@@ -1,32 +1,319 @@
-# Temporary probe: prints what the ubuntu-latest runner provides, so the real
-# pipeline can be designed from it.
+# CI for n-ga.ge/arcade on Forgejo Actions (runners labelled ubuntu-latest).
+#
+#   build    builds the WebAssembly player from the eka2l1 submodule, checks the
+#            catalogue and decides which of the later jobs can run
+#   game     one job per catalogue entry, named after the game: starts the game
+#            in headless Chromium and fails when it falls short of the level its
+#            entry expects (test.expect)
+#   status   collects the results into status.json and the screenshots the
+#            front page shows; runs even when games fail
+#   deploy   builds the site and publishes it to Cloudflare: production on
+#            main, a preview for pull requests
+#
+# Configuration, under the repository's (or the organisation's) Settings >
+# Actions. A job whose script or configuration is missing is skipped, and the
+# "Plan the later jobs" step of build says what it lacks.
+#
+#   Variables
+#     ASSETS_URL             where tools/assets/fetch.py gets the firmware and the
+#                            game cards (the assets Worker in front of the R2 bucket)
+#     CF_PAGES_PROJECT       Cloudflare Pages project; "n-ga-ge" when unset
+#   Secrets
+#     ASSETS_TOKEN           bearer token for ASSETS_URL
+#     CLOUDFLARE_API_TOKEN   token allowed to deploy Pages and Workers
+#     CLOUDFLARE_ACCOUNT_ID  the Cloudflare account the site lives in
+#
+# Pull requests from forks get no secrets, so there the game tests and the
+# preview are skipped and only build runs.
+#
+# The firmware and the game cards are copyrighted. They are downloaded into
+# testdata/ inside a game job and must never be uploaded as an artifact or
+# stored in a cache: the result artifacts hold only what the patterns below
+# name. Packing the dumps and uploading them to R2 is a workflow of the private
+# repository, not part of this one.
+#
+# Action URLs are written out in full, as Forgejo recommends; the artifact
+# actions are Forgejo's forks, because the upstream v4 ones refuse to run
+# anywhere but github.com.
 name: CI
-on: [push]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
 jobs:
-  probe:
-    name: probe runner
+  build:
+    name: Build the player
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      game: ${{ steps.plan.outputs.game }}
+      status: ${{ steps.plan.outputs.status }}
+      deploy: ${{ steps.plan.outputs.deploy }}
     steps:
-      - name: Describe the runner
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+
+      - name: Check the catalogue
+        run: python3 -I tools/games/validate.py
+
+      - name: Plan the later jobs
+        id: plan
+        env:
+          ASSETS_URL: ${{ vars.ASSETS_URL }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          EVENT: ${{ forge.event_name }}
+          REF: ${{ forge.ref }}
         run: |
-          set +e
-          echo "== os"; cat /etc/os-release; uname -a
-          echo "== user"; id; echo "HOME=$HOME"; pwd; echo "SHELL=$SHELL"; ls -la /proc/1/exe; cat /proc/1/cgroup | head -5; [ -f /.dockerenv ] && echo in-docker
-          echo "== sudo"; command -v sudo && sudo -n true && echo sudo-ok
-          echo "== cpu"; nproc; grep -m1 'model name' /proc/cpuinfo
-          echo "== memory"; free -m
-          echo "== disk"; df -h / "$PWD" /tmp 2>/dev/null
-          echo "== tools"
-          for t in git git-lfs curl wget jq python3 pip3 node npm npx cmake ninja ccache make gcc g++ clang emcc xz zstd tar unzip zip bzip2 docker apt-get xvfb-run google-chrome chromium chromium-browser firefox java; do
-            p=$(command -v $t) && echo "$t: $p: $($t --version 2>&1 | head -1)" || echo "$t: missing"
-          done
-          echo "== env"; env | grep -E '^(GITHUB_|FORGEJO_|GITEA_|RUNNER_|ACTIONS_|CI|ImageOS|AGENT_)' | grep -v -i -E 'token|secret' | sort
-          echo "== toolcache"; ls -la /opt/hostedtoolcache 2>/dev/null | head; ls /opt 2>/dev/null
-          echo "== network"; for u in https://github.com https://data.forgejo.org https://code.forgejo.org https://registry.npmjs.org https://storage.googleapis.com https://cdn.playwright.dev https://nodejs.org/dist/ https://git.code.sf.net; do printf '%s ' $u; curl -sS -m 15 -o /dev/null -w '%{http_code} %{time_total}s\n' $u; done
-          echo "== download speed"; curl -sS -m 60 -o /dev/null -w '%{speed_download} B/s\n' https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.tar.gz
-      - name: Contexts
+          # lacking <requirement>...: list what is absent. A requirement is a
+          # file, or NAME= for a variable or secret that must be set.
+          lacking() {
+            local item name out=
+            for item in "$@"; do
+              case "$item" in
+                *=) name=${item%=}; [ -n "${!name}" ] || out="$out, $name is not set" ;;
+                *) [ -e "$item" ] || out="$out, $item is missing" ;;
+              esac
+            done
+            echo "${out#, }"
+          }
+          say() { echo "$1"; echo "- $1" >> "$GITHUB_STEP_SUMMARY"; }
+
+          echo "matrix=$(python3 -I tools/ci/gen-matrix.py)" >> "$GITHUB_OUTPUT"
+
+          why=$(lacking tools/web/gametest.mjs package.json tools/assets/fetch.py ASSETS_URL= ASSETS_TOKEN=)
+          if [ -z "$why" ]; then
+            say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games"
+            echo "game=true" >> "$GITHUB_OUTPUT"
+            why=$(lacking tools/ci/status.py)
+          else
+            say "game: skipped ($why)"
+            why="there are no game results"
+          fi
+          if [ -z "$why" ]; then
+            say "status: will run"
+            echo "status=true" >> "$GITHUB_OUTPUT"
+          else
+            say "status: skipped ($why)"
+          fi
+
+          # Production is main; a pull request gets a preview. deploy.sh is told
+          # which through DEPLOY_TARGET and DEPLOY_BRANCH, and a deploy.sh that
+          # does not read DEPLOY_TARGET would publish a pull request as the live
+          # site, so with such a script there is no preview.
+          target=
+          case "$EVENT $REF" in
+            "pull_request "*)
+              target=preview
+              why=$(lacking tools/ci/deploy.sh CLOUDFLARE_API_TOKEN= CLOUDFLARE_ACCOUNT_ID=)
+              if [ -z "$why" ] && ! grep -q DEPLOY_TARGET tools/ci/deploy.sh; then
+                why="tools/ci/deploy.sh does not read DEPLOY_TARGET, so it cannot make a preview"
+              fi ;;
+            *" refs/heads/main")
+              target=production
+              why=$(lacking tools/ci/deploy.sh CLOUDFLARE_API_TOKEN= CLOUDFLARE_ACCOUNT_ID=) ;;
+            *)
+              why="only main and pull requests are deployed, this is $EVENT on $REF" ;;
+          esac
+          if [ -z "$why" ]; then
+            say "deploy: $target"
+            echo "deploy=$target" >> "$GITHUB_OUTPUT"
+          else
+            say "deploy: skipped ($why)"
+          fi
+
+      - name: Check out the emulator
+        run: tools/ci/checkout-eka2l1.sh
+
+      - name: Cache keys
+        id: key
         run: |
-          echo "event=${{ github.event_name }} ref=${{ github.ref }} repo=${{ github.repository }} server=${{ github.server_url }}"
-          echo "forge.ref=${{ forge.ref }} forgejo.ref=${{ forgejo.ref }}"
-          echo "var set: ${{ vars.ASSETS_URL != '' }} secret set: ${{ secrets.ASSETS_TOKEN != '' }}"
-          echo "hashFiles: ${{ hashFiles('catalog/schema.json') }}"
+          echo "toolchain=$(sha256sum tools/ci/setup-toolchain.sh | cut -c1-16)" >> "$GITHUB_OUTPUT"
+          echo "eka2l1=$(git -C eka2l1 rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Toolchain cache
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: .toolchain
+          key: toolchain-${{ steps.key.outputs.toolchain }}
+
+      - name: Set up the toolchain
+        run: tools/ci/setup-toolchain.sh
+
+      # Saved once per emulator commit; any earlier one is a good start.
+      - name: Compiler cache
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-emscripten-${{ steps.key.outputs.eka2l1 }}
+          restore-keys: ccache-emscripten-
+
+      - name: Build
+        run: |
+          . tools/env.sh
+          ccache --zero-stats >/dev/null
+          tools/ci/build-web.sh
+          ccache --show-stats
+
+      - name: Upload the player
+        uses: https://data.forgejo.org/forgejo/upload-artifact@v4
+        with:
+          name: player
+          path: |
+            eka2l1/build/web/bin
+            !eka2l1/build/web/bin/**/*.a
+          if-no-files-found: error
+          retention-days: 14
+
+  game:
+    name: ${{ matrix.game.title }}
+    needs: build
+    if: needs.build.outputs.game == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.matrix) }}
+    env:
+      SLUG: ${{ matrix.game.slug }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+
+      - name: Node
+        run: tools/ci/setup-toolchain.sh --only node
+
+      - name: Download the player
+        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+        with:
+          name: player
+          path: eka2l1/build/web/bin
+
+      - name: Cache key
+        id: key
+        run: echo "deps=$(cat package.json package-lock.json 2>/dev/null | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Node packages and browser cache
+        id: deps
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
+          key: test-deps-${{ steps.key.outputs.deps }}
+
+      - name: Install the Node packages
+        if: steps.deps.outputs.cache-hit != 'true'
+        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      # Downloads the browser unless the cache had it; the system libraries it
+      # needs are installed either way.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Download the firmware and the game
+        env:
+          ASSETS_URL: ${{ vars.ASSETS_URL }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+        run: python3 -I tools/assets/fetch.py --fw "$SLUG" --out testdata
+
+      - name: Test
+        run: node tools/web/gametest.mjs --game "$SLUG" --out results
+
+      # Only the result and the screenshot: never anything from testdata/.
+      - name: Upload the result
+        if: ${{ !cancelled() }}
+        uses: https://data.forgejo.org/forgejo/upload-artifact@v4
+        with:
+          name: result-${{ matrix.game.slug }}
+          path: |
+            results/*.json
+            results/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
+  status:
+    name: Status of all games
+    needs: [build, game]
+    if: ${{ !cancelled() && needs.build.outputs.status == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+
+      - name: Download the results
+        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+        with:
+          pattern: result-*
+          path: results
+          merge-multiple: true
+
+      - name: Summarise
+        run: |
+          mkdir -p results
+          python3 -I tools/ci/status.py results --out status
+
+      - name: Upload the status
+        uses: https://data.forgejo.org/forgejo/upload-artifact@v4
+        with:
+          name: status
+          path: status
+          if-no-files-found: error
+          retention-days: 30
+
+  deploy:
+    name: Deploy (${{ needs.build.outputs.deploy }})
+    needs: [build, status]
+    # A failed game does not hold the site back: the front page reports it.
+    # A failed status job does, and a skipped one means a site without results.
+    if: ${{ !cancelled() && needs.build.outputs.deploy != '' && needs.status.result != 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+
+      - name: Node
+        run: tools/ci/setup-toolchain.sh --only node
+
+      - name: Download the player
+        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+        with:
+          name: player
+          path: eka2l1/build/web/bin
+
+      - name: Download the status
+        if: needs.status.result == 'success'
+        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+        with:
+          name: status
+          path: status
+
+      - name: Build the site
+        run: |
+          args=(--bin eka2l1/build/web/bin)
+          if [ -f status/status.json ]; then args+=(--status status); fi
+          python3 -I tools/site/build.py "${args[@]}"
+
+      - name: Install the Node packages
+        run: |
+          if [ -f package-lock.json ]; then npm ci
+          elif [ -f package.json ]; then npm install
+          fi
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'n-ga-ge' }}
+          DEPLOY_TARGET: ${{ needs.build.outputs.deploy }}
+          DEPLOY_BRANCH: ${{ forge.head_ref || forge.ref_name }}
+        run: tools/ci/deploy.sh
