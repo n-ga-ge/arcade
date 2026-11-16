@@ -10,12 +10,14 @@ export const STATUSES = [
   { id: 'menu', label: 'Menus only', means: 'The main menu works, but the game itself does not start.' },
   { id: 'boots', label: 'Boots', means: 'Shows its own first screens and gets no further.' },
   { id: 'broken', label: 'Not working', means: 'Does not start, or crashes.' },
-  { id: 'untested', label: 'Untested', means: 'Nobody has tried it in the web build yet.' },
 ];
+// A game nobody has looked at yet is in the catalogue but not on the page: the
+// site only lists games it can say something about.
+const UNTESTED = { id: 'untested', label: 'Untested', means: 'Nobody has tried it in the web build yet.' };
 const RANK = new Map(STATUSES.map((status, i) => [status.id, i]));
-const BY_ID = new Map(STATUSES.map((status) => [status.id, status]));
+const BY_ID = new Map([...STATUSES, UNTESTED].map((status) => [status.id, status]));
 
-export const statusOf = (id) => BY_ID.get(id) || BY_ID.get('untested');
+export const statusOf = (id) => BY_ID.get(id) || UNTESTED;
 
 // The words for a level a test run reached or expected. The runner can report
 // levels the catalogue has no word for (nothing shown at all), so fall back to
@@ -72,7 +74,8 @@ export async function loadCatalog(signal) {
   if (!index || !Array.isArray(index.games)) throw new Error('the catalogue file has no list of games');
   const commit = typeof index.commit === 'string' && /^[0-9a-f]{7,40}$/i.test(index.commit) ? index.commit : null;
   const version = commit ? commit.slice(0, 12) : index.generated ? String(index.generated) : '';
-  const games = index.games.filter((raw) => raw && raw.slug).map((raw) => normalise(raw, version));
+  const games = index.games.filter((raw) => raw && raw.slug).map((raw) => normalise(raw, version))
+    .filter((game) => game.status !== UNTESTED.id);
   const bySlug = new Map(games.map((game) => [game.slug, game]));
   for (const game of games) {
     const base = game.variantOf && game.variantOf !== game.slug ? bySlug.get(game.variantOf) : null;
@@ -100,7 +103,7 @@ const ORDERS = {
   title: byTitle,
 };
 export const isOrder = (name) => Object.hasOwn(ORDERS, name);
-export const isStatus = (id) => BY_ID.has(id);
+export const isStatus = (id) => RANK.has(id);
 
 
 // What the page shows for a search, status filter and order, plus how many of

@@ -2,7 +2,7 @@
 // search, status filter, order and open detail view in the address so a view
 // can be shared.
 //
-//   ?q=<text>  &status=<ingame|menu|boots|broken|untested>  &sort=title  &game=<slug>
+//   ?q=<text>  &status=<ingame|menu|boots|broken>  &sort=title  &game=<slug>
 import { isOrder, isStatus, loadCatalog, select, statusOf } from './model.js';
 import { buildLine, card, chips, detail, el, setCounts } from './view.js';
 

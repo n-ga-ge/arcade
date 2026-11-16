@@ -24,7 +24,7 @@ speed; older computers and phones may be slow.
 ## What the labels on the games mean
 
 Not every game works yet. Each game on the front page carries a label that
-says how far it gets:
+says how far it gets. A game appears there once it has been tried:
 
 | Label | Meaning |
 |---|---|
@@ -32,7 +32,6 @@ says how far it gets:
 | Menus only | The menus work, but the game itself does not start or cannot be played. |
 | Boots | The game shows its opening screens and goes no further. |
 | Not working | The game does not start. |
-| Untested | Nobody has looked yet. |
 
 The games are also started automatically by a test every time the site
 changes, and the card shows whether that test passed. A game can be listed as
