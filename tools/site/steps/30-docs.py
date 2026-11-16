@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Publish the documentation: README.md and docs/*.md as static pages.
+"""Publish the site's documentation: docs/public/*.md as static pages.
 
   python3 -I tools/site/steps/30-docs.py <dist>        writes <dist>/docs/
   python3 -I tools/site/steps/30-docs.py --self-test   checks the renderer itself
 
-  /docs/            README.md, the overview
-  /docs/<name>/     docs/<name>.md
-  /docs/<file>      every other file in docs/ (the style sheet, diagrams)
+  /docs/            docs/public/index.md, the overview
+  /docs/<name>/     docs/public/<name>.md
+  /docs/<file>      every other file in docs/public/ (the style sheet, pictures)
 
-The pages are listed in the order README.md first links to them, so README.md
-must link to every page in docs/.
+Only docs/public/ is published. It is the general description for visitors:
+what the site is and how to play. README.md and the other pages in docs/ are
+for people working on the code and are read in the repository.
+
+The pages are listed in the order the overview first links to them, so it
+must link to every page in docs/public/.
 
 Links are written the way the forge wants them (relative to the Markdown file)
 and are rewritten here: a link to another page becomes that page's address, a
@@ -38,6 +42,8 @@ import unicodedata
 # up in another checkout must not make this one publish that one's pages.
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 FORGE = "https://github.com/n-ga-ge/arcade/blob/main/"
+PUBLIC = "docs/public"                    # the folder that is published
+HOME = PUBLIC + "/index.md"               # the overview, served at /docs/
 SITE_NAME = "n-ga.ge"
 
 PUNCTUATION = set("\\`*_{}[]()#+-.!|<>~\"'&$%,/:;=?@^")
@@ -128,11 +134,16 @@ def repository_files(root):
     return {path for path in listing.split("\0") if path}
 
 
+def site_path(asset):
+    """Where a file of docs/public/ is served: docs/public/x.svg -> docs/x.svg."""
+    return "docs/" + asset[len(PUBLIC) + 1:]
+
+
 class Page:
     def __init__(self, source):
         self.source = source                      # path in the repository, "/" separated
         name = posixpath.splitext(posixpath.basename(source))[0]
-        self.folder = "docs" if source == "README.md" else "docs/" + name   # folder in the site
+        self.folder = "docs" if source == HOME else "docs/" + name   # folder in the site
         self.title = ""
         self.headings = []                        # (level, id, inline markup)
         self.body = ""
@@ -195,14 +206,14 @@ class Renderer:
 
     def image(self, source, where):
         if re.match(r"[A-Za-z][A-Za-z0-9+.-]*:|/", source):
-            fail(where, f"image {source}: only files in docs/ can be shown (the site loads nothing from elsewhere)")
+            fail(where, f"image {source}: only files in {PUBLIC}/ can be shown (the site loads nothing from elsewhere)")
         target = posixpath.normpath(posixpath.join(posixpath.dirname(self.page.source), source))
-        if not target.startswith("docs/") or target.endswith(".md"):
-            fail(where, f"image {source}: only files in docs/ are published")
+        if not target.startswith(PUBLIC + "/") or target.endswith(".md"):
+            fail(where, f"image {source}: only files in {PUBLIC}/ are published")
         if not os.path.isfile(os.path.join(self.root, target)):
             fail(where, f"image {source}: there is no {target}")
         self.assets.add(target)
-        return self.page.href(target)
+        return self.page.href(site_path(target))
 
     # --- inline ------------------------------------------------------------
 
@@ -639,7 +650,7 @@ TEMPLATE = """<!doctype html>
 {around}
 </nav>
 <footer>
-<p>This page is <a href="{source}">{source_name}</a> in the repository. <a href="{front}">Back to the games</a>.</p>
+<p><a href="{front}">Back to the games</a></p>
 </footer>
 </main>
 </div>
@@ -652,7 +663,7 @@ def page_html(page, order):
     nav = []
     for other in order:
         current = other is page
-        label = "Overview" if other.source == "README.md" else escape(other.title)
+        label = "Overview" if other.source == HOME else escape(other.title)
         entry = f'<a href="{attribute(page.href(other.folder, folder=True))}"' + (' aria-current="page"' if current else "") + f">{label}</a>"
         sections = [(ident, markup) for level, ident, markup in other.headings if level == 2] if current else []
         if sections:
@@ -667,7 +678,7 @@ def page_html(page, order):
     if index + 1 < len(order):
         following = order[index + 1]
         around.append(f'<a class="next" href="{attribute(page.href(following.folder, folder=True))}"><small>Next</small>{escape(following.title)}</a>')
-    is_home = page.source == "README.md"
+    is_home = page.source == HOME
     return TEMPLATE.format(
         title=escape(f"{SITE_NAME} documentation" if is_home else f"{page.title} · {SITE_NAME} documentation"),
         style=attribute(page.href("docs/docs.css")),
@@ -677,20 +688,17 @@ def page_html(page, order):
         nav="\n".join(nav),
         body=page.body,
         around="\n".join(around),
-        source=attribute(FORGE + page.source),
-        source_name=escape(page.source),
     )
 
 
 def build(root, dist):
     """Render the documentation of the checkout at `root` into <dist>/docs.
     Returns the number of pages."""
-    docs = os.path.join(root, "docs")
-    readme = os.path.join(root, "README.md")
-    if not os.path.isfile(readme):
-        fail("README.md", "missing: it is the overview page of the documentation")
+    docs = os.path.join(root, *PUBLIC.split("/"))
+    if not os.path.isfile(os.path.join(root, *HOME.split("/"))):
+        fail(HOME, "missing: it is the overview page of the documentation")
     tracked = repository_files(root)
-    sources = ["README.md"] + sorted("docs/" + name for name in (os.listdir(docs) if os.path.isdir(docs) else []) if name.endswith(".md"))
+    sources = [HOME] + sorted(PUBLIC + "/" + name for name in os.listdir(docs) if name.endswith(".md") and PUBLIC + "/" + name != HOME)
     pages = {source: Page(source) for source in sources}
 
     assets = set()
@@ -701,15 +709,15 @@ def build(root, dist):
             if not name.endswith(".md"):
                 assets.add(path)
             elif path not in pages:
-                fail(path, "pages live directly in docs/: a Markdown file in a subfolder would not be published")
+                fail(path, f"pages live directly in {PUBLIC}/: a Markdown file in a subfolder would not be published")
     for page in pages.values():
-        clash = [asset for asset in assets if asset == page.folder or asset.startswith(page.folder + "/")]
-        if clash and page.source != "README.md":
+        clash = [asset for asset in assets if site_path(asset) == page.folder or site_path(asset).startswith(page.folder + "/")]
+        if clash and page.source != HOME:
             fail(page.source, f"its address is taken by {clash[0]}")
-    if "docs/index.html" in assets:
-        fail("docs/index.html", "the overview is rendered to this address from README.md")
-    if "docs/docs.css" not in assets:
-        fail("docs/docs.css", "missing: the pages' style sheet")
+    if PUBLIC + "/index.html" in assets:
+        fail(PUBLIC + "/index.html", f"the overview is rendered to this address from {HOME}")
+    if PUBLIC + "/docs.css" not in assets:
+        fail(PUBLIC + "/docs.css", "missing: the pages' style sheet")
 
     for page in pages.values():
         with open(os.path.join(root, page.source), encoding="utf-8") as fh:
@@ -721,8 +729,8 @@ def build(root, dist):
             if fragment not in {ident for _, ident, _ in target.headings}:
                 fail(where, f'there is no heading with the anchor "#{fragment}" in {target.source}')
 
-    # README.md is the table of contents: the pages follow in the order it names them.
-    home = pages["README.md"]
+    # The overview is the table of contents: the pages follow in the order it names them.
+    home = pages[HOME]
     order = [home]
     for match in re.finditer(r'href="([^"#]+/)(?:#[^"]*)?"', home.body):
         for page in pages.values():
@@ -730,7 +738,7 @@ def build(root, dist):
                 order.append(page)
     missing = [page.source for page in pages.values() if page not in order]
     if missing:
-        fail("README.md", "does not link to " + ", ".join(missing) + ": every page must be reachable from the overview")
+        fail(HOME, "does not link to " + ", ".join(missing) + ": every page must be reachable from the overview")
 
     out = os.path.join(dist, "docs")
     if os.path.exists(out):
@@ -741,7 +749,7 @@ def build(root, dist):
         with open(target, "w", encoding="utf-8") as fh:
             fh.write(page_html(page, order))
     for asset in sorted(assets):
-        target = os.path.join(dist, *asset.split("/"))
+        target = os.path.join(dist, *site_path(asset).split("/"))
         os.makedirs(os.path.dirname(target), exist_ok=True)
         shutil.copyfile(os.path.join(root, *asset.split("/")), target)
     return len(order)
@@ -756,7 +764,7 @@ def self_test():
         """Build a throwaway checkout from {path: text}; returns (page markup by address, error)."""
         with tempfile.TemporaryDirectory() as folder:
             root = os.path.join(folder, "repo")
-            for path, text in {"docs/docs.css": "", **files}.items():
+            for path, text in {PUBLIC + "/docs.css": "", **files}.items():
                 target = os.path.join(root, path)
                 os.makedirs(os.path.dirname(target), exist_ok=True)
                 with open(target, "w", encoding="utf-8") as fh:
@@ -778,14 +786,14 @@ def self_test():
     failures = []
 
     def renders(name, markdown, *expected):
-        pages, error = site({"README.md": "# T\n\n" + markdown})
+        pages, error = site({HOME: "# T\n\n" + markdown})
         text = pages.get("docs/index.html", "")
         for piece in expected:
             if error or piece not in text:
                 failures.append(f"{name}: expected {piece!r}, got {error or text[text.find('<main'):text.find('<nav class=' + chr(34) + 'around')]!r}")
 
     def refuses(name, markdown, reason, extra=None):
-        _, error = site({"README.md": "# T\n\n" + markdown, **(extra or {})})
+        _, error = site({HOME: "# T\n\n" + markdown, **(extra or {})})
         if not error or reason not in error:
             failures.append(f"{name}: expected a failure mentioning {reason!r}, got {error!r}")
 
@@ -824,15 +832,16 @@ def self_test():
     refuses("hard break", "a  \nb", "trailing spaces")
     refuses("footnote", "a[^1]", "footnotes")
     refuses("dead anchor", "[x](#nowhere)", "no heading")
-    refuses("dead file", "[x](tools/nothing.py)", "there is no tools/nothing.py")
-    refuses("dead page", "[x](docs/nothing.md)", "there is no page")
+    refuses("dead file", "[x](../../tools/nothing.py)", "there is no tools/nothing.py")
+    refuses("dead page", "[x](nothing.md)", "there is no page")
     refuses("site path", "[x](/play/)", "site root")
-    refuses("outside", "[x](../other/file)", "outside the repository")
-    refuses("submodule", "[x](eka2l1/README.md)", "submodule")
-    refuses("remote image", "![x](https://e.org/x.png)", "only files in docs/")
-    refuses("unlinked page", "text", "does not link to docs/a.md", {"docs/a.md": "# A\n"})
-    refuses("dead cross anchor", "[a](docs/a.md#nope)", "no heading", {"docs/a.md": "# A\n"})
-    refuses("page in a subfolder", "text", "pages live directly in docs/", {"docs/sub/a.md": "# A\n"})
+    refuses("outside", "[x](../../../other/file)", "outside the repository")
+    refuses("submodule", "[x](../../eka2l1/README.md)", "submodule")
+    refuses("remote image", "![x](https://e.org/x.png)", "only files in docs/public/")
+    refuses("unpublished image", "![x](../overview.svg)", "are published", {"docs/overview.svg": "<svg/>"})
+    refuses("unlinked page", "text", "does not link to docs/public/a.md", {"docs/public/a.md": "# A\n"})
+    refuses("dead cross anchor", "[a](a.md#nope)", "no heading", {"docs/public/a.md": "# A\n"})
+    refuses("page in a subfolder", "text", "pages live directly in docs/public/", {"docs/public/sub/a.md": "# A\n"})
     refuses("lazy quote line", "> a\nb", "follows a quote")
     refuses("spaced rule", "* * *", "rule written with spaces")
     refuses("link in a heading", "## See [x](https://e.org)", "link in a heading")
@@ -846,10 +855,11 @@ def self_test():
     renders("list then text", "- a\n\ntext", "<ul>\n<li>a</li>\n</ul>\n<p>text</p>")
 
     pages, error = site({
-        "README.md": "# T\n\n[b](docs/b.md), [a](docs/a.md#part-two), [tool](tools/x.py), ![d](docs/d.svg)\n",
-        "docs/a.md": "# A page\n\n## Part two\n\n[home](../README.md#t), [b](b.md), [tool](../tools/x.py#L3), ![d](d.svg)\n",
-        "docs/b.md": "# B page\n",
-        "docs/d.svg": "<svg/>",
+        HOME: "# T\n\n[b](b.md), [a](a.md#part-two), [tool](../../tools/x.py), [dev](../building.md), ![d](d.svg)\n",
+        "docs/public/a.md": "# A page\n\n## Part two\n\n[home](index.md#t), [b](b.md), [tool](../../tools/x.py#L3), ![d](d.svg)\n",
+        "docs/public/b.md": "# B page\n",
+        "docs/public/d.svg": "<svg/>",
+        "docs/building.md": "# Not published\n",
         "tools/x.py": "",
     })
     home = pages.get("docs/index.html", "")
@@ -863,17 +873,19 @@ def self_test():
         (home.find('href="b/"', home.find('class="pages"')) < home.find('href="a/"', home.find('class="pages"')), "site: pages follow the overview's order"),
         ('<a href="#part-two">Part two</a>' in a and 'aria-current="page">A page' in a, "site: sections of the current page"),
         ("docs/d.svg" in pages and "docs/docs.css" in pages, "site: other files are copied"),
+        (f'href="{FORGE}docs/building.md"' in home and "docs/building/index.html" not in pages, "site: pages outside docs/public/ are not published"),
+        ("in the repository" not in a, "site: no link to the page's source"),
         ('class="previous" href="../b/"' in a and 'class="next" href="b/"' in home, "site: previous and next"),
     ]
     failures += [message for ok, message in checks if not ok]
 
     # A file git ignores exists here but not on the forge. Needs git, as the check itself does.
     if shutil.which("git"):
-        ignored = {"README.md": "# T\n\n[x](testdata/x.bin) [y](tools/y.py)\n", ".gitignore": "/testdata/\n", "testdata/x.bin": "", "tools/y.py": ""}
+        ignored = {HOME: "# T\n\n[x](../../testdata/x.bin) [y](../../tools/y.py)\n", ".gitignore": "/testdata/\n", "testdata/x.bin": "", "tools/y.py": ""}
         _, error = site(ignored, git=True)
         if not error or "ignored by git" not in error or "testdata/x.bin" not in error:
             failures.append(f"ignored file: expected a failure for testdata/x.bin, got {error!r}")
-        _, error = site({**ignored, "README.md": "# T\n\n[y](tools/y.py) [dir](tools/)\n"}, git=True)
+        _, error = site({**ignored, HOME: "# T\n\n[y](../../tools/y.py) [dir](../../tools/)\n"}, git=True)
         if error:
             failures.append(f"untracked file and folder: {error}")
 
