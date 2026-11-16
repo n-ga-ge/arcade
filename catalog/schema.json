@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://n-ga.ge/catalog/schema.json",
+  "title": "Catalogue entry for one game (catalog/games/<slug>.json)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slug", "title", "uid", "dump", "status"],
+  "$defs": {
+    "level": { "enum": ["broken", "boots", "menu", "ingame"] },
+    "key": { "enum": ["up", "down", "left", "right", "ok", "lsk", "rsk", "1", "2", "3", "4", "5", "6", "7", "8", "9", "star", "0", "hash", "clear"] },
+    "keyMap": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/key" },
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "properties": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "File name, URL name (/play/?g=<slug>) and asset name (games/<slug>.zip)." },
+    "title": { "type": "string", "description": "As the game names itself on its title screen." },
+    "publisher": { "type": "string" },
+    "year": { "type": "integer" },
+    "genre": { "type": "string" },
+    "uid": { "type": "string", "pattern": "^0x[0-9A-F]{8}$", "description": "UID of the app the card launches, as the emulator reports it." },
+    "variantOf": { "type": ["string", "null"], "description": "Slug of the base game when this is a translation or mod of it (they share a UID)." },
+    "dump": { "type": "string", "description": "Folder name under games/ in a local checkout. Local only; the dumps are never committed." },
+    "pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Fix-ups tools/games/pack.py applies when it builds the zip.",
+      "properties": {
+        "root": { "type": "string", "description": "Card root inside the dump, when it cannot be found by looking for System/Apps." },
+        "move": { "type": "array", "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }, "description": "[from, to] pairs relative to the card root, applied in order." },
+        "exclude": { "type": "array", "items": { "type": "string" }, "description": "Extra glob patterns (matched against the path inside the card) to leave out." }
+      }
+    },
+    "status": { "enum": ["untested", "broken", "boots", "menu", "ingame"], "description": "How far the game gets in the web build: broken (does not start or crashes), boots (shows its own screens), menu (main menu works), ingame (playable)." },
+    "statusNote": { "type": "string", "description": "What was seen, in a sentence or two. Required when status is broken, boots or menu." },
+    "notes": { "type": "array", "items": { "type": "string" }, "description": "Things a player should know (shown in the guide)." },
+    "controls": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["source", "actions"],
+      "properties": {
+        "source": { "type": "string", "description": "Where the actions were learned: the game's own help or options screen, observed in play, or its manual." },
+        "actions": { "type": "object", "propertyNames": { "$ref": "#/$defs/key" }, "additionalProperties": { "type": "string" }, "description": "What each N-Gage key does in the game." },
+        "keyboard": { "$ref": "#/$defs/keyMap", "description": "N-Gage key -> KeyboardEvent.code list. Omit to use the standard layout." },
+        "gamepad": { "$ref": "#/$defs/keyMap", "description": "N-Gage key -> gamepad inputs: b<n> button, a<n>- / a<n>+ axis direction. Omit to use the standard layout." },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "test": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["expect", "script"],
+      "properties": {
+        "expect": { "$ref": "#/$defs/level", "description": "The level the script is expected to reach. The CI job fails when the game falls short of it." },
+        "script": {
+          "type": "array",
+          "description": "Steps replayed after the game starts running, in order.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "key": { "$ref": "#/$defs/key" },
+              "hold": { "type": "integer", "minimum": 20, "description": "Milliseconds the key is held (default 120)." },
+              "wait": { "type": "integer", "minimum": 0, "description": "Milliseconds to wait afterwards (default 600); with no key, a plain pause." },
+              "repeat": { "type": "integer", "minimum": 1, "description": "Times to repeat this step (default 1)." }
+            }
+          }
+        },
+        "timeoutMs": { "type": "integer", "description": "How long the game may take to start running (default 90000)." }
+      }
+    }
+  }
+}

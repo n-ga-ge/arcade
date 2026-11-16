@@ -1,0 +1,20 @@
+{
+  "slug": "techwars",
+  "title": "TechWars",
+  "uid": "0x101FF855",
+  "variantOf": null,
+  "dump": "TechWars",
+  "pack": {
+    "root": ".",
+    "move": [
+      [
+        "System/App",
+        "System/Apps"
+      ]
+    ]
+  },
+  "status": "untested",
+  "notes": [],
+  "controls": null,
+  "test": null
+}

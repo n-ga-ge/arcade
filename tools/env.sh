@@ -11,13 +11,13 @@ _common=$(git -C "$ARCADE_ROOT" rev-parse --path-format=absolute --git-common-di
 case "$_common" in */.git) ARCADE_MAIN=${ARCADE_MAIN:-$(dirname "$_common")} ;; *) ARCADE_MAIN=${ARCADE_MAIN:-$ARCADE_ROOT} ;; esac
 unset _common
 export ARCADE_ROOT ARCADE_MAIN
-if [ -z "$EKA2L1_TOOLCHAIN" ]; then
+if [ -z "${EKA2L1_TOOLCHAIN:-}" ]; then
   for _c in "$ARCADE_ROOT/.toolchain" "$ARCADE_MAIN/.toolchain"; do
     if [ -f "$_c/env.sh" ]; then EKA2L1_TOOLCHAIN=$_c; break; fi
   done
   unset _c
 fi
-if [ -n "$EKA2L1_TOOLCHAIN" ] && [ -f "$EKA2L1_TOOLCHAIN/env.sh" ]; then
+if [ -n "${EKA2L1_TOOLCHAIN:-}" ] && [ -f "$EKA2L1_TOOLCHAIN/env.sh" ]; then
   . "$EKA2L1_TOOLCHAIN/env.sh"
   if [ ! -e "$ARCADE_ROOT/node_modules" ] && [ -d "$EKA2L1_TOOLCHAIN/pw/node_modules" ]; then
     ln -s "$EKA2L1_TOOLCHAIN/pw/node_modules" "$ARCADE_ROOT/node_modules"

@@ -4,9 +4,6 @@
 /games/
 /testdata/
 
-# The EKA2L1 fork is its own repository (branch web-port).
-/eka2l1/
-
 # User-space toolchain and downloaded browsers.
 /.toolchain/
 

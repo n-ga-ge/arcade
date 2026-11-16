@@ -1,0 +1,19 @@
+{
+  "slug": "ghost-recon-jungle-storm",
+  "title": "Tom Clancy's Ghost Recon: Jungle Storm",
+  "uid": "0x101FD3F0",
+  "variantOf": null,
+  "dump": "Ghost Recon Jungle Storm",
+  "pack": {
+    "move": [
+      [
+        "Libs",
+        "System/Libs"
+      ]
+    ]
+  },
+  "status": "untested",
+  "notes": [],
+  "controls": null,
+  "test": null
+}

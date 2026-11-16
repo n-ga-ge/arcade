@@ -1,0 +1,16 @@
+{
+  "slug": "bomberman",
+  "title": "Bomberman",
+  "uid": "0x101FD3D5",
+  "variantOf": null,
+  "dump": "Bomberman",
+  "pack": {
+    "root": "BomberMan/BomberMan/Bomber Man"
+  },
+  "status": "untested",
+  "notes": [
+    "The dump also holds a second, patched 6R29.APP (\"fix Engage\"); the zip uses the card as dumped."
+  ],
+  "controls": null,
+  "test": null
+}

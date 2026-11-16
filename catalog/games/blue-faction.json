@@ -1,0 +1,11 @@
+{
+  "slug": "blue-faction",
+  "title": "Blue Faction (Red Faction mod)",
+  "uid": "0x101FD3D0",
+  "variantOf": "red-faction",
+  "dump": "Blue Faction (red faction mod)",
+  "status": "untested",
+  "notes": [],
+  "controls": null,
+  "test": null
+}

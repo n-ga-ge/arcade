@@ -1,0 +1,11 @@
+{
+  "slug": "catan",
+  "title": "Catan",
+  "uid": "0x101FD3FB",
+  "variantOf": null,
+  "dump": "Catan",
+  "status": "untested",
+  "notes": [],
+  "controls": null,
+  "test": null
+}

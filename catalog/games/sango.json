@@ -1,0 +1,13 @@
+{
+  "slug": "sango",
+  "title": "Sango",
+  "uid": "0x101FE73A",
+  "variantOf": null,
+  "dump": "Sango",
+  "status": "untested",
+  "notes": [
+    "The dump has an English patch as a separate .SIS file, which a card install does not apply."
+  ],
+  "controls": null,
+  "test": null
+}

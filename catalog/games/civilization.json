@@ -1,0 +1,11 @@
+{
+  "slug": "civilization",
+  "title": "Civilization",
+  "uid": "0x101FD42A",
+  "variantOf": null,
+  "dump": "Civilization",
+  "status": "untested",
+  "notes": [],
+  "controls": null,
+  "test": null
+}
