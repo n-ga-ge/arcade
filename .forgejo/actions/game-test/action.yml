@@ -50,12 +50,12 @@ runs:
       shell: bash
       run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-    # Downloads the browser only if the cache did not have it. The system
-    # libraries it needs are not in the runner's image and are installed
-    # every time.
+    # The headless shell is the browser gametest.mjs starts. It is downloaded
+    # only if the cache did not have it; the system libraries it needs are not
+    # in the runner's image and are installed every time.
     - name: Install Chromium
       shell: bash
-      run: npx playwright install --with-deps chromium
+      run: npx playwright install --with-deps --only-shell chromium
 
     - name: Download the firmware and the game
       shell: bash

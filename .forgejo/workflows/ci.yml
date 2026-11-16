@@ -10,23 +10,35 @@
 #   status   collects the results into status.json and the screenshots the
 #            front page shows; runs even when games fail
 #   deploy   builds the site and publishes it to Cloudflare: production on
-#            main, a preview for pull requests
+#            main, a preview for a pull request or a manual run elsewhere
 #
 # Configuration, under the repository's (or the organisation's) Settings >
 # Actions. A job whose script or configuration is missing is skipped, and the
 # "Plan the later jobs" step of build says what it lacks.
 #
 #   Variables
-#     ASSETS_URL             where tools/assets/fetch.py gets the firmware and the
-#                            game cards (the assets Worker in front of the R2 bucket)
-#     CF_PAGES_PROJECT       Cloudflare Pages project; "n-ga-ge" when unset
+#     ASSETS_URL                    where tools/assets/fetch.py gets the firmware
+#                                   and the game cards: the site's /assets/ base,
+#                                   served by the assets Worker from the R2 bucket
+#     CF_PAGES_PROJECT              Cloudflare Pages project; "n-ga-ge" when unset
 #   Secrets
-#     ASSETS_TOKEN           bearer token for ASSETS_URL
-#     CLOUDFLARE_API_TOKEN   token allowed to deploy Pages and Workers
-#     CLOUDFLARE_ACCOUNT_ID  the Cloudflare account the site lives in
+#     ASSETS_TOKEN                  bearer token for ASSETS_URL
+#     CLOUDFLARE_API_TOKEN_PAGES    Cloudflare token that uploads the site
+#     CLOUDFLARE_ACCOUNT_ID         the Cloudflare account the site lives in
+#     CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token that deploys the
+#                                   assets Worker, when the Pages one may not
+#     CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's route
+#     FORGE_TOKEN                   an access token of this forge with repository
+#                                   read access. Needed while n-ga.ge/EKA2L1 is
+#                                   private and the job's own token cannot read
+#                                   it; without the secret the job's token is used
 #
-# Pull requests from forks get no secrets, so there the game tests and the
-# preview are skipped and only build runs.
+# The game jobs need ASSETS_URL and ASSETS_TOKEN, the deployment needs
+# CLOUDFLARE_API_TOKEN_PAGES and CLOUDFLARE_ACCOUNT_ID. Pull requests from
+# forks get no secrets, so there the game tests and the preview are skipped
+# and only build runs. tools/ci/deploy.sh decides what a deployment is: main
+# goes live and deploys the Worker, anything else (a pull request above all)
+# becomes a preview at https://<branch>.<project>.pages.dev.
 #
 # The firmware and the game cards are copyrighted. They are downloaded into
 # testdata/ inside a game job and must never be uploaded as an artifact or
@@ -75,6 +87,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
 
       - name: Check the catalogue
         run: python3 -I tools/games/validate.py
@@ -84,7 +98,7 @@ jobs:
         env:
           ASSETS_URL: ${{ vars.ASSETS_URL }}
           ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN_PAGES: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           BATCHES: 6
           EVENT: ${{ forge.event_name }}
@@ -106,7 +120,7 @@ jobs:
 
           python3 -I tools/ci/gen-matrix.py --batches "$BATCHES" >> "$GITHUB_OUTPUT"
 
-          why=$(lacking tools/web/gametest.mjs package.json tools/assets/fetch.py ASSETS_URL= ASSETS_TOKEN=)
+          why=$(lacking tools/web/gametest.mjs package.json tools/assets/fetch.py catalog/assets.json ASSETS_URL= ASSETS_TOKEN=)
           if [ -z "$why" ]; then
             say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games, in $BATCHES batches"
             echo "game=true" >> "$GITHUB_OUTPUT"
@@ -122,24 +136,14 @@ jobs:
             say "status: skipped ($why)"
           fi
 
-          # Production is main; a pull request gets a preview. deploy.sh is told
-          # which through DEPLOY_TARGET and DEPLOY_BRANCH, and a deploy.sh that
-          # does not read DEPLOY_TARGET would publish a pull request as the live
-          # site, so with such a script there is no preview.
-          target=
+          # What the deployment will be is deploy.sh's decision; this only
+          # names it for the log.
           case "$EVENT $REF" in
-            "pull_request "*)
-              target=preview
-              why=$(lacking tools/ci/deploy.sh CLOUDFLARE_API_TOKEN= CLOUDFLARE_ACCOUNT_ID=)
-              if [ -z "$why" ] && ! grep -q DEPLOY_TARGET tools/ci/deploy.sh; then
-                why="tools/ci/deploy.sh does not read DEPLOY_TARGET, so it cannot make a preview"
-              fi ;;
-            *" refs/heads/main")
-              target=production
-              why=$(lacking tools/ci/deploy.sh CLOUDFLARE_API_TOKEN= CLOUDFLARE_ACCOUNT_ID=) ;;
-            *)
-              why="only main and pull requests are deployed, this is $EVENT on $REF" ;;
+            "pull_request"*) target=preview ;;
+            *" refs/heads/main") target=production ;;
+            *) target=preview ;;
           esac
+          why=$(lacking tools/ci/deploy.sh CLOUDFLARE_API_TOKEN_PAGES= CLOUDFLARE_ACCOUNT_ID=)
           if [ -z "$why" ]; then
             say "deploy: $target"
             echo "deploy=$target" >> "$GITHUB_OUTPUT"
@@ -169,7 +173,7 @@ jobs:
         if: steps.plan.outputs.game == 'true' && steps.deps.outputs.cache-hit != 'true'
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
-          npx playwright install chromium
+          npx playwright install --only-shell chromium
 
       # The player depends on the emulator commit and on the scripts that
       # build it, and on nothing else in this repository. Most pushes change
@@ -198,8 +202,11 @@ jobs:
             echo "no player for emulator commit ${{ steps.key.outputs.eka2l1 }} yet: building it"
           fi
 
+      # The emulator fork is a repository of this forge and may be private.
       - name: Check out the emulator
         if: steps.player.outputs.cached != 'true'
+        env:
+          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN || forge.token }}
         run: tools/ci/checkout-eka2l1.sh
 
       - name: Toolchain cache
@@ -277,6 +284,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
       - name: Test the game
         uses: ./.forgejo/actions/game-test
         with:
@@ -298,6 +307,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
       - name: Test the game
         uses: ./.forgejo/actions/game-test
         with:
@@ -318,6 +329,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
       - name: Test the game
         uses: ./.forgejo/actions/game-test
         with:
@@ -338,6 +351,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
       - name: Test the game
         uses: ./.forgejo/actions/game-test
         with:
@@ -358,6 +373,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
       - name: Test the game
         uses: ./.forgejo/actions/game-test
         with:
@@ -378,6 +395,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
       - name: Test the game
         uses: ./.forgejo/actions/game-test
         with:
@@ -394,6 +413,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
 
       - name: Download the results
         uses: https://data.forgejo.org/forgejo/download-artifact@v4
@@ -405,7 +426,7 @@ jobs:
       - name: Summarise
         run: |
           mkdir -p results
-          python3 -I tools/ci/status.py results --out status
+          python3 -I tools/ci/status.py results --out status --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the status
         uses: https://data.forgejo.org/forgejo/upload-artifact@v4
@@ -426,6 +447,8 @@ jobs:
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
 
       - name: Node
         run: tools/ci/setup-toolchain.sh --only node
@@ -449,17 +472,13 @@ jobs:
           if [ -f status/status.json ]; then args+=(--status status); fi
           python3 -I tools/site/build.py "${args[@]}"
 
-      - name: Install the Node packages
-        run: |
-          if [ -f package-lock.json ]; then npm ci
-          elif [ -f package.json ]; then npm install
-          fi
-
+      # deploy.sh takes the branch and the commit from the job's own
+      # variables and never lets a pull request reach production.
       - name: Deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN_PAGES: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
+          CLOUDFLARE_API_TOKEN_WORKERS: ${{ secrets.CLOUDFLARE_API_TOKEN_WORKERS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'n-ga-ge' }}
-          DEPLOY_TARGET: ${{ needs.build.outputs.deploy }}
-          DEPLOY_BRANCH: ${{ forge.head_ref || forge.ref_name }}
         run: tools/ci/deploy.sh
