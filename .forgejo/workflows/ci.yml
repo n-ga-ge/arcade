@@ -82,10 +82,10 @@ jobs:
       - name: Plan the later jobs
         id: plan
         env:
-          ASSETS_URL: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'stand-in' }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'stand-in' }}
+          ASSETS_URL: ${{ vars.ASSETS_URL }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           BATCHES: 6
           EVENT: ${{ forge.event_name }}
           REF: ${{ forge.ref }}
@@ -281,8 +281,8 @@ jobs:
         uses: ./.forgejo/actions/game-test
         with:
           slug: ${{ matrix.game }}
-          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
 
   game-2:
     name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
@@ -302,8 +302,8 @@ jobs:
         uses: ./.forgejo/actions/game-test
         with:
           slug: ${{ matrix.game }}
-          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
 
   game-3:
     name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
@@ -322,8 +322,8 @@ jobs:
         uses: ./.forgejo/actions/game-test
         with:
           slug: ${{ matrix.game }}
-          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
 
   game-4:
     name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
@@ -342,8 +342,8 @@ jobs:
         uses: ./.forgejo/actions/game-test
         with:
           slug: ${{ matrix.game }}
-          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
 
   game-5:
     name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
@@ -362,8 +362,8 @@ jobs:
         uses: ./.forgejo/actions/game-test
         with:
           slug: ${{ matrix.game }}
-          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
 
   game-6:
     name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
@@ -382,8 +382,8 @@ jobs:
         uses: ./.forgejo/actions/game-test
         with:
           slug: ${{ matrix.game }}
-          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
 
   status:
     name: Status of all games
@@ -457,8 +457,8 @@ jobs:
 
       - name: Deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'stand-in' }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'stand-in' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'n-ga-ge' }}
           DEPLOY_TARGET: ${{ needs.build.outputs.deploy }}
           DEPLOY_BRANCH: ${{ forge.head_ref || forge.ref_name }}
