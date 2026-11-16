@@ -3,7 +3,8 @@
 
   python3 -I tools/games/pack.py [--games DIR] [--out DIR] [--force] [slug ...]
 
-Reads catalog/games/<slug>.json, finds the card inside games/<dump>/ and writes
+Reads catalog/games/<slug>.json, finds the card inside the dump folder (the
+private repository's games/<dump>/, cloned at private/, or a plain games/) and writes
 <out>/<slug>.zip (default testdata/games/) plus <out>/manifest.json with each
 zip's size and SHA-256. Without slugs, every game in the catalogue is packed;
 games whose dump folder is missing are reported and skipped.
@@ -152,7 +153,9 @@ def main():
     main_dir = main_checkout()
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("slugs", nargs="*")
-    parser.add_argument("--games", default=os.path.join(main_dir, "games"), help="folder of dumps (default: games/)")
+    private = os.path.join(main_dir, "private", "games")
+    parser.add_argument("--games", default=private if os.path.isdir(private) else os.path.join(main_dir, "games"),
+                        help="folder of dumps (default: private/games/ when that checkout exists, else games/)")
     parser.add_argument("--out", default=os.path.join(main_dir, "testdata", "games"), help="output folder (default: testdata/games/)")
     parser.add_argument("--force", action="store_true", help="repack zips that already exist")
     args = parser.parse_args()

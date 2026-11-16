@@ -3,12 +3,14 @@
 /The_Elder_Scrolls_Travels_Shadowkey/
 /games/
 /testdata/
+/private/
 
 # User-space toolchain and downloaded browsers.
 /.toolchain/
 
 # Generated output and screenshots of the game.
 /dist/
+/.scratch/
 tools/**/out/
 tools/**/shots/
 tools/**/results*/
