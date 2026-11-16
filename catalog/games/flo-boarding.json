@@ -1,11 +1,75 @@
 {
   "slug": "flo-boarding",
   "title": "Flo Boarding",
+  "publisher": "Nokia",
+  "genre": "Sports",
   "uid": "0x101FACFA",
   "variantOf": null,
   "dump": "Flo Boarding",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "pack": {
+    "move": [
+      [
+        "System/Apps/Nokia_Game/0.5.65.txt",
+        "System/Apps/Nokia_Game/options/0.5.65.txt"
+      ]
+    ]
+  },
+  "status": "ingame",
+  "statusNote": "The card starts the Nokia Game launcher: splash, registration prompts (declined), a menu with Flo, Chat, Flo Boarding and Ranking. Flo Boarding loads from there: title, main menu, level and board selection, and the qualification race rides in 3D with timer, position, speed and pause menu. Needs the zip packed with an options folder: the dump's own is empty, the pack tool drops empty folders, and without it the launcher exits at start with a System error (\"Base directory of file e:\\System\\Apps\\Nokia_Game\\Options\\config.txt not found\").",
+  "notes": [
+    "The card opens on the Nokia Game launcher. Press a soft key on the first picture, answer No (right soft key) to registration and to logging in, then choose Flo Boarding in the menu.",
+    "Chat, Ranking, registration and the Bluetooth Duel need the Nokia Game online service or Bluetooth and cannot work here. Flo opens but her animations do not show.",
+    "Some letters are missing from the launcher's text in this build; the game's own screens are fine."
+  ],
+  "controls": {
+    "source": "The game's own help text for Flo Boarding (the Help page of the Nokia Game menu, read from the card). Speeding up, turning, jumping, the pause menu and the launcher's soft keys were confirmed in play; rails and air tricks were not tried.",
+    "actions": {
+      "up": "Speed up; forward flip (in the air); move through menus",
+      "down": "Brake; backward flip (in the air); move through menus",
+      "left": "Turn left; balance (on a rail); spin (in the air)",
+      "right": "Turn right; balance (on a rail); spin (in the air)",
+      "ok": "Select (menus)",
+      "lsk": "Pause (in a race); Select, Yes or Options (menus)",
+      "rsk": "Back, No or Exit (menus)",
+      "2": "Boost speed",
+      "5": "Hold to build jumping power, release to jump",
+      "7": "Rail"
+    },
+    "notes": [
+      "In the air every number key performs a different trick for bonus points, which fill the boost bar."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "rsk",
+        "wait": 6000,
+        "repeat": 3
+      },
+      {
+        "key": "down",
+        "wait": 2000,
+        "repeat": 2
+      },
+      {
+        "key": "ok",
+        "wait": 30000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 10
+      },
+      {
+        "key": "up",
+        "hold": 3000,
+        "wait": 500,
+        "repeat": 3
+      }
+    ]
+  }
 }
