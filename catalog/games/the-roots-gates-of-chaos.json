@@ -1,11 +1,300 @@
 {
   "slug": "the-roots-gates-of-chaos",
   "title": "The Roots: Gates of Chaos",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Action RPG",
   "uid": "0x101FD3FF",
   "variantOf": null,
   "dump": "The Roots - Gates Of Chaos",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: logos, main menu, a new character (Paladin), the intro story, then the Tutorial's first area (the Woodlands) in 3D seen from above, where the character walks in all four directions and swings his sword, and the game menu opens and closes. Only that first area was played and no enemy was fought. The character menu and quick skills keys answered \"You cannot perform this action!\" there, which looks like the tutorial holding them back.",
+  "notes": [
+    "In the menus the left soft key accepts and the right one goes back; 5 accepts too, except in the name box.",
+    "The character's name is typed phone-style on the digit keys. To keep the suggested name PLAYER, press the left soft key.",
+    "Story pages and the tutorial's parchment messages are dismissed with 5.",
+    "In play either soft key opens the game menu (Return, Options, Help, Save and Quit). Help has a long manual.",
+    "Multiplayer (cooperative and competitive) needs Bluetooth or N-Gage Arena and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's Help > Controls pages. Moving, attacking, 5 on messages and the soft keys were also tried in the tutorial; the skill, potion, map and menu keys are from the Help only.",
+    "actions": {
+      "up": "Move up",
+      "down": "Move down",
+      "left": "Move left",
+      "right": "Move right",
+      "7": "Attack",
+      "5": "Action: shops, teleports, pick up; dismiss a message",
+      "8": "Skill 1",
+      "9": "Skill 2",
+      "4": "Use HP potion",
+      "6": "Use AP potion",
+      "2": "Character menu",
+      "3": "Map, quests and chat",
+      "1": "Context-sensitive help",
+      "0": "Quick skills (skill assignment)",
+      "lsk": "Accept in menus; game menu in play",
+      "rsk": "Back in menus; game menu in play"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "5": [
+        "KeyX",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "8": [
+        "KeyA",
+        "Digit8",
+        "Numpad8"
+      ],
+      "9": [
+        "KeyS",
+        "Digit9",
+        "Numpad9"
+      ],
+      "4": [
+        "KeyD",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyF",
+        "Digit6",
+        "Numpad6"
+      ],
+      "2": [
+        "KeyC",
+        "Digit2",
+        "Numpad2"
+      ],
+      "3": [
+        "KeyM",
+        "Digit3",
+        "Numpad3"
+      ],
+      "1": [
+        "KeyH",
+        "Digit1",
+        "Numpad1"
+      ],
+      "0": [
+        "KeyV",
+        "Digit0",
+        "Numpad0"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW",
+        "Escape"
+      ],
+      "ok": [
+        "Enter"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "8": [
+        "b1"
+      ],
+      "7": [
+        "b2"
+      ],
+      "9": [
+        "b3"
+      ],
+      "4": [
+        "b4"
+      ],
+      "6": [
+        "b5"
+      ],
+      "2": [
+        "b6"
+      ],
+      "3": [
+        "b7"
+      ],
+      "rsk": [
+        "b8"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "0": [
+        "b10"
+      ],
+      "1": [
+        "b11"
+      ]
+    },
+    "notes": [
+      "Action role-playing layout: move on the arrows, attack on Z, action on X or Space, skills on A and S, potions on D and F, character menu on C, map on M, help on H, quick skills on V. On a gamepad X attacks, A is the action, B and Y are the skills, the bumpers drink potions, the triggers open the character menu and the map, and Start is the left soft key."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 20000
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "lsk",
+        "wait": 2500,
+        "repeat": 2
+      }
+    ]
+  }
 }
