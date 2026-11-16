@@ -63,7 +63,11 @@ runs:
         ASSETS_TOKEN: ${{ inputs.assets-token }}
       run: python3 -I tools/assets/fetch.py --fw "$SLUG" --out testdata
 
+    # Runs even when a step above failed: without its files or its browser
+    # gametest.mjs still writes a result that says so, and the game then shows
+    # up in the status as not tested instead of going missing.
     - name: Test
+      if: ${{ !cancelled() }}
       shell: bash
       env:
         SLUG: ${{ inputs.slug }}

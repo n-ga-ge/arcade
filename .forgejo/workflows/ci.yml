@@ -29,9 +29,12 @@
 #                                   assets Worker, when the Pages one may not
 #     CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's route
 #     FORGE_TOKEN                   an access token of this forge with repository
-#                                   read access. Needed while n-ga.ge/EKA2L1 is
-#                                   private and the job's own token cannot read
-#                                   it; without the secret the job's token is used
+#                                   read access, for the checkout and for the
+#                                   eka2l1 submodule while n-ga.ge/EKA2L1 is
+#                                   private. Without the secret the job's own
+#                                   token is used, which is enough when the fork
+#                                   is public; that it can read a private one has
+#                                   not been seen
 #
 # The game jobs need ASSETS_URL and ASSETS_TOKEN, the deployment needs
 # CLOUDFLARE_API_TOKEN_PAGES and CLOUDFLARE_ACCOUNT_ID. Pull requests from
@@ -111,8 +114,8 @@ jobs:
           EVENT: ${{ forge.event_name }}
           REF: ${{ forge.ref }}
         run: |
-          # unset <name>...: list the variables and secrets that are not set.
-          unset() {
+          # missing <name>...: list the variables and secrets that are not set.
+          missing() {
             local name out=
             for name in "$@"; do
               [ -n "${!name}" ] || out="$out, $name is not set"
@@ -123,7 +126,7 @@ jobs:
 
           python3 -I tools/ci/gen-matrix.py --batches "$BATCHES" >> "$GITHUB_OUTPUT"
 
-          why=$(unset ASSETS_URL ASSETS_TOKEN)
+          why=$(missing ASSETS_URL ASSETS_TOKEN)
           if [ -z "$why" ]; then
             say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games, in $BATCHES batches"
             say "status: will run"
@@ -141,7 +144,7 @@ jobs:
             *" refs/heads/main") target=production ;;
             *) target=preview ;;
           esac
-          why=$(unset CLOUDFLARE_API_TOKEN_PAGES CLOUDFLARE_ACCOUNT_ID)
+          why=$(missing CLOUDFLARE_API_TOKEN_PAGES CLOUDFLARE_ACCOUNT_ID)
           if [ -z "$why" ]; then
             say "deploy: $target"
             echo "deploy=$target" >> "$GITHUB_OUTPUT"
