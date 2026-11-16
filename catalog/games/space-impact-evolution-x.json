@@ -1,11 +1,23 @@
 {
   "slug": "space-impact-evolution-x",
   "title": "Space Impact Evolution X",
+  "publisher": "Nokia",
+  "genre": "Shoot 'em up",
   "uid": "0x101F8A5E",
   "variantOf": null,
   "dump": "Space Impact Evolution X",
-  "status": "untested",
-  "notes": [],
+  "status": "broken",
+  "statusNote": "The card installs and the app (caption \"Space Impact\", Athena.app) is launched, but it never draws: the frame count stays at 0 and /v1/screenshot answers 409 no_screen (\"no active emulator surface\"). At info level the log shows Athena.app, its .r01 resource file and the UI framework libraries loading (last ones: eikdlg, numbergrouping, phoneclient), then the read of System\\Shareddata\\100058ec.ini, and nothing more for 105 seconds: no panic, no thread kill, no reaction to keys.",
+  "notes": [
+    "A plain Series 60 application rather than an N-Gage card title. It does not get as far as a picture in this emulator yet."
+  ],
   "controls": null,
-  "test": null
+  "test": {
+    "expect": "broken",
+    "script": [
+      {
+        "wait": 20000
+      }
+    ]
+  }
 }
