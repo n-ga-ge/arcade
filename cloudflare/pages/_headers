@@ -1,0 +1,73 @@
+# Response headers for the site on Cloudflare Pages.
+# tools/site/steps/90-cloudflare.py copies this file to the root of dist/.
+#
+# Syntax and limits (https://developers.cloudflare.com/pages/configuration/headers/):
+# at most 100 rules and 2,000 characters per line; one splat (*) per path; a
+# request takes the headers of every rule it matches, in file order; a header
+# set by two rules is joined with a comma, so a narrower rule first detaches
+# ("! Name") what it replaces. Pages does not apply this file to responses
+# from Pages Functions (the site has none) or from the assets Worker, which
+# sets its own headers on /assets/.
+
+/*
+  # Cross-origin isolation. The player runs the emulator on threads, which
+  # needs SharedArrayBuffer, and browsers only expose that to a page whose
+  # document sends COOP and COEP. The headers are on every path because
+  # workers and worklets are checked too, and because a document that lacks
+  # them cannot open the player in the same browsing context group.
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  # Pages adds "Access-Control-Allow-Origin: *" to every asset. Nothing here
+  # is meant to be loaded by another origin, and the header would contradict
+  # the resource policy above for requests made with CORS.
+  ! Access-Control-Allow-Origin
+
+  # Caching. No file name carries a content hash (eka2l1_web.wasm, .data and
+  # .js keep their names from one build to the next, as do the pages, the
+  # scripts and the catalogue), so nothing may be reused without asking the
+  # server first: a browser that mixed an old wasm with a new page would
+  # break. "max-age=0, must-revalidate" makes the browser keep its copy and
+  # revalidate it on every use. Pages sends an ETag for every asset and
+  # answers an unchanged one with 304 and no body, so a returning visitor
+  # pays one small round trip per file and downloads the 10 MB wasm again
+  # only after a deployment changed it; a 304 also keeps the browser's
+  # compiled-code cache for the wasm valid. This is also what Pages sends by
+  # default; it is written out so that the policy does not depend on a
+  # default. Longer lifetimes ("immutable") would need hashed file names,
+  # and stale-while-revalidate would show one stale mixed version after each
+  # deployment. Cloudflare's own edge cache is not governed by this header:
+  # Pages keeps assets at the edge until the next deployment replaces them.
+  Cache-Control: public, max-age=0, must-revalidate
+
+  # Security headers. HTTPS only from the first visit on.
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  # Only the site itself may frame its pages (X-Frame-Options for browsers
+  # that predate frame-ancestors).
+  X-Frame-Options: SAMEORIGIN
+  # Device features no page of the site uses. Fullscreen, gamepads, audio
+  # playback and storage are not listed and keep their defaults.
+  Permissions-Policy: accelerometer=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=()
+  # Everything comes from the site's own origin: no third-party scripts,
+  # styles, fonts or frames (cross-origin isolation rules most of them out
+  # anyway). What the other sources are for:
+  #   'wasm-unsafe-eval'  compiling WebAssembly (the emulator; nothing else is evaluated)
+  #   'unsafe-inline'     inline scripts and styles in the front page and the docs
+  #   blob:, data:        images and downloads the pages build in memory
+  #   connect-src https:  the player's loader can fetch a firmware or a game from a URL the visitor types in
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+
+/play/*
+  # The player holds the visitor's saves and takes URLs from the address bar,
+  # so it gets the stricter policy: scripts only from files of this site, no
+  # inline script. Its page has none; tools/site/steps/90-cloudflare.py fails
+  # the build if one appears. Workers (the emulator's threads) and the audio
+  # worklet are files of the site as well and need nothing more.
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+
+# No Content-Type rule: Pages takes the type from the file extension, and
+# .wasm is served as application/wasm (which streaming compilation requires)
+# without being told. "wrangler pages dev" shows the same types locally.
