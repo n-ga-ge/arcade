@@ -1,11 +1,52 @@
 {
   "slug": "pool-friction",
-  "title": "Pool Friction (Spanish)",
+  "title": "Pool Friction",
+  "genre": "Pool",
   "uid": "0x102089D0",
   "variantOf": null,
   "dump": "Pool Friction (Spanish only)",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Main menu, help and options work; a free-play game starts, the cue ball can be placed, aimed and shot, and the balls roll and collide.",
+  "notes": [
+    "The game is in Spanish only. Main menu: Iniciar juego (start game), Opciones (options), Créditos (credits), Ayuda (help), Salir (quit). Start game offers Estilo libre (free play), Jugador VS. CPU (player against the computer) and Juego en red (network game).",
+    "A shot has three steps: place or aim with the direction keys, press 5 to accept, then hold 5 until the power indicator shows the strength you want and let go.",
+    "Juego en red (network game) needs a second phone and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's Ayuda (help) screens for aiming and power; the direction keys when placing the cue ball, OK acting like 5, and the soft keys were observed in play.",
+    "actions": {
+      "up": "Move the cue ball when placing it; move up in menus",
+      "down": "Move the cue ball when placing it; move down in menus",
+      "left": "Turn the aim left; move the cue ball when placing it",
+      "right": "Turn the aim right; move the cue ball when placing it",
+      "5": "Accept the position or angle; hold to set the power and shoot",
+      "ok": "Same as 5; select in menus",
+      "lsk": "Pause menu; left option on a screen (Continuar, Siguiente)",
+      "rsk": "Pause menu; right option on a screen (Volver: back)"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 20000
+      },
+      {
+        "key": "ok",
+        "wait": 6000
+      },
+      {
+        "key": "ok",
+        "wait": 8000
+      },
+      {
+        "key": "lsk",
+        "wait": 12000
+      },
+      {
+        "key": "5",
+        "wait": 6000
+      }
+    ]
+  }
 }
