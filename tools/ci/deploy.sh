@@ -6,9 +6,13 @@
 # API token and the CI secrets are described in cloudflare/pages/README.md.
 #
 # Environment:
-#   CLOUDFLARE_API_TOKEN   API token (secret)
-#   CLOUDFLARE_ACCOUNT_ID  account the Pages project and the Worker live in (secret)
-#   CF_PAGES_PROJECT       Pages project name (variable; default n-ga-ge)
+#   CLOUDFLARE_API_TOKEN_PAGES    API token for the deployment (secret). The plain
+#                                 CLOUDFLARE_API_TOKEN, wrangler's own name, is
+#                                 used when this one is not set.
+#   CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token for the Worker, when
+#                                 the Pages token has no Workers permissions
+#   CLOUDFLARE_ACCOUNT_ID         account the Pages project and the Worker live in (secret)
+#   CF_PAGES_PROJECT              Pages project name (variable; default n-ga-ge)
 #
 # The branch decides what is deployed. "main" is production: the site goes
 # live, and the Worker in cloudflare/assets-worker/ (when that folder exists)
@@ -92,8 +96,15 @@ echo "Commit:        ${COMMIT:-unknown}  $MESSAGE"
 python3 -I "$ARCADE_ROOT/tools/site/steps/90-cloudflare.py" "$DIST" --check
 command -v npx >/dev/null || die "npx is not on PATH: wrangler needs Node.js 22 or later"
 
+# Tokens are stored per job (..._PAGES here, ..._R2 for the upload); wrangler
+# only reads CLOUDFLARE_API_TOKEN, so the deployment's token is handed to it
+# under that name.
+if [ -n "${CLOUDFLARE_API_TOKEN_PAGES:-}" ]; then
+  export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN_PAGES
+fi
+
 MISSING=()
-[ -n "${CLOUDFLARE_API_TOKEN:-}" ] || MISSING+=(CLOUDFLARE_API_TOKEN)
+[ -n "${CLOUDFLARE_API_TOKEN:-}" ] || MISSING+=(CLOUDFLARE_API_TOKEN_PAGES)
 [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || MISSING+=(CLOUDFLARE_ACCOUNT_ID)
 if [ ${#MISSING[@]} -gt 0 ] && [ -z "$DRY_RUN" ]; then
   die "not set: ${MISSING[*]}" \
@@ -171,7 +182,7 @@ case "$STATUS:$PROJECT_BRANCH" in
         "npx wrangler@$WRANGLER_VERSION pages project create $PROJECT --production-branch $PRODUCTION_BRANCH" \
         "or set the variable CF_PAGES_PROJECT to the name of the existing project." ;;
   401:*|403:*)
-    die "Cloudflare rejected CLOUDFLARE_API_TOKEN (HTTP $STATUS: ${PROJECT_BRANCH#error })." \
+    die "Cloudflare rejected CLOUDFLARE_API_TOKEN_PAGES (HTTP $STATUS: ${PROJECT_BRANCH#error })." \
         "The token must be valid for account $CLOUDFLARE_ACCOUNT_ID and include Account > Cloudflare Pages > Edit." ;;
   *) die "could not read the Pages project \"$PROJECT\" (HTTP ${STATUS:-none}: ${PROJECT_BRANCH#error })." ;;
 esac
@@ -219,8 +230,9 @@ elif [ "$ENVIRONMENT" != production ]; then
 else
   echo "Deploying the assets Worker..."
   [ ! -f "$WORKER_DIR/package-lock.json" ] || (cd "$WORKER_DIR" && npm ci --no-audit --no-fund)
-  (cd "$WORKER_DIR" && wrangler deploy </dev/null) ||
-    die "the Worker deployment failed. The site itself was deployed: $URL"
+  (cd "$WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy </dev/null) ||
+    die "the Worker deployment failed. The site itself was deployed: $URL" \
+        "If the token only covers Pages, add the Workers permissions to it or set CLOUDFLARE_API_TOKEN_WORKERS (cloudflare/pages/README.md)."
 fi
 
 echo "Deployment URL: $URL"
