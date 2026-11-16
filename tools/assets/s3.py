@@ -10,11 +10,13 @@ Credentials come from the environment only:
   CLOUDFLARE_ACCOUNT_ID        gives the endpoint https://<id>.r2.cloudflarestorage.com
   R2_ENDPOINT                  overrides the endpoint (a jurisdiction endpoint, or a test server)
   R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY     an R2 API token's S3 keys, or instead
-  CLOUDFLARE_API_TOKEN         a Cloudflare API token with R2 write permission: R2
+  CLOUDFLARE_API_TOKEN_R2      a Cloudflare API token with R2 write permission: R2
                                accepts the token's id as the access key and the
-                               SHA-256 of its value as the secret, so the same
-                               token wrangler uses works here. The id is looked
-                               up with the token verify call.
+                               SHA-256 of its value as the secret. The id is
+                               looked up with the token verify call.
+  CLOUDFLARE_API_TOKEN         used when CLOUDFLARE_API_TOKEN_R2 is not set, for a
+                               setup with one token for everything (the name
+                               wrangler and the deployment use)
 """
 import base64
 import datetime
@@ -72,7 +74,11 @@ def sign(method, path, query, headers, payload_hash, access_key, secret_key, reg
     return f"AWS4-HMAC-SHA256 Credential={access_key}/{scope}, SignedHeaders={names}, Signature={signature}"
 
 
-def token_id(token, account, api_base=API_BASE):
+# Environment variables that may hold the API token, in order of preference.
+TOKEN_NAMES = ("CLOUDFLARE_API_TOKEN_R2", "CLOUDFLARE_API_TOKEN")
+
+
+def token_id(token, account, api_base=API_BASE, name="CLOUDFLARE_API_TOKEN_R2"):
     """The id of a Cloudflare API token. User tokens and account-owned tokens have separate verify calls."""
     paths = ["/user/tokens/verify"]
     if account:
@@ -102,7 +108,7 @@ def token_id(token, account, api_base=API_BASE):
             problem, refused = f"{path}: token status {result.get('status')!r}", True
             break
         problems.append(problem)
-    raise CredentialsError(("CLOUDFLARE_API_TOKEN was not accepted by Cloudflare" if refused else "could not reach Cloudflare to look up CLOUDFLARE_API_TOKEN")
+    raise CredentialsError((f"{name} was not accepted by Cloudflare" if refused else f"could not reach Cloudflare to look up {name}")
                            + " (" + "; ".join(problems) + ")")
 
 
@@ -131,10 +137,13 @@ class Client:
             raise NoCredentials("set CLOUDFLARE_ACCOUNT_ID (or R2_ENDPOINT)")
         access, secret = env.get("R2_ACCESS_KEY_ID", "").strip(), env.get("R2_SECRET_ACCESS_KEY", "").strip()
         if not (access and secret):
-            token = env.get("CLOUDFLARE_API_TOKEN", "").strip()
-            if not token:
-                raise NoCredentials("set CLOUDFLARE_API_TOKEN, or R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY")
-            access = token_id(token, account, env.get("CLOUDFLARE_API_BASE_URL", "").strip().rstrip("/") or API_BASE)
+            # The token kept for R2 alone wins over the general one, which usually
+            # belongs to the deployment and may not have R2 permissions.
+            name = next((n for n in TOKEN_NAMES if env.get(n, "").strip()), None)
+            if not name:
+                raise NoCredentials("set CLOUDFLARE_API_TOKEN_R2 (or CLOUDFLARE_API_TOKEN), or R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY")
+            token = env[name].strip()
+            access = token_id(token, account, env.get("CLOUDFLARE_API_BASE_URL", "").strip().rstrip("/") or API_BASE, name)
             secret = hashlib.sha256(token.encode()).hexdigest()
         return cls(endpoint, access, secret)
 

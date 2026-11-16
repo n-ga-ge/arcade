@@ -29,7 +29,7 @@ import s3  # noqa: E402
 import s3stub  # noqa: E402
 
 SLUGS = common.catalogue_slugs()
-SECRETS = ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_BASE_URL", "R2_ENDPOINT", "R2_ACCESS_KEY_ID",
+SECRETS = ("CLOUDFLARE_API_TOKEN_R2", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_BASE_URL", "R2_ENDPOINT", "R2_ACCESS_KEY_ID",
            "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "ASSETS_URL", "ASSETS_TOKEN")
 
 
@@ -220,7 +220,7 @@ class Upload(unittest.TestCase):
         self.assertIn("1 uploaded", self.upload("--only", "fw"))
 
     def test_api_token_credentials(self):
-        """CLOUDFLARE_API_TOKEN alone: the S3 keys are the token's id and the SHA-256 of its value."""
+        """An API token alone: the S3 keys are the token's id and the SHA-256 of its value."""
         self.stub.token = "cf-token-for-the-test"
         self.stub.keys = {s3stub.TOKEN_ID: hashlib.sha256(b"cf-token-for-the-test").hexdigest()}
         env = {"R2_ENDPOINT": self.endpoint, "CLOUDFLARE_API_BASE_URL": self.endpoint + "/client/v4", "CLOUDFLARE_API_TOKEN": "cf-token-for-the-test"}
@@ -229,6 +229,9 @@ class Upload(unittest.TestCase):
         self.assertIn("was not accepted", self.upload("--only", "fw", env={**env, "CLOUDFLARE_API_TOKEN": "another"}, code=1))
         # a refused token is not "no credentials": the dry run fails too
         self.assertIn("was not accepted", self.upload("--dry-run", "--only", "fw", env={**env, "CLOUDFLARE_API_TOKEN": "another"}, code=1))
+        # the token kept for R2 wins over the general one, whichever of the two is right
+        self.upload("--only", "fw", env={**env, "CLOUDFLARE_API_TOKEN": "another", "CLOUDFLARE_API_TOKEN_R2": "cf-token-for-the-test"})
+        self.assertIn("CLOUDFLARE_API_TOKEN_R2 was not accepted", self.upload("--only", "fw", env={**env, "CLOUDFLARE_API_TOKEN_R2": "another"}, code=1))
 
 
 class AssetServer(http.server.SimpleHTTPRequestHandler):

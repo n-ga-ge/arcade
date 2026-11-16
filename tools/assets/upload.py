@@ -39,7 +39,7 @@ refuses to start when what it packed differs from the manifest: whoever changes
 a dump, a catalogue "pack" option or the firmware runs --write-manifest and
 commits the result first.
 
-Credentials come from the environment only (see s3.py): CLOUDFLARE_API_TOKEN
+Credentials come from the environment only (see s3.py): CLOUDFLARE_API_TOKEN_R2
 and CLOUDFLARE_ACCOUNT_ID, or R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY.
 Exits 1 on any failure. Prints file names, sizes and hashes, nothing else.
 """
