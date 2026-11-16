@@ -1,11 +1,50 @@
 {
   "slug": "tiger-woods-pga-tour-2004",
   "title": "Tiger Woods PGA Tour 2004",
+  "publisher": "Electronic Arts",
+  "year": 2004,
+  "genre": "Sports (golf)",
   "uid": "0x101FD3E8",
   "variantOf": null,
   "dump": "Tiger Woods PGA Tour 2004",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "The title screen waits for key 5. The logos and legal screens before it take about a minute and a half.",
+    "To swing: hold Down to pull the club back, then press Up. Key 5 switches between the swing view and the plan view, where you aim and pick the club.",
+    "The left soft key pauses a round (resume, options, scorecard, quit).",
+    "Arena on the main menu is N-Gage Arena, Nokia's online service, which no longer exists. One golfer is unlocked only through it.",
+    "The game can remap its own keys under Options > Control Options, on top of the bindings here."
+  ],
+  "controls": {
+    "source": "The game's defaults, read from its Options > Control Options screens (Swing, Plan and Flight controls). The swing, the plan view toggle, aiming, the pause menu and menu keys were also tried in play.",
+    "actions": {
+      "up": "Swing: hit the ball. Plan view: aim farther. Ball in flight: spin up",
+      "down": "Swing: pull back. Plan view: aim nearer. Ball in flight: spin down",
+      "left": "Swing: draw. Plan view: aim left. Ball in flight: spin left",
+      "right": "Swing: fade. Plan view: aim right. Ball in flight: spin right",
+      "5": "Switch between swing view and plan view; select in menus, start from the title",
+      "1": "Swing: power boost. Plan view: less club. Ball in flight: increase spin",
+      "3": "Swing: power boost. Plan view: more club. Ball in flight: increase spin",
+      "7": "Plan view: look nearer",
+      "star": "Plan view: shot type",
+      "hash": "Plan view: reset shot",
+      "ok": "Select (menus)",
+      "lsk": "Pause menu in a round; the left option in menus (Select, Done, Edit)",
+      "rsk": "The right option in menus (Back, Cancel)"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "5",
+        "wait": 5000,
+        "repeat": 44
+      }
+    ]
+  },
+  "statusNote": "Runs from the logos through the main menu into a practice round: the first hole at Bay Hill is drawn in 3D, and the plan view, the swing and the ball flight all work."
 }
