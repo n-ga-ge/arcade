@@ -514,5 +514,8 @@ jobs:
           CLOUDFLARE_API_TOKEN_WORKERS: ${{ secrets.CLOUDFLARE_API_TOKEN_WORKERS }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          # Stored on the Worker by a production deployment, so that the game
+          # jobs' downloads are accepted.
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
           CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'n-ga-ge' }}
         run: tools/ci/deploy.sh

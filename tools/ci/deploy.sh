@@ -15,6 +15,9 @@
 #   CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's route. With it the
 #                                 route names its zone by ID, so wrangler does not
 #                                 have to look the zone up by name.
+#   ASSETS_TOKEN                  optional: the token CI downloads game files with.
+#                                 When set, a production deployment stores it on the
+#                                 Worker, so the Worker and CI always hold the same value.
 #   CF_PAGES_PROJECT              Pages project name (variable; default n-ga-ge)
 #   CF_PAGES_DEV_BRANCH           Pages branch that dev deployments go to (default dev)
 #
@@ -280,6 +283,18 @@ else
   (cd "$WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||
     die "the Worker deployment failed. The site itself was deployed: $URL" \
         "If the token only covers Pages, add the Workers permissions to it or set CLOUDFLARE_API_TOKEN_WORKERS (cloudflare/pages/README.md)."
+  # The Worker lets CI download the game files when a request carries this
+  # token. It is kept in one place, the forge's ASSETS_TOKEN secret, and handed
+  # to the Worker here, so the two cannot drift apart.
+  if [ -n "${ASSETS_TOKEN:-}" ]; then
+    echo "Storing ASSETS_TOKEN on the Worker..."
+    (cd "$WORKER_DIR" && printf '%s' "$ASSETS_TOKEN" |
+      CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler secret put ASSETS_TOKEN "${WORKER_ARGS[@]}" >/dev/null) ||
+      die "could not store ASSETS_TOKEN on the Worker. The site and the Worker were deployed: $URL" \
+          "Until it is stored, CI's game downloads are refused with 403."
+  else
+    echo "ASSETS_TOKEN is not set: the Worker keeps whatever token it has."
+  fi
 fi
 
 echo "Deployment URL: $URL"
