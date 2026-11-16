@@ -1,11 +1,184 @@
 {
   "slug": "wwe-aftershock",
   "title": "WWE Aftershock",
+  "publisher": "THQ",
+  "year": 2005,
+  "genre": "Wrestling",
   "uid": "0x101FD3F4",
   "variantOf": null,
   "dump": "WWE Aftershock",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "A match starts with both superstars' ring entrances, which take up to a minute and play by themselves.",
+    "The left soft key pauses a match. The pause menu has Controls (the key list, which can be changed there) and Help.",
+    "From the game's Help: tap Counter rapidly to counter a strike or grapple; hit Strike and Grapple rapidly to win a submission; when the SmackDown! meter is charged, go for the impact.",
+    "Multiplayer and N-Gage Arena on the main menu need a second phone or Nokia's online service and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's defaults, read from its pause menu > Controls screen (keys 1 to 9). The soft keys and OK in menus were seen by pressing them. Moving with the pad is the usual arrangement and could not be confirmed in the match that was tried, because the opponent kept the player's superstar down.",
+    "actions": {
+      "up": "Move your superstar; move the selection in menus",
+      "down": "Move your superstar; move the selection in menus",
+      "left": "Move your superstar",
+      "right": "Move your superstar",
+      "1": "Pin",
+      "2": "Enter or exit the ring, climb up or down",
+      "3": "Tag partner",
+      "4": "Search, pick up or drop a weapon; Irish whip",
+      "5": "Strike; perform a SmackDown!",
+      "6": "Counter",
+      "7": "Grapple, submission and kickout",
+      "8": "Pick the opponent off the floor",
+      "9": "Run",
+      "ok": "Select (menus)",
+      "lsk": "Pause; the left option in menus (Select, Continue)",
+      "rsk": "The right option in menus (Back); resume from pause"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "KeyZ",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyX",
+        "Digit7",
+        "Numpad7"
+      ],
+      "6": [
+        "KeyC",
+        "Digit6",
+        "Numpad6"
+      ],
+      "9": [
+        "KeyV",
+        "ShiftLeft",
+        "Digit9",
+        "Numpad9"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "8": [
+        "KeyS",
+        "Digit8",
+        "Numpad8"
+      ],
+      "1": [
+        "KeyD",
+        "Digit1",
+        "Numpad1"
+      ],
+      "2": [
+        "KeyF",
+        "Digit2",
+        "Numpad2"
+      ],
+      "3": [
+        "KeyG",
+        "Digit3",
+        "Numpad3"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW",
+        "Backspace"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "7": [
+        "b1"
+      ],
+      "5": [
+        "b2"
+      ],
+      "6": [
+        "b3"
+      ],
+      "4": [
+        "b4"
+      ],
+      "9": [
+        "b5"
+      ],
+      "2": [
+        "b6"
+      ],
+      "1": [
+        "b7"
+      ],
+      "rsk": [
+        "b8"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "3": [
+        "b10"
+      ],
+      "8": [
+        "b11"
+      ]
+    },
+    "notes": [
+      "Fighting layout: the arrows move, Z strikes (5), X grapples (7), C counters (6) and V or left Shift runs (9); A, S, D, F and G are 4, 8, 1, 2 and 3. The digit keys still work."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 50000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 10
+      },
+      {
+        "wait": 75000
+      }
+    ]
+  },
+  "statusNote": "Runs from the legal screens and logos through the menus into a Single-Player exhibition match: both ring entrances play in 3D, then the match itself with strikes, grapples, the health and SmackDown! meters and the pause menu."
 }
