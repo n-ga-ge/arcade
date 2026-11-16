@@ -10,7 +10,7 @@
 #   status   collects the results into status.json and the screenshots the
 #            front page shows; runs even when games fail
 #   deploy   builds the site and publishes it to Cloudflare: production on
-#            main, a preview for a pull request or a manual run elsewhere
+#            main, the dev site for a pull request or a manual run elsewhere
 #
 # Configuration, under the repository's (or the organisation's) Settings >
 # Actions. A job whose configuration is missing is skipped, and the "Plan the
@@ -41,7 +41,7 @@
 # forks get no secrets, so there the game tests and the preview are skipped
 # and only build runs. tools/ci/deploy.sh decides what a deployment is: main
 # goes live and deploys the Worker, anything else (a pull request above all)
-# becomes a preview at https://<branch>.<project>.pages.dev.
+# becomes the dev deployment at https://dev.<project>.pages.dev (dev.n-ga.ge).
 #
 # The firmware and the game cards are copyrighted. They are downloaded into
 # testdata/ inside a game job and must never be uploaded as an artifact or

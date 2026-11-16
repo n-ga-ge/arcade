@@ -16,13 +16,16 @@
 #                                 route names its zone by ID, so wrangler does not
 #                                 have to look the zone up by name.
 #   CF_PAGES_PROJECT              Pages project name (variable; default n-ga-ge)
+#   CF_PAGES_DEV_BRANCH           Pages branch that dev deployments go to (default dev)
 #
 # The branch decides what is deployed. "main" is production: the site goes
 # live, and the Worker in cloudflare/assets-worker/ (when that folder exists)
-# is deployed after it. Any other branch becomes a Pages preview deployment at
-# https://<branch>.<project>.pages.dev and leaves the Worker alone; so does a
-# pull request and a tag, whatever they are called. The branch and the commit
-# come from --branch, else from Forgejo's CI variables, else from the checkout.
+# is deployed after it. Anything else (another branch, a pull request, a tag)
+# is a dev deployment: it is uploaded as the Pages branch "dev"
+# (CF_PAGES_DEV_BRANCH), so it appears at https://dev.<project>.pages.dev and
+# at the host name pointed there (dev.n-ga.ge), replacing the dev deployment
+# before it, and it leaves the Worker alone. The branch and the commit come
+# from --branch, else from Forgejo's CI variables, else from the checkout.
 #
 # --dry-run does everything that needs no credentials: it resolves the branch
 # and the commit, checks dist/ again, fetches the pinned wrangler, bundles the
@@ -85,10 +88,27 @@ COMMIT=${FORGEJO_SHA:-${GITHUB_SHA:-$(git -C "$ARCADE_ROOT" rev-parse HEAD 2>/de
 # Only the summary line: Pages rejects some long or multi-line messages.
 MESSAGE=$(git -C "$ARCADE_ROOT" log -1 --format=%s "${COMMIT:-HEAD}" 2>/dev/null || true)
 [ -n "$MESSAGE" ] || MESSAGE="Deploy ${COMMIT:0:12}"
-if [ "$BRANCH" = "$PRODUCTION_BRANCH" ]; then ENVIRONMENT=production; else ENVIRONMENT=preview; fi
+# Everything that is not production is a dev deployment, and they all go to
+# one Pages branch. That gives them one address,
+# https://<dev branch>.<project>.pages.dev, which the dev host name
+# (dev.n-ga.ge) points at; the newest dev deployment is the one shown there.
+DEV_BRANCH=${CF_PAGES_DEV_BRANCH:-dev}
+[ "$DEV_BRANCH" != "$PRODUCTION_BRANCH" ] || die "CF_PAGES_DEV_BRANCH must not be the production branch ($PRODUCTION_BRANCH)."
+SOURCE_BRANCH=$BRANCH
+if [ "$BRANCH" = "$PRODUCTION_BRANCH" ]; then
+  ENVIRONMENT=production
+else
+  ENVIRONMENT=preview
+  BRANCH=$DEV_BRANCH
+  MESSAGE="[$SOURCE_BRANCH] $MESSAGE"
+fi
 
 echo "Pages project: $PROJECT"
-echo "Branch:        $BRANCH ($ENVIRONMENT)"
+if [ "$ENVIRONMENT" = production ]; then
+  echo "Branch:        $BRANCH (production)"
+else
+  echo "Branch:        $SOURCE_BRANCH, deployed as \"$BRANCH\" (dev)"
+fi
 echo "Commit:        ${COMMIT:-unknown}  $MESSAGE"
 
 # --- checks that need no credentials -----------------------------------------

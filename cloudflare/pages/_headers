@@ -71,3 +71,15 @@
 # No Content-Type rule: Pages takes the type from the file extension, and
 # .wasm is served as application/wasm (which streaming compilation requires)
 # without being told. "wrangler pages dev" shows the same types locally.
+
+# Search engines should list the live site only. Dev deployments (the dev host
+# name and every *.pages.dev address, production's own included) are for
+# looking at, not for finding.
+https://dev.n-ga.ge/*
+  X-Robots-Tag: noindex
+
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
