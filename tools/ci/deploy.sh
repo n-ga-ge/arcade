@@ -12,6 +12,9 @@
 #   CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token for the Worker, when
 #                                 the Pages token has no Workers permissions
 #   CLOUDFLARE_ACCOUNT_ID         account the Pages project and the Worker live in (secret)
+#   CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's route. With it the
+#                                 route names its zone by ID, so wrangler does not
+#                                 have to look the zone up by name.
 #   CF_PAGES_PROJECT              Pages project name (variable; default n-ga-ge)
 #
 # The branch decides what is deployed. "main" is production: the site goes
@@ -117,9 +120,31 @@ fi
 # no functions/ folder and no git checkout to guess from, so the flags below
 # are all it goes by, and its cache does not land in the checkout.
 WORK=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/deploy.XXXXXX")
-trap 'rm -rf "$WORK"' EXIT
+GENERATED_CONFIG=
+trap 'rm -rf "$WORK"; [ -z "$GENERATED_CONFIG" ] || rm -f "$GENERATED_CONFIG"' EXIT
 export WRANGLER_SEND_METRICS=false
 wrangler() { npx --yes "wrangler@$WRANGLER_VERSION" "$@"; }
+
+# The Worker's configuration names its route's zone by name. When CI supplies
+# the zone ID, deploy from a copy that names it by ID instead: wrangler then
+# skips the lookup by name, which a token limited to Workers may not be allowed.
+# The copy sits beside the original because the paths in it are relative, and
+# is removed on exit.
+WORKER_ARGS=()
+worker_config() {
+  [ -n "${CLOUDFLARE_ZONE_ID:-}" ] || return 0
+  [[ "$CLOUDFLARE_ZONE_ID" =~ ^[0-9a-f]{32}$ ]] || die "CLOUDFLARE_ZONE_ID is not a zone ID (32 hexadecimal digits)."
+  local name source=
+  for name in wrangler.jsonc wrangler.json wrangler.toml; do
+    if [ -f "$WORKER_DIR/$name" ]; then source=$name; break; fi
+  done
+  [ -n "$source" ] || die "no wrangler configuration in cloudflare/assets-worker/."
+  GENERATED_CONFIG=$WORKER_DIR/wrangler.deploy.${source#wrangler.}
+  sed -E "s/(\"?)zone_name(\"?)([[:space:]]*[:=][[:space:]]*)\"[^\"]*\"/\1zone_id\2\3\"$CLOUDFLARE_ZONE_ID\"/g" "$WORKER_DIR/$source" >"$GENERATED_CONFIG"
+  grep -q "zone_id" "$GENERATED_CONFIG" ||
+    die "CLOUDFLARE_ZONE_ID is set, but $source has no route with a zone_name to apply it to."
+  WORKER_ARGS=(--config "$(basename "$GENERATED_CONFIG")")
+}
 
 PAGES_COMMAND=(pages deploy "$DIST" --project-name "$PROJECT" --branch "$BRANCH" --commit-message "$MESSAGE")
 [ -z "$COMMIT" ] || PAGES_COMMAND+=(--commit-hash "$COMMIT")
@@ -134,7 +159,7 @@ if [ -n "$DRY_RUN" ]; then
     echo "No cloudflare/assets-worker/ in this checkout: no Worker to deploy."
   else
     if [ "$ENVIRONMENT" = production ]; then
-      echo "and then, in cloudflare/assets-worker/:"
+      echo "and then, in cloudflare/assets-worker/${CLOUDFLARE_ZONE_ID:+ (route zone by ID)}:"
       show deploy
     else
       echo "The Worker is only deployed from $PRODUCTION_BRANCH."
@@ -145,7 +170,8 @@ if [ -n "$DRY_RUN" ]; then
     if [ -f "$WORKER_DIR/package-lock.json" ] && [ ! -d "$WORKER_DIR/node_modules" ]; then
       (cd "$WORKER_DIR" && npm ci --no-audit --no-fund)
     fi
-    (cd "$WORKER_DIR" && wrangler deploy --dry-run --outdir "$WORK/worker" </dev/null)
+    worker_config
+    (cd "$WORKER_DIR" && wrangler deploy "${WORKER_ARGS[@]}" --dry-run --outdir "$WORK/worker" </dev/null)
   fi
   echo "Deployment URL: none (dry run, nothing was deployed)"
   exit 0
@@ -230,7 +256,8 @@ elif [ "$ENVIRONMENT" != production ]; then
 else
   echo "Deploying the assets Worker..."
   [ ! -f "$WORKER_DIR/package-lock.json" ] || (cd "$WORKER_DIR" && npm ci --no-audit --no-fund)
-  (cd "$WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy </dev/null) ||
+  worker_config
+  (cd "$WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||
     die "the Worker deployment failed. The site itself was deployed: $URL" \
         "If the token only covers Pages, add the Workers permissions to it or set CLOUDFLARE_API_TOKEN_WORKERS (cloudflare/pages/README.md)."
 fi
