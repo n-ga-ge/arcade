@@ -1,11 +1,167 @@
 {
   "slug": "barakel",
   "title": "Barakel: The Fallen Angel",
+  "publisher": "Technobubble Entertainment",
+  "year": 2005,
+  "genre": "Action role-playing",
   "uid": "0x101FF856",
   "variantOf": null,
   "dump": "Barakel",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "pack": {
+    "exclude": [
+      "System/Apps/RealPlayer/*",
+      "System/Apps/Videos/*"
+    ]
+  },
+  "status": "ingame",
+  "statusNote": "With Multiplayer set to No, the publisher logo, main menu, help, story intro and the first area (Norgaram Neighborhoods) all work: the knight walks, and the inventory and quest log open. With Multiplayer left at Yes (the default), New Adventure stops the emulator (\"RuntimeError: null function\" after \"Socket failed to be initialize, error code=44\"). The card as dumped also carries RealPlayer and a Videos app, which the installer refuses (more than one app folder), so the zip must be packed without them.",
+  "notes": [
+    "Before starting, move to Multiplayer on the main menu and press OK so it reads \"Multiplayer:No\". With Yes, New Adventure freezes the game here; multiplayer needs Bluetooth, which is not available.",
+    "A new adventure opens with an illustrated story that plays by itself for about 40 seconds before the first area loads.",
+    "In play the left soft key opens the menu (Play > Go to the game returns) and the right soft key the inventory. In the inventory 5 uses an object, 7 throws it away, 4 reads and 8 drinks.",
+    "Saving costs 200 gold, paid to the Wizard; after dying, use Resurrection in the game menu."
+  ],
+  "controls": {
+    "source": "The game's Help (\"Book of help\": controls during the game and in the inventory). Movement, the soft keys and the * key were also observed in play; attack, protect, spells and potion showed no visible change with no enemy near, so they stand as Help gives them. Help calls * \"Enemy\"; in play it showed the current adventure.",
+    "actions": {
+      "up": "Move up (press twice quickly to run)",
+      "down": "Move down",
+      "left": "Move left",
+      "right": "Move right",
+      "ok": "Select (menus)",
+      "lsk": "Game menu; next page (help, quest log)",
+      "rsk": "Inventory; return (inventory, help, quest log)",
+      "4": "Drink potion; read (inventory)",
+      "5": "Attack; use object (inventory)",
+      "7": "Protect; throw object away (inventory)",
+      "8": "Spells; drink (inventory)",
+      "star": "Current adventure (quest log)"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "5": [
+        "Space",
+        "KeyZ",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyX",
+        "Digit7",
+        "Numpad7"
+      ],
+      "8": [
+        "KeyC",
+        "Digit8",
+        "Numpad8"
+      ],
+      "4": [
+        "KeyV",
+        "Digit4",
+        "Numpad4"
+      ],
+      "star": [
+        "Tab",
+        "Minus",
+        "NumpadMultiply"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW",
+        "Backspace"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "5": [
+        "b2",
+        "b7"
+      ],
+      "7": [
+        "b1"
+      ],
+      "8": [
+        "b3"
+      ],
+      "4": [
+        "b6"
+      ],
+      "star": [
+        "b8"
+      ],
+      "lsk": [
+        "b4",
+        "b9"
+      ],
+      "rsk": [
+        "b5"
+      ]
+    },
+    "notes": [
+      "Arrows move. Space or Z attacks, X protects, C opens the spells, V drinks a potion, Tab shows the current adventure. Q is the game menu and W the inventory."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "down",
+        "wait": 2000
+      },
+      {
+        "key": "ok",
+        "wait": 3000
+      },
+      {
+        "key": "up",
+        "wait": 2000
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "ok",
+        "wait": 90000
+      }
+    ]
+  }
 }
