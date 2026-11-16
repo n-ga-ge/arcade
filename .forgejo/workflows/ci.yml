@@ -1,0 +1,32 @@
+# Temporary probe: prints what the ubuntu-latest runner provides, so the real
+# pipeline can be designed from it.
+name: CI
+on: [push]
+jobs:
+  probe:
+    name: probe runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Describe the runner
+        run: |
+          set +e
+          echo "== os"; cat /etc/os-release; uname -a
+          echo "== user"; id; echo "HOME=$HOME"; pwd; echo "SHELL=$SHELL"; ls -la /proc/1/exe; cat /proc/1/cgroup | head -5; [ -f /.dockerenv ] && echo in-docker
+          echo "== sudo"; command -v sudo && sudo -n true && echo sudo-ok
+          echo "== cpu"; nproc; grep -m1 'model name' /proc/cpuinfo
+          echo "== memory"; free -m
+          echo "== disk"; df -h / "$PWD" /tmp 2>/dev/null
+          echo "== tools"
+          for t in git git-lfs curl wget jq python3 pip3 node npm npx cmake ninja ccache make gcc g++ clang emcc xz zstd tar unzip zip bzip2 docker apt-get xvfb-run google-chrome chromium chromium-browser firefox java; do
+            p=$(command -v $t) && echo "$t: $p: $($t --version 2>&1 | head -1)" || echo "$t: missing"
+          done
+          echo "== env"; env | grep -E '^(GITHUB_|FORGEJO_|GITEA_|RUNNER_|ACTIONS_|CI|ImageOS|AGENT_)' | grep -v -i -E 'token|secret' | sort
+          echo "== toolcache"; ls -la /opt/hostedtoolcache 2>/dev/null | head; ls /opt 2>/dev/null
+          echo "== network"; for u in https://github.com https://data.forgejo.org https://code.forgejo.org https://registry.npmjs.org https://storage.googleapis.com https://cdn.playwright.dev https://nodejs.org/dist/ https://git.code.sf.net; do printf '%s ' $u; curl -sS -m 15 -o /dev/null -w '%{http_code} %{time_total}s\n' $u; done
+          echo "== download speed"; curl -sS -m 60 -o /dev/null -w '%{speed_download} B/s\n' https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.tar.gz
+      - name: Contexts
+        run: |
+          echo "event=${{ github.event_name }} ref=${{ github.ref }} repo=${{ github.repository }} server=${{ github.server_url }}"
+          echo "forge.ref=${{ forge.ref }} forgejo.ref=${{ forgejo.ref }}"
+          echo "var set: ${{ vars.ASSETS_URL != '' }} secret set: ${{ secrets.ASSETS_TOKEN != '' }}"
+          echo "hashFiles: ${{ hashFiles('catalog/schema.json') }}"
