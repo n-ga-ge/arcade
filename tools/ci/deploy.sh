@@ -116,7 +116,9 @@ echo "Commit:        ${COMMIT:-unknown}  $MESSAGE"
 
 # --- checks that need no credentials -----------------------------------------
 
-[ -f "$DIST/play/eka2l1_web.wasm" ] || die "no built site at $DIST: run python3 -I tools/site/build.py first"
+# The site build keeps the player's files in play/b/<build id>/.
+compgen -G "$DIST/play/b/*/eka2l1_web.wasm" >/dev/null || [ -f "$DIST/play/eka2l1_web.wasm" ] ||
+  die "no built site at $DIST: run python3 -I tools/site/build.py first"
 # The build ran this check already; dist/ may have been touched since, and
 # what is uploaded here is public.
 python3 -I "$ARCADE_ROOT/tools/site/steps/90-cloudflare.py" "$DIST" --check
