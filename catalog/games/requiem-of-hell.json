@@ -34,7 +34,48 @@
       "7": "Skip a movie (hold it)",
       "star": "Confirm the name you typed",
       "rsk": "Pause menu; back; close the inventory"
-    }
+    },
+    "gamepad": {
+      "5": [
+        "b0"
+      ],
+      "4": [
+        "b1"
+      ],
+      "6": [
+        "b2"
+      ],
+      "7": [
+        "b3"
+      ],
+      "1": [
+        "b4"
+      ],
+      "2": [
+        "b5"
+      ],
+      "3": [
+        "b6"
+      ],
+      "9": [
+        "b7"
+      ],
+      "0": [
+        "b8"
+      ],
+      "rsk": [
+        "b9"
+      ],
+      "hash": [
+        "b10"
+      ],
+      "star": [
+        "b11"
+      ]
+    },
+    "notes": [
+      "The keyboard uses the standard layout (arrows and the digit row). On a gamepad A attacks (5), B defends (4), X is the combo strike (6), Y is 7; the shoulder buttons and the left trigger are the three magic attacks, the right trigger throws an item; Back opens the inventory, Start the pause menu, pressing the left stick shows the map and pressing the right stick is the star key."
+    ]
   },
   "test": {
     "expect": "ingame",

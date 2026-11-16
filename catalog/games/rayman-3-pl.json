@@ -26,7 +26,36 @@
       "ok": "Select in menus",
       "lsk": "Pause; select in menus; skip the story",
       "rsk": "Pause; back in menus"
-    }
+    },
+    "keyboard": {
+      "5": [
+        "Space",
+        "KeyZ",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyX",
+        "Digit7",
+        "Numpad7"
+      ],
+      "ok": [
+        "Enter"
+      ]
+    },
+    "gamepad": {
+      "5": [
+        "b0",
+        "b2"
+      ],
+      "7": [
+        "b1",
+        "b3"
+      ]
+    },
+    "notes": [
+      "Platformer layout: jump (5) on Space or Z and punch (7) on X, besides the digit keys. On a gamepad A or X jumps and B or Y punches; in menus the same buttons select and go back."
+    ]
   },
   "test": {
     "expect": "ingame",
