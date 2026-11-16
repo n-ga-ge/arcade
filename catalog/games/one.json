@@ -1,11 +1,180 @@
 {
   "slug": "one",
   "title": "ONE",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Fighting",
   "uid": "0x101FD409",
   "variantOf": null,
   "dump": "ONE",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "The first screen asks for a language: English, Spanish, Italian, French or German.",
+    "You must create a fighter before you can play. The left soft key is Continue on each creation screen; on the last one type a name on the number keys (like texting: 2 gives A, 3 gives D) and press the left soft key to save.",
+    "Play > Single-player has Versus, Survival, Story and Training.",
+    "Either soft key pauses a fight. The pause menu has Settings > Customise Controls and the Skills list of moves.",
+    "Multiplayer over Bluetooth and N-Gage Arena is not available in the browser."
+  ],
+  "controls": {
+    "source": "The game's defaults, read from its Settings > Customise Controls screen (keys 3 to 9). Directions, OK and the soft keys were observed in menus and in a fight.",
+    "actions": {
+      "up": "Move up (menus)",
+      "down": "Move down (menus)",
+      "left": "Move left (in a fight); change a setting (menus)",
+      "right": "Move right (in a fight); change a setting (menus)",
+      "ok": "Select (menus)",
+      "lsk": "Select / continue (menus); pause (in a fight)",
+      "rsk": "Back (menus); pause and resume (in a fight)",
+      "3": "Offensive pose",
+      "4": "Defence",
+      "5": "Punch",
+      "6": "Neutral pose",
+      "7": "Kick",
+      "8": "Grab",
+      "9": "Defensive pose"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "ok": [
+        "Enter",
+        "Space"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW",
+        "Escape"
+      ],
+      "5": [
+        "KeyA",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyS",
+        "Digit7",
+        "Numpad7"
+      ],
+      "8": [
+        "KeyD",
+        "Digit8",
+        "Numpad8"
+      ],
+      "4": [
+        "KeyZ",
+        "Digit4",
+        "Numpad4"
+      ],
+      "3": [
+        "KeyX",
+        "Digit3",
+        "Numpad3"
+      ],
+      "6": [
+        "KeyC",
+        "Digit6",
+        "Numpad6"
+      ],
+      "9": [
+        "KeyV",
+        "Digit9",
+        "Numpad9"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "7": [
+        "b0"
+      ],
+      "8": [
+        "b1"
+      ],
+      "5": [
+        "b2"
+      ],
+      "ok": [
+        "b3"
+      ],
+      "3": [
+        "b4"
+      ],
+      "4": [
+        "b5"
+      ],
+      "9": [
+        "b6"
+      ],
+      "6": [
+        "b7"
+      ],
+      "rsk": [
+        "b8"
+      ],
+      "lsk": [
+        "b9"
+      ]
+    },
+    "notes": [
+      "Fighting layout: move on the arrows; A punches, S kicks, D grabs and Z defends; X, C and V switch to the offensive, neutral and defensive pose. The digit keys work too and are needed to type the fighter's name.",
+      "On a gamepad X punches, A kicks, B grabs and RB defends; LB, RT and LT are the offensive, neutral and defensive pose. Start selects in menus and pauses a fight, Back goes back, Y is OK. Typing the fighter's name needs the keyboard or the touch keypad."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 14000
+      },
+      {
+        "key": "lsk",
+        "wait": 4000,
+        "repeat": 12
+      },
+      {
+        "key": "2",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 6000
+      },
+      {
+        "key": "ok",
+        "wait": 4500,
+        "repeat": 13
+      },
+      {
+        "wait": 10000
+      }
+    ],
+    "timeoutMs": 120000
+  },
+  "statusNote": "Logos, language choice, menus and fighter creation work, and a single-player Versus fight in the 3D dock arena plays: moving, punch, kick and the pause menu were tried."
 }
