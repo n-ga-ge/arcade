@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
-import { checkScript, difference, picture, scriptMs, stepTiming, targetLevel, verdict } from './gamecheck.mjs';
+import { SHOWN_AT, checkScript, difference, likeness, picture, scriptMs, stepTiming, targetLevel, verdict } from './gamecheck.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const KEYS = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog', 'schema.json'), 'utf8')).$defs.key.enum;
@@ -103,4 +103,38 @@ test('difference is the share of changed pixels', () => {
   assert.equal(difference(base, png(100, 100, (x, y) => (y < 25 ? [0, 0, 255] : [x, y, 0]))), 0.25);
   assert.equal(difference(base, png(50, 100, (x, y) => [x, y, 0])), 1);
   assert.equal(difference(base, Buffer.from('junk')), 1);
+});
+
+// A made-up 176x208 game screen: a bright block, a gradient and a dark band.
+const screen = (x, y) => (y < 40 ? [20, 20, 30] : x > 40 && x < 120 && y > 70 && y < 150 ? [230, 220, 90] : [Math.floor(x / 2), 60, Math.floor(y / 2)]);
+
+test('a page that shows the game is like the emulator screenshot', () => {
+  const guest = png(176, 208, screen);
+  // The canvas scales the screen 3.3x and centres it between black bars.
+  const scale = 3.3;
+  const shown = png(900, Math.round(208 * scale), (x, y) => {
+    const gx = Math.floor((x - (900 - 176 * scale) / 2) / scale);
+    return gx < 0 || gx >= 176 ? [0, 0, 0] : screen(gx, Math.floor(y / scale));
+  });
+  assert.ok(likeness(shown, guest) > 0.95);
+  // Darker (an overlay) or a little offset in time is still the same picture.
+  const dim = png(900, Math.round(208 * scale), (x, y) => {
+    const gx = Math.floor((x - (900 - 176 * scale) / 2) / scale);
+    return gx < 0 || gx >= 176 ? [0, 0, 0] : screen(gx, Math.floor(y / scale)).map((value) => Math.floor(value * 0.3));
+  });
+  assert.ok(likeness(dim, guest) >= SHOWN_AT);
+});
+
+test('a page of one colour, or of something else, is not like the game', () => {
+  const guest = png(176, 208, screen);
+  assert.equal(likeness(png(900, 686, () => [255, 0, 255]), guest), 0);
+  // Magenta between black bars: the bars are outside the picture, and the
+  // sliver of them at its edges does not make it look like the game.
+  assert.ok(likeness(png(900, 686, (x) => (x < 160 || x > 740 ? [0, 0, 0] : [255, 0, 255])), guest) < 0.3);
+  assert.ok(likeness(png(900, 686, (x, y) => ((x + y) % 97 < 40 ? [200, 200, 200] : [10, 10, 10])), guest) < SHOWN_AT);
+});
+
+test('nothing to compare gives null', () => {
+  assert.equal(likeness(png(900, 686, screen), png(176, 208, () => [0, 0, 0])), null);
+  assert.equal(likeness(Buffer.from('no'), png(176, 208, screen)), null);
 });

@@ -23,8 +23,9 @@
 // Levels, from what a machine can check:
 //   broken   the game did not install or launch, the page reported an error,
 //            the wasm aborted, the game exited, or it never drew a picture
-//   boots    it launched, frames advance, and the emulator's own screenshot
-//            is not blank
+//   boots    it launched, frames advance, the emulator's own screenshot is
+//            not blank, and the page's canvas shows that same picture (a game
+//            that runs behind a canvas of one colour is broken for the visitor)
 //   menu, ingame   the level its script expects ("test.expect"), when after
 //            the whole script the game still runs, frames still advance (by
 //            themselves or when a key is pressed) and the screen is not
@@ -48,7 +49,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkScript, difference, picture, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
+import { SHOWN_AT, checkScript, difference, likeness, picture, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OPTIONS = { game: 'value', out: 'value', browser: 'value', port: 'value', bin: 'value', assets: 'value', entry: 'value', 'time-limit': 'value', verbose: 'flag' };
@@ -356,6 +357,46 @@ async function guestShot(keep = true) {
   return { png, ...seen };
 }
 
+// What the visitor sees: the page's canvas as the browser composites it. The
+// emulator's screenshot above comes from inside the guest and stays right even
+// when presenting the frame to the page fails.
+// The page's own overlays (the "click for sound" hint) are hidden for the
+// picture, so that only the canvas is compared.
+async function pageShot() {
+  const overlays = (hidden) => page.evaluate((hide) => {
+    for (const id of ['overlay', 'setup']) {
+      const element = document.getElementById(id);
+      if (!element) continue;
+      if (hide) { element.dataset.wasHidden = String(element.hidden); element.hidden = true; }
+      else if (element.dataset.wasHidden !== undefined) { element.hidden = element.dataset.wasHidden === 'true'; delete element.dataset.wasHidden; }
+    }
+  }, hidden);
+  try {
+    await overlays(true);
+    return await withTimeout(page.locator('#canvas').screenshot({ timeout: 15000 }), 20000, 'the page screenshot');
+  } catch {
+    return null; // the test goes on without it rather than fail on the camera
+  } finally {
+    await overlays(false).catch(() => {});
+  }
+}
+
+// How alike the page and the emulator's screenshot are, at the best of a few
+// moments (a game that is moving differs a little between the two pictures).
+// null when it could not be measured.
+async function shownOnPage() {
+  let best = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const guest = await guestShot(false);
+    const shown = await pageShot();
+    const alike = guest && shown ? likeness(shown, guest.png) : null;
+    if (alike !== null && (best === null || alike > best)) best = alike;
+    if (best !== null && best >= SHOWN_AT) break;
+    await pause(700);
+  }
+  return best;
+}
+
 const watch = { running: false, sawFrames: false, sawPicture: false, lastFrames: -1 };
 
 // Runs for the whole test, beside the script: notices when the page reports an
@@ -615,6 +656,15 @@ async function test() {
   if (!watch.sawPicture || !watch.sawFrames) {
     run.reached = 'broken';
     run.error = !watch.sawPicture ? 'the game runs but its screen stayed blank (one colour)' : 'the game stopped drawing: no new frame, not even after a key';
+    return;
+  }
+  // The game draws. Does the page show it? A game that runs behind a canvas of
+  // one colour is broken for the visitor, whatever the emulator says.
+  const alike = await shownOnPage();
+  run.checks.pageLikeness = alike;
+  if (alike !== null && alike < SHOWN_AT) {
+    run.reached = 'broken';
+    run.error = `the game draws, but the page does not show it (likeness ${alike}, needs ${SHOWN_AT}): the visitor sees something else`;
     return;
   }
   run.reached = 'boots';

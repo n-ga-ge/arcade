@@ -106,3 +106,70 @@ export function difference(first, second) {
   }
   return differing / pixels;
 }
+
+// Does the page show what the game draws? `page` is a screenshot of the page's
+// canvas, `guest` the emulator's own screenshot taken at the same moment. The
+// canvas shows the guest's screen scaled to fit and centred, with bars beside
+// or above it, so the comparison is made on that rectangle, on a coarse grid
+// of average brightness. Returns the correlation of the two grids, from -1 to
+// 1: near 1 when the page shows the game (whatever the scaling filter or the
+// brightness), near 0 when it shows something else, and 0 for a page of one
+// colour. null when there is nothing to compare (a guest screen of one colour,
+// or a picture that cannot be read).
+export const SHOWN_AT = 0.6;
+
+export function likeness(page, guest) {
+  let a;
+  let b;
+  try {
+    a = PNG.sync.read(Buffer.from(page));
+    b = PNG.sync.read(Buffer.from(guest));
+  } catch {
+    return null;
+  }
+  if (!a.width || !a.height || b.width < 16 || b.height < 16) return null;
+  const columns = Math.max(4, Math.floor(b.width / 8));
+  const rows = Math.max(4, Math.floor(b.height / 8));
+  const scale = Math.min(a.width / b.width, a.height / b.height);
+  const box = { x: (a.width - b.width * scale) / 2, y: (a.height - b.height * scale) / 2, width: b.width * scale, height: b.height * scale };
+  const grid = (png, area) => {
+    const cells = new Float64Array(columns * rows);
+    for (let row = 0; row < rows; row++) {
+      for (let column = 0; column < columns; column++) {
+        const x0 = Math.floor(area.x + (area.width * column) / columns);
+        const x1 = Math.max(x0 + 1, Math.floor(area.x + (area.width * (column + 1)) / columns));
+        const y0 = Math.floor(area.y + (area.height * row) / rows);
+        const y1 = Math.max(y0 + 1, Math.floor(area.y + (area.height * (row + 1)) / rows));
+        let sum = 0;
+        let count = 0;
+        for (let y = y0; y < y1 && y < png.height; y++) {
+          for (let x = x0; x < x1 && x < png.width; x++) {
+            const i = (y * png.width + x) * 4;
+            sum += 0.299 * png.data[i] + 0.587 * png.data[i + 1] + 0.114 * png.data[i + 2];
+            count++;
+          }
+        }
+        cells[row * columns + column] = count ? sum / count : 0;
+      }
+    }
+    return cells;
+  };
+  const shown = grid(a, box);
+  const drawn = grid(b, { x: 0, y: 0, width: b.width, height: b.height });
+  const mean = (cells) => cells.reduce((sum, value) => sum + value, 0) / cells.length;
+  const meanShown = mean(shown);
+  const meanDrawn = mean(drawn);
+  let cross = 0;
+  let spreadShown = 0;
+  let spreadDrawn = 0;
+  for (let i = 0; i < shown.length; i++) {
+    cross += (shown[i] - meanShown) * (drawn[i] - meanDrawn);
+    spreadShown += (shown[i] - meanShown) ** 2;
+    spreadDrawn += (drawn[i] - meanDrawn) ** 2;
+  }
+  // A guest screen that is (nearly) one brightness has no shape to look for.
+  if (Math.sqrt(spreadDrawn / drawn.length) < 2) return null;
+  // The same for the page: one colour is not the game (and has no correlation to compute).
+  if (Math.sqrt(spreadShown / shown.length) < 0.5) return 0;
+  return Number((cross / Math.sqrt(spreadShown * spreadDrawn)).toFixed(3));
+}
