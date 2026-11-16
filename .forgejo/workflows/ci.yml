@@ -1,0 +1,518 @@
+# CI for n-ga.ge/arcade on Forgejo Actions (runners labelled ubuntu-latest).
+#
+#   build    builds the WebAssembly player from the eka2l1 submodule (or takes
+#            the one an earlier run built from the same emulator commit),
+#            checks the catalogue and decides which of the later jobs can run
+#   game-N   one job per catalogue entry, named after the game: starts the game
+#            in headless Chromium and fails when it falls short of the level its
+#            entry expects (test.expect). The games are dealt into batches that
+#            run one after another, see "Batches" below
+#   status   collects the results into status.json and the screenshots the
+#            front page shows; runs even when games fail
+#   deploy   builds the site and publishes it to Cloudflare: production on
+#            main, a preview for a pull request or a manual run elsewhere
+#
+# Configuration, under the repository's (or the organisation's) Settings >
+# Actions. A job whose configuration is missing is skipped, and the "Plan the
+# later jobs" step of build says what it lacks.
+#
+#   Variables
+#     ASSETS_URL                    where tools/assets/fetch.py gets the firmware
+#                                   and the game cards: the site's /assets/ base,
+#                                   served by the assets Worker from the R2 bucket
+#     CF_PAGES_PROJECT              Cloudflare Pages project; "n-ga-ge" when unset
+#   Secrets
+#     ASSETS_TOKEN                  bearer token for ASSETS_URL
+#     CLOUDFLARE_API_TOKEN_PAGES    Cloudflare token that uploads the site
+#     CLOUDFLARE_ACCOUNT_ID         the Cloudflare account the site lives in
+#     CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token that deploys the
+#                                   assets Worker, when the Pages one may not
+#     CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's route
+#     FORGE_TOKEN                   an access token of this forge with repository
+#                                   read access, for the checkout and for the
+#                                   eka2l1 submodule while n-ga.ge/EKA2L1 is
+#                                   private. Without the secret the job's own
+#                                   token is used, which is enough when the fork
+#                                   is public; that it can read a private one has
+#                                   not been seen
+#
+# The game jobs need ASSETS_URL and ASSETS_TOKEN, the deployment needs
+# CLOUDFLARE_API_TOKEN_PAGES and CLOUDFLARE_ACCOUNT_ID. Pull requests from
+# forks get no secrets, so there the game tests and the preview are skipped
+# and only build runs. tools/ci/deploy.sh decides what a deployment is: main
+# goes live and deploys the Worker, anything else (a pull request above all)
+# becomes a preview at https://<branch>.<project>.pages.dev.
+#
+# The firmware and the game cards are copyrighted. They are downloaded into
+# testdata/ inside a game job and must never be uploaded as an artifact or
+# stored in a cache: the result artifacts hold only what the patterns below
+# name. Packing the dumps and uploading them to R2 is a workflow of the private
+# repository, not part of this one.
+#
+# Batches. Forgejo 16 ignores strategy.max-parallel and the runner takes every
+# job it is offered, but its Docker cannot create more than about 30 job
+# networks at a time ("all predefined address pools have been fully
+# subnetted"), and other repositories use the same runner. So the games are
+# dealt into BATCHES matrices of nearly equal size (tools/ci/gen-matrix.py),
+# each batch waits for the one before it, and a batch should stay near a dozen
+# jobs. To add a batch: raise BATCHES in the plan step, add a batchN output to
+# build, copy the last game-N job with its numbers raised, and add the new job
+# to the needs of status. (The copies cannot share their text through YAML
+# anchors: Forgejo 16 refuses a workflow that has them.)
+#
+# Action URLs are written out in full, as Forgejo recommends; the artifact
+# actions are Forgejo's forks, because the upstream v4 ones refuse to run
+# anywhere but github.com.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer run of the same branch or pull request replaces the one in progress,
+# so an older commit can never be deployed after a newer one.
+concurrency:
+  group: ci-${{ forge.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the player
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      batch1: ${{ steps.plan.outputs.batch1 }}
+      batch2: ${{ steps.plan.outputs.batch2 }}
+      batch3: ${{ steps.plan.outputs.batch3 }}
+      batch4: ${{ steps.plan.outputs.batch4 }}
+      batch5: ${{ steps.plan.outputs.batch5 }}
+      batch6: ${{ steps.plan.outputs.batch6 }}
+      game: ${{ steps.plan.outputs.game }}
+      status: ${{ steps.plan.outputs.status }}
+      deploy: ${{ steps.plan.outputs.deploy }}
+      deps-key: ${{ steps.deps-key.outputs.key }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+
+      - name: Check the catalogue
+        run: python3 -I tools/games/validate.py
+
+      - name: Plan the later jobs
+        id: plan
+        env:
+          ASSETS_URL: ${{ vars.ASSETS_URL }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+          CLOUDFLARE_API_TOKEN_PAGES: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BATCHES: 6
+          EVENT: ${{ forge.event_name }}
+          REF: ${{ forge.ref }}
+        run: |
+          # missing <name>...: list the variables and secrets that are not set.
+          missing() {
+            local name out=
+            for name in "$@"; do
+              [ -n "${!name}" ] || out="$out, $name is not set"
+            done
+            echo "${out#, }"
+          }
+          say() { echo "$1"; echo "- $1" >> "$GITHUB_STEP_SUMMARY"; }
+
+          python3 -I tools/ci/gen-matrix.py --batches "$BATCHES" >> "$GITHUB_OUTPUT"
+
+          why=$(missing ASSETS_URL ASSETS_TOKEN)
+          if [ -z "$why" ]; then
+            say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games, in $BATCHES batches"
+            say "status: will run"
+            echo "game=true" >> "$GITHUB_OUTPUT"
+            echo "status=true" >> "$GITHUB_OUTPUT"
+          else
+            say "game: skipped ($why)"
+            say "status: skipped (there are no game results)"
+          fi
+
+          # What the deployment will be is deploy.sh's decision; this only
+          # names it for the log.
+          case "$EVENT $REF" in
+            "pull_request"*) target=preview ;;
+            *" refs/heads/main") target=production ;;
+            *) target=preview ;;
+          esac
+          why=$(missing CLOUDFLARE_API_TOKEN_PAGES CLOUDFLARE_ACCOUNT_ID)
+          if [ -z "$why" ]; then
+            say "deploy: $target"
+            echo "deploy=$target" >> "$GITHUB_OUTPUT"
+          else
+            say "deploy: skipped ($why)"
+          fi
+
+      # The game jobs all need the same Node packages and browser. They only
+      # read this cache; it is filled here, once, instead of by a dozen jobs
+      # that all find it empty at the same moment. The key is handed to them,
+      # and .forgejo/actions/game-test must name the same paths.
+      - name: Node
+        if: steps.plan.outputs.game == 'true'
+        run: tools/ci/setup-toolchain.sh --only node
+
+      - name: Test dependencies cache key
+        if: steps.plan.outputs.game == 'true'
+        id: deps-key
+        run: echo "key=test-deps-$(cat package.json package-lock.json 2>/dev/null | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Test dependencies cache
+        if: steps.plan.outputs.game == 'true'
+        id: deps
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
+          key: ${{ steps.deps-key.outputs.key }}
+
+      - name: Download the test dependencies
+        if: steps.plan.outputs.game == 'true' && steps.deps.outputs.cache-hit != 'true'
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npx playwright install --only-shell chromium
+
+      # The player depends on the emulator commit and on the scripts that
+      # build it, and on nothing else in this repository. Most pushes change
+      # neither, and then the player of an earlier run is used as it is.
+      # (What a pull request's run saves in a cache, the runner shows only to
+      # later runs of that pull request, so one cannot plant a player for main.)
+      - name: Player cache key
+        id: key
+        run: |
+          eka2l1=$(git ls-tree HEAD eka2l1 | awk '{print $3}')
+          echo "eka2l1=$eka2l1" >> "$GITHUB_OUTPUT"
+          echo "toolchain=$(sha256sum tools/ci/setup-toolchain.sh | cut -c1-16)" >> "$GITHUB_OUTPUT"
+          echo "player=$( (echo "$eka2l1"; cat tools/ci/setup-toolchain.sh tools/ci/build-web.sh tools/ci/checkout-eka2l1.sh) | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Player cache
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: eka2l1/build/web/bin
+          key: player-${{ steps.key.outputs.player }}
+
+      - name: Is there a player already?
+        id: player
+        run: |
+          if [ -s eka2l1/build/web/bin/eka2l1_web.wasm ]; then
+            echo "using the player built earlier for emulator commit ${{ steps.key.outputs.eka2l1 }}"
+            echo "cached=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no player for emulator commit ${{ steps.key.outputs.eka2l1 }} yet: building it"
+          fi
+
+      # The emulator fork is a repository of this forge and may be private.
+      - name: Check out the emulator
+        if: steps.player.outputs.cached != 'true'
+        env:
+          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN || forge.token }}
+          HAVE_SECRET: ${{ secrets.FORGE_TOKEN != '' }}
+        run: |
+          if [ "$HAVE_SECRET" = true ]; then echo "fetching the fork with the FORGE_TOKEN secret"
+          else echo "FORGE_TOKEN is not set: fetching the fork with the job's own token"
+          fi
+          tools/ci/checkout-eka2l1.sh
+
+      - name: Toolchain cache
+        if: steps.player.outputs.cached != 'true'
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: .toolchain
+          key: toolchain-${{ steps.key.outputs.toolchain }}
+
+      - name: Set up the toolchain
+        if: steps.player.outputs.cached != 'true'
+        run: tools/ci/setup-toolchain.sh
+
+      # Saved once per emulator commit; any earlier one is a good start.
+      - name: Compiler cache
+        if: steps.player.outputs.cached != 'true'
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-emscripten-${{ steps.key.outputs.eka2l1 }}
+          restore-keys: ccache-emscripten-
+
+      # Configuring takes six minutes, nearly all of it some 300 "does this
+      # function exist" probes that each link a program through emcc. CMake
+      # keeps their answers in CMakeCache.txt, and the answers can only change
+      # with the toolchain, the build script, the place of the checkout or a
+      # CMake file of the emulator, so the file is reused while none of those
+      # has changed.
+      - name: Configure cache key
+        if: steps.player.outputs.cached != 'true'
+        id: configure
+        run: |
+          key=$( (pwd; cat tools/ci/setup-toolchain.sh tools/ci/build-web.sh
+                  git -C eka2l1 ls-files --stage --recurse-submodules -- 'CMakeLists.txt' '*/CMakeLists.txt' '*.cmake' '*.cmake.in') | sha256sum | cut -c1-16)
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Configure cache
+        if: steps.player.outputs.cached != 'true'
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: eka2l1/build/web/CMakeCache.txt
+          key: configure-${{ steps.configure.outputs.key }}
+
+      - name: Build
+        if: steps.player.outputs.cached != 'true'
+        run: |
+          . tools/env.sh
+          ccache --zero-stats >/dev/null
+          tools/ci/build-web.sh
+          ccache --show-stats
+          (cd eka2l1/build/web/bin && sha256sum eka2l1_web.wasm eka2l1_web.js eka2l1_web.data)
+
+      - name: Upload the player
+        uses: https://data.forgejo.org/forgejo/upload-artifact@v4
+        with:
+          name: player
+          path: |
+            eka2l1/build/web/bin
+            !eka2l1/build/web/bin/**/*.a
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+
+  # The six game jobs differ only in their batch and in what they wait on.
+  # What a game job does is in .forgejo/actions/game-test/action.yml.
+  #
+  # A job is shown as "<title> (<slug>)": Forgejo appends the matrix value
+  # itself. Each job reads the titles from its own batch, which also keeps the
+  # text of the six names different: given the same text six times, Forgejo
+  # numbers the jobs before it fills in their names and then never does.
+  game-1:
+    name: ${{ fromJSON(needs.build.outputs.batch1).titles[matrix.game] }}
+    needs: build
+    if: needs.build.outputs.game == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch1).slugs }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          deps-key: ${{ needs.build.outputs.deps-key }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
+
+  game-2:
+    name: ${{ fromJSON(needs.build.outputs.batch2).titles[matrix.game] }}
+    needs: [build, game-1]
+    # Failures in the batch before do not stop this one.
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch2).slugs }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          deps-key: ${{ needs.build.outputs.deps-key }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
+
+  game-3:
+    name: ${{ fromJSON(needs.build.outputs.batch3).titles[matrix.game] }}
+    needs: [build, game-2]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch3).slugs }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          deps-key: ${{ needs.build.outputs.deps-key }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
+
+  game-4:
+    name: ${{ fromJSON(needs.build.outputs.batch4).titles[matrix.game] }}
+    needs: [build, game-3]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch4).slugs }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          deps-key: ${{ needs.build.outputs.deps-key }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
+
+  game-5:
+    name: ${{ fromJSON(needs.build.outputs.batch5).titles[matrix.game] }}
+    needs: [build, game-4]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch5).slugs }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          deps-key: ${{ needs.build.outputs.deps-key }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
+
+  game-6:
+    name: ${{ fromJSON(needs.build.outputs.batch6).titles[matrix.game] }}
+    needs: [build, game-5]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch6).slugs }}
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          deps-key: ${{ needs.build.outputs.deps-key }}
+          assets-url: ${{ vars.ASSETS_URL }}
+          assets-token: ${{ secrets.ASSETS_TOKEN }}
+
+  status:
+    name: Status of all games
+    needs: [build, game-1, game-2, game-3, game-4, game-5, game-6]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.status == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+
+      - name: Download the results
+        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+        with:
+          pattern: result-*
+          path: results
+          merge-multiple: true
+
+      - name: Summarise
+        run: |
+          mkdir -p results
+          python3 -I tools/ci/status.py results --out status --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the status
+        uses: https://data.forgejo.org/forgejo/upload-artifact@v4
+        with:
+          name: status
+          path: status
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+
+  deploy:
+    name: Deploy
+    needs: [build, status]
+    # A failed game does not hold the site back: the front page reports it.
+    # A failed status job does, and a skipped one means a site without results.
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.deploy != '' && needs.status.result != 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+
+      - name: Node
+        run: tools/ci/setup-toolchain.sh --only node
+
+      - name: Download the player
+        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+        with:
+          name: player
+          path: eka2l1/build/web/bin
+
+      - name: Download the status
+        if: needs.status.result == 'success'
+        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+        with:
+          name: status
+          path: status
+
+      - name: Build the site
+        run: |
+          args=(--bin eka2l1/build/web/bin)
+          if [ -f status/status.json ]; then args+=(--status status); fi
+          python3 -I tools/site/build.py "${args[@]}"
+
+      # deploy.sh takes the branch and the commit from the job's own
+      # variables and never lets a pull request reach production.
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN_PAGES: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
+          CLOUDFLARE_API_TOKEN_WORKERS: ${{ secrets.CLOUDFLARE_API_TOKEN_WORKERS }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'n-ga-ge' }}
+        run: tools/ci/deploy.sh
