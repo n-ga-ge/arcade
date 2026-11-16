@@ -1,11 +1,175 @@
 {
   "slug": "atari-masterpieces-vol-1",
   "title": "Atari Masterpieces Vol. I",
+  "genre": "Arcade compilation",
   "uid": "0x101FD41F",
   "variantOf": null,
   "dump": "Atari Masterpieces Vol. 1",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Logos, title and menus work. All eight arcade games start from Choose Game (Asteroids, Battlezone, Black Widow, Lunar Lander, Millipede, Missile Command, Red Baron, Super Breakout); Asteroids was played: the ship turns, thrusts and fires. The four Atari 2600 extras are locked until score targets are met, as on the console.",
+  "notes": [
+    "Each game opens on its arcade attract screen; press 1 to start a one-player game.",
+    "Either soft key pauses a game. The pause menu has Control Keys (that game's keys, which can be changed there), Game Settings, and Quit Game to go back to the game list.",
+    "Adventure, Surround, Video Chess and Yars' Revenge (Atari 2600) unlock by reaching a score in Missile Command, Millipede, Red Baron and Asteroids.",
+    "N-Gage Arena is no longer online, so its menu entry does nothing useful here."
+  ],
+  "controls": {
+    "source": "Each game's Control Keys screen in its pause menu (defaults). Movement on the direction pad is not listed there; it was confirmed in Asteroids (turn and thrust) and is assumed for the other games.",
+    "actions": {
+      "up": "Menus: move up. Games: thrust (Asteroids), otherwise move or aim up",
+      "down": "Menus: move down. Games: move or aim down",
+      "left": "Turn or move left",
+      "right": "Turn or move right",
+      "ok": "Select (menus)",
+      "lsk": "Select (menus); pause menu (in a game)",
+      "rsk": "Back (menus); pause menu (in a game), resume (pause menu)",
+      "1": "Start a one-player game (every game)",
+      "2": "Two-player start (Asteroids, Millipede, Missile Command, Super Breakout); fire up (Black Widow); rotation mode (Lunar Lander)",
+      "3": "Two-player start (Black Widow); add fuel (Lunar Lander)",
+      "4": "Fire left (Black Widow); fire Alpha base (Missile Command)",
+      "5": "Fire (Asteroids, Battlezone, Millipede, Red Baron); fire Delta base (Missile Command); serve (Super Breakout); abort (Lunar Lander)",
+      "6": "Fire right (Black Widow); fire Omega base (Missile Command)",
+      "7": "Hyperspace (Asteroids)",
+      "8": "Fire down (Black Widow)"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "5": [
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "2": [
+        "KeyW",
+        "Digit2",
+        "Numpad2"
+      ],
+      "8": [
+        "KeyS",
+        "Digit8",
+        "Numpad8"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyD",
+        "Digit6",
+        "Numpad6"
+      ],
+      "7": [
+        "KeyH",
+        "Digit7",
+        "Numpad7"
+      ],
+      "1": [
+        "Digit1",
+        "Numpad1"
+      ],
+      "3": [
+        "Digit3",
+        "Numpad3"
+      ],
+      "lsk": [
+        "Escape",
+        "KeyQ"
+      ],
+      "rsk": [
+        "Backspace",
+        "KeyE"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "5": [
+        "b2",
+        "b7"
+      ],
+      "7": [
+        "b3"
+      ],
+      "3": [
+        "b1"
+      ],
+      "1": [
+        "b9"
+      ],
+      "2": [
+        "a3-"
+      ],
+      "8": [
+        "a3+"
+      ],
+      "4": [
+        "a2-"
+      ],
+      "6": [
+        "a2+"
+      ],
+      "lsk": [
+        "b4",
+        "b8"
+      ],
+      "rsk": [
+        "b5"
+      ]
+    },
+    "notes": [
+      "Arcade layout: arrows move, Space is the fire key (5), 1 starts a game, Escape pauses. W/A/S/D are 2/4/8/6, which gives Black Widow its second stick (fire up, left, down, right) and Missile Command its Alpha and Omega bases on A and D; H is hyperspace in Asteroids. On a gamepad the right stick does the same and Start begins a game."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 40000
+      },
+      {
+        "key": "ok",
+        "wait": 6000
+      },
+      {
+        "key": "ok",
+        "wait": 12000
+      },
+      {
+        "key": "1",
+        "wait": 6000
+      }
+    ]
+  }
 }
