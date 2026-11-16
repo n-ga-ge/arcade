@@ -1,11 +1,177 @@
 {
   "slug": "operation-shadow",
   "title": "Operation Shadow",
+  "publisher": "Nokia",
+  "year": 2004,
+  "genre": "Third-person shooter",
   "uid": "0x101FD3D6",
   "variantOf": null,
   "dump": "Operation Shadow",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "Start > New Game > Single Player offers the Tutorial and the Ixan campaign.",
+    "Briefing text advances with key 5 or the left soft key, not with OK.",
+    "You fight on foot and in a Humvee, a tank and a helicopter; key 2 enters or leaves a vehicle. Options > Controls in the game shows the keys for each.",
+    "Either soft key pauses the game.",
+    "N-Gage Arena and the Bluetooth multiplayer are not available in the browser."
+  ],
+  "controls": {
+    "source": "The game's four diagrams under Options > Controls (Infantry, Humvee, Tank, Chopper). The keypad drawing is small, so the positions were checked in play as infantry: forward, turning, grenade (7), mission status (9), fire (5) and both soft keys were seen working; strafing (4, 6), change weapon (3), enter or exit vehicle (2) and the vehicle rows are as read from the diagrams. The year is from general knowledge of the game.",
+    "actions": {
+      "up": "Forward (on foot); accelerate (vehicles)",
+      "down": "Reverse (on foot); decelerate (vehicles)",
+      "left": "Turn left",
+      "right": "Turn right",
+      "ok": "Select (menus)",
+      "lsk": "OK (menus); next briefing text; pause",
+      "rsk": "Back (menus); pause",
+      "2": "Enter or exit a vehicle",
+      "3": "Change weapon (on foot)",
+      "4": "Strafe left (on foot, chopper); turret left (tank)",
+      "5": "Machine gun (on foot, Humvee, chopper); missiles (tank); next briefing text",
+      "6": "Strafe right (on foot, chopper); turret right (tank)",
+      "7": "Grenade (on foot); missiles (chopper)",
+      "9": "Mission status"
+    },
+    "keyboard": {
+      "up": [
+        "KeyW",
+        "ArrowUp"
+      ],
+      "down": [
+        "KeyS",
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyD",
+        "Digit6",
+        "Numpad6"
+      ],
+      "5": [
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyG",
+        "Digit7",
+        "Numpad7"
+      ],
+      "2": [
+        "KeyE",
+        "Digit2",
+        "Numpad2"
+      ],
+      "3": [
+        "KeyR",
+        "Digit3",
+        "Numpad3"
+      ],
+      "9": [
+        "KeyM",
+        "Tab",
+        "Digit9",
+        "Numpad9"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "lsk": [
+        "Backquote"
+      ],
+      "rsk": [
+        "Escape",
+        "Backspace"
+      ],
+      "clear": [
+        "Delete"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "4": [
+        "a2-"
+      ],
+      "6": [
+        "a2+"
+      ],
+      "5": [
+        "b7"
+      ],
+      "7": [
+        "b6"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "rsk": [
+        "b1",
+        "b9"
+      ],
+      "2": [
+        "b2"
+      ],
+      "3": [
+        "b3"
+      ],
+      "lsk": [
+        "b4"
+      ],
+      "9": [
+        "b8"
+      ]
+    },
+    "notes": [
+      "Third-person layout: W and S (or the up and down arrows) move, the left and right arrows turn, A and D strafe. Space fires, G throws a grenade, E enters or leaves a vehicle, R changes weapon and M shows the mission status. Esc pauses.",
+      "On a gamepad the left stick moves and turns and the right stick strafes; RT fires, LT throws a grenade, X enters or leaves a vehicle, Y changes weapon, Back shows the mission status, and B or Start pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 10
+      },
+      {
+        "key": "5",
+        "wait": 2000,
+        "repeat": 16
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  },
+  "statusNote": "Logos, title, menus and the control diagrams work, and the Tutorial campaign loads into the 3D world: after the instructor's briefing the soldier walks, turns, throws grenades, and the mission status and pause screens open."
 }
