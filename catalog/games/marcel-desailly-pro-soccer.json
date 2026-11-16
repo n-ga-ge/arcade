@@ -1,11 +1,164 @@
 {
   "slug": "marcel-desailly-pro-soccer",
   "title": "Marcel Desailly Pro Soccer",
+  "publisher": "Gameloft",
+  "year": 2004,
+  "genre": "Sports (football)",
   "uid": "0x101FD3DC",
   "variantOf": null,
   "dump": "Marcel Desailly Pro Soccer",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "The first screen asks for a language: English (UK or US), German, French, Italian or Spanish.",
+    "Friendly > Game starts a single match; Cup, League and Career are on the main menu too.",
+    "Either soft key pauses a match. In menus the right soft key selects and the left one goes back.",
+    "The 2 Players mode needs a second N-Gage over Bluetooth and is not available in the browser."
+  ],
+  "controls": {
+    "source": "The game's defaults, read from the diagram on its Options > Controls screen. The soft keys, OK and key 5 selecting in menus were observed.",
+    "actions": {
+      "up": "Move / dribble up",
+      "down": "Move / dribble down",
+      "left": "Move / dribble left",
+      "right": "Move / dribble right",
+      "ok": "Select (menus)",
+      "lsk": "Back (menus); pause",
+      "rsk": "Select (menus); pause",
+      "1": "Deep pass",
+      "2": "Forward pass",
+      "4": "Sprint",
+      "5": "Pass (with the ball); pressing (without); select (menus)",
+      "6": "Manual pass",
+      "7": "Shoot (with the ball); tackle (without)",
+      "8": "Change player"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "ok": [
+        "Enter",
+        "Space"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW"
+      ],
+      "5": [
+        "KeyZ",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyX",
+        "Digit7",
+        "Numpad7"
+      ],
+      "8": [
+        "KeyC",
+        "Digit8",
+        "Numpad8"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "2": [
+        "KeyS",
+        "Digit2",
+        "Numpad2"
+      ],
+      "1": [
+        "KeyD",
+        "Digit1",
+        "Numpad1"
+      ],
+      "6": [
+        "KeyF",
+        "Digit6",
+        "Numpad6"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b1"
+      ],
+      "2": [
+        "b2"
+      ],
+      "1": [
+        "b3"
+      ],
+      "8": [
+        "b4"
+      ],
+      "4": [
+        "b5"
+      ],
+      "6": [
+        "b7"
+      ],
+      "lsk": [
+        "b8"
+      ],
+      "rsk": [
+        "b9"
+      ],
+      "ok": [
+        "b10"
+      ]
+    },
+    "notes": [
+      "Football layout: move on the arrows; Z passes, X shoots or tackles, C changes player, A sprints, S and D are the forward and deep passes, F the manual pass. The digit keys work too.",
+      "On a gamepad A passes (and selects in menus), B shoots or tackles, X and Y are the forward and deep passes, LB changes player, RB sprints, RT is the manual pass, Start pauses or selects and Back goes back."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 12000
+      },
+      {
+        "key": "ok",
+        "wait": 3500,
+        "repeat": 18
+      },
+      {
+        "wait": 8000
+      }
+    ]
+  },
+  "statusNote": "Language choice, menus, options and team selection work, and a Friendly match (France v Spain) plays at full speed: moving, passing, shooting and the pause menu were tried."
 }
