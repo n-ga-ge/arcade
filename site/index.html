@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>n-ga.ge: N-Gage games in the browser</title>
+<meta name="description" content="A catalogue of Nokia N-Gage games that run in the browser on the EKA2L1 emulator, with how far each one gets today.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#e7e5df" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15171c" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css">
+<link rel="preload" href="/catalog/index.json" as="fetch" crossorigin>
+<link rel="modulepreload" href="/js/model.js">
+<link rel="modulepreload" href="/js/view.js">
+<link rel="modulepreload" href="/js/sprite.js">
+<script type="module" src="/js/main.js"></script>
+</head>
+<body>
+<a class="skip" href="#games">Skip to the games</a>
+
+<!-- Status glyphs: signal bars, one more lit for each step a game gets further. -->
+<svg class="defs" aria-hidden="true" focusable="false" width="0" height="0">
+  <symbol id="sig-ingame" viewBox="0 0 14 12"><path d="M0 8h3v4H0zM5.5 4h3v8h-3zM11 0h3v12h-3z"/></symbol>
+  <symbol id="sig-menu" viewBox="0 0 14 12"><path d="M0 8h3v4H0zM5.5 4h3v8h-3z"/><path d="M11.5.5h2v11h-2z" fill="none" stroke="currentColor"/></symbol>
+  <symbol id="sig-boots" viewBox="0 0 14 12"><path d="M0 8h3v4H0z"/><path d="M6 4.5h2v7H6zM11.5.5h2v11h-2z" fill="none" stroke="currentColor"/></symbol>
+  <symbol id="sig-broken" viewBox="0 0 14 12"><path d="M.5 8.5h2v3h-2zM6 4.5h2v7H6zM11.5.5h2v11h-2z" fill="none" stroke="currentColor" opacity=".55"/><path d="M1 1l12 10M13 1L1 11" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="sig-untested" viewBox="0 0 14 12"><path d="M0 9h3v3H0zM5.5 9h3v3h-3zM11 9h3v3h-3z" opacity=".7"/></symbol>
+  <symbol id="ci-pass" viewBox="0 0 10 10"><path d="M1.5 5.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="ci-fail" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="ci-none" viewBox="0 0 10 10"><path d="M2 5h6" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+</svg>
+
+<header class="masthead">
+  <div class="wrap masthead-row">
+    <h1 class="brand">
+      <a href="/" aria-label="n-ga.ge, front page">
+        <svg class="wordmark" viewBox="0 0 30 7" width="150" height="35" aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+          <path class="wm-ink" d="M0 0h3v1h-3zM0 1h1v1h-1zM3 1h1v1h-1zM0 2h1v1h-1zM3 2h1v1h-1zM0 3h1v1h-1zM3 3h1v1h-1zM0 4h1v1h-1zM3 4h1v1h-1zM10 0h3v1h-3zM9 1h1v1h-1zM12 1h1v1h-1zM9 2h1v1h-1zM12 2h1v1h-1zM9 3h1v1h-1zM12 3h1v1h-1zM10 4h3v1h-3zM12 5h1v1h-1zM10 6h2v1h-2zM15 0h2v1h-2zM17 1h1v1h-1zM15 2h3v1h-3zM14 3h1v1h-1zM17 3h1v1h-1zM15 4h3v1h-3zM22 0h3v1h-3zM21 1h1v1h-1zM24 1h1v1h-1zM21 2h1v1h-1zM24 2h1v1h-1zM21 3h1v1h-1zM24 3h1v1h-1zM22 4h3v1h-3zM24 5h1v1h-1zM22 6h2v1h-2zM27 0h2v1h-2zM26 1h1v1h-1zM29 1h1v1h-1zM26 2h4v1h-4zM26 3h1v1h-1zM27 4h3v1h-3z"/>
+          <path class="wm-dot" d="M5 2h3v1h-3zM19 4h1v1h-1z"/>
+        </svg>
+      </a>
+    </h1>
+    <nav class="topnav" aria-label="Site">
+      <a href="/docs/">Docs</a>
+      <a href="/play/">Load your own game</a>
+      <a href="https://github.com/n-ga-ge/arcade">Source</a>
+    </nav>
+  </div>
+  <div class="wrap intro">
+    <p class="lede">N-Gage games, playable in the browser.</p>
+    <p class="sub">Pick a card to start it. The label on each card says how far the game gets in the emulator today.</p>
+  </div>
+</header>
+
+<main id="games" class="wrap" tabindex="-1">
+  <h2 class="visually-hidden">Games</h2>
+
+  <noscript>
+    <div class="notice">
+      <p class="notice-title">The game list needs JavaScript.</p>
+      <p>This page builds the list of games from <a href="/catalog/index.json">the catalogue file</a>, and the emulator itself is a WebAssembly program, so neither works with scripts turned off. The <a href="/docs/">documentation</a> can be read without them.</p>
+    </div>
+  </noscript>
+
+  <div id="notice" class="notice" role="status" hidden></div>
+
+  <section id="browse" hidden aria-label="Find a game">
+    <form id="controls" class="controls" role="search">
+      <label class="field search">
+        <span class="field-label">Search</span>
+        <input id="q" name="q" type="search" placeholder="Title, publisher, genre" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-keyshortcuts="/">
+      </label>
+      <label class="field sort">
+        <span class="field-label">Order</span>
+        <select id="sort" name="sort">
+          <option value="">Playable first</option>
+          <option value="title">Title, A to Z</option>
+        </select>
+      </label>
+      <fieldset id="filters" class="filters">
+        <legend class="field-label">Status</legend>
+        <div id="chips" class="chips"></div>
+      </fieldset>
+    </form>
+    <p id="summary" class="summary" role="status" aria-live="polite"></p>
+  </section>
+
+  <ul id="grid" class="grid"></ul>
+
+  <div id="empty" class="notice" hidden>
+    <p class="notice-title">No games match.</p>
+    <p><button id="reset" type="button" class="button">Clear the search and filter</button></p>
+  </div>
+</main>
+
+<dialog id="detail" class="detail" aria-labelledby="detail-title">
+  <div id="detail-body" class="detail-body"></div>
+</dialog>
+
+<footer class="colophon">
+  <div class="wrap">
+    <p id="build" class="build"></p>
+    <p>n-ga.ge runs on <a href="https://github.com/EKA2L1/EKA2L1">EKA2L1</a>, a Symbian emulator licensed under GPL-3.0, compiled to WebAssembly. Game files and the N-Gage firmware are not part of the repository.</p>
+    <p>N-Gage is a trademark of Nokia. This site is not affiliated with Nokia or with any game's publisher.</p>
+    <nav class="footnav" aria-label="Footer">
+      <a href="/docs/">Documentation</a>
+      <a href="/play/">Load your own game</a>
+      <a href="https://github.com/n-ga-ge/arcade">Source</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>
