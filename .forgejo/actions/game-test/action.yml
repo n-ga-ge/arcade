@@ -61,8 +61,7 @@ runs:
         SLUG: ${{ inputs.slug }}
         ASSETS_URL: ${{ inputs.assets-url }}
         ASSETS_TOKEN: ${{ inputs.assets-token }}
-      run: |
-        echo "TEMPORARY, not fetching $SLUG because there is no ASSETS_URL yet"
+      run: python3 -I tools/assets/fetch.py --fw "$SLUG" --out testdata
 
     - name: Test
       shell: bash

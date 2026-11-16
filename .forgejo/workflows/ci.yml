@@ -103,8 +103,8 @@ jobs:
       - name: Plan the later jobs
         id: plan
         env:
-          ASSETS_URL: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          ASSETS_URL: ${{ vars.ASSETS_URL }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
           CLOUDFLARE_API_TOKEN_PAGES: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           BATCHES: 6
