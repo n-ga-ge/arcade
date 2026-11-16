@@ -1,16 +1,126 @@
 {
   "slug": "bomberman",
   "title": "Bomberman",
+  "publisher": "Hudson Soft",
+  "genre": "Action",
   "uid": "0x101FD3D5",
   "variantOf": null,
   "dump": "Bomberman",
   "pack": {
     "root": "BomberMan/BomberMan/Bomber Man"
   },
-  "status": "untested",
+  "status": "ingame",
+  "statusNote": "The card as dumped runs: title, options, the story pages and the pause menu work, and a 1P game reaches Standard World stage 1-1, where the player walks and lays bombs that explode. The second, patched 6R29.APP in the dump (\"fix Engage\") was not needed.",
   "notes": [
-    "The dump also holds a second, patched 6R29.APP (\"fix Engage\"); the zip uses the card as dumped."
+    "On the title screen choose with left and right (1P game, VS game, High Score, Options, Exit) and confirm with 5. The OK key does nothing in this game.",
+    "Left idle, the title screen starts a demo; any direction key returns to the title.",
+    "Either soft key pauses a stage; the pause menu can save and return to the title screen.",
+    "VS game needs Bluetooth, which is not available here."
   ],
-  "controls": null,
-  "test": null
+  "controls": {
+    "source": "Observed in the menus and in play (the game has no controls screen): moving, laying a bomb with 5, the pause menu on the soft keys, 5 and 7 as confirm and back in menus.",
+    "actions": {
+      "up": "Move up",
+      "down": "Move down",
+      "left": "Move left; previous choice (title)",
+      "right": "Move right; next choice (title)",
+      "5": "Lay a bomb; select (menus)",
+      "7": "Back (menus); next page (story)",
+      "lsk": "Pause menu; select (title)",
+      "rsk": "Pause menu; continue (pause menu); back (options)"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "Space",
+        "Enter",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "Backspace",
+        "Digit7",
+        "Numpad7"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0",
+        "b2"
+      ],
+      "7": [
+        "b1",
+        "b3"
+      ],
+      "lsk": [
+        "b4",
+        "b9"
+      ],
+      "rsk": [
+        "b5",
+        "b8"
+      ]
+    },
+    "notes": [
+      "Arrows move; Space or Enter is the 5 key (lay a bomb, confirm in menus), Backspace is 7 (back), Q or Escape pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 20000
+      },
+      {
+        "key": "down",
+        "wait": 3000
+      },
+      {
+        "key": "5",
+        "wait": 6000
+      },
+      {
+        "key": "7",
+        "wait": 4000,
+        "repeat": 6
+      },
+      {
+        "wait": 12000
+      }
+    ]
+  }
 }
