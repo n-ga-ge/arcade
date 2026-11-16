@@ -42,7 +42,8 @@
 # each batch waits for the one before it, and a batch should stay near a dozen
 # jobs. To add a batch: raise BATCHES in the plan step, add a batchN output to
 # build, copy the last game-N job with its numbers raised, and add the new job
-# to the needs of status.
+# to the needs of status. (The copies cannot share their text through YAML
+# anchors: Forgejo 16 refuses a workflow that has them.)
 #
 # Action URLs are written out in full, as Forgejo recommends; the artifact
 # actions are Forgejo's forks, because the upstream v4 ones refuse to run
@@ -260,11 +261,11 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # The six game jobs are the same but for their batch and for what they wait
-  # on, so the name, the environment and the steps are written once, in game-1.
+  # The six game jobs differ only in their batch and in what they wait on.
+  # What a game job does is in .forgejo/actions/game-test/action.yml.
   game-1:
     # Shown as "<title> (<slug>)": Forgejo appends the matrix value itself.
-    name: &game-name ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
+    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: build
     if: needs.build.outputs.game == 'true'
     runs-on: ubuntu-latest
@@ -273,68 +274,18 @@ jobs:
       fail-fast: false
       matrix:
         game: ${{ fromJSON(needs.build.outputs.batch1) }}
-    env: &game-env
-      SLUG: ${{ matrix.game }}
-    steps: &game-steps
+    steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
-
-      - name: Node
-        run: tools/ci/setup-toolchain.sh --only node
-
-      - name: Download the player
-        uses: https://data.forgejo.org/forgejo/download-artifact@v4
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
         with:
-          name: player
-          path: eka2l1/build/web/bin
-
-      - name: Test dependencies cache key
-        id: deps-key
-        run: echo "deps=$(cat package.json package-lock.json 2>/dev/null | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
-
-      # Filled by build; the same paths and key as there.
-      - name: Test dependencies cache
-        id: deps
-        uses: https://data.forgejo.org/actions/cache/restore@v4
-        with:
-          path: |
-            node_modules
-            ~/.cache/ms-playwright
-          key: test-deps-${{ steps.deps-key.outputs.deps }}
-
-      - name: Install the Node packages
-        if: steps.deps.outputs.cache-hit != 'true'
-        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
-
-      # Downloads the browser only if the cache did not have it; the system
-      # libraries it needs are not in the runner's image and are installed
-      # every time.
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Download the firmware and the game
-        env:
-          ASSETS_URL: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
-          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
-        run: python3 -I tools/assets/fetch.py --fw "$SLUG" --out testdata
-
-      - name: Test
-        run: node tools/web/gametest.mjs --game "$SLUG" --out results
-
-      # Only the result and the screenshot: never anything from testdata/.
-      - name: Upload the result
-        if: ${{ !cancelled() }}
-        uses: https://data.forgejo.org/forgejo/upload-artifact@v4
-        with:
-          name: result-${{ matrix.game }}
-          path: |
-            results/*.json
-            results/*.png
-          if-no-files-found: warn
-          retention-days: 14
+          slug: ${{ matrix.game }}
+          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
 
   game-2:
-    name: *game-name
+    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: [build, game-1]
     # Failures in the batch before do not stop this one.
     if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
@@ -344,13 +295,19 @@ jobs:
       fail-fast: false
       matrix:
         game: ${{ fromJSON(needs.build.outputs.batch2) }}
-    env: *game-env
-    steps: *game-steps
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
 
   game-3:
-    name: *game-name
+    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: [build, game-2]
-    # Failures in the batch before do not stop this one.
     if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -358,13 +315,19 @@ jobs:
       fail-fast: false
       matrix:
         game: ${{ fromJSON(needs.build.outputs.batch3) }}
-    env: *game-env
-    steps: *game-steps
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
 
   game-4:
-    name: *game-name
+    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: [build, game-3]
-    # Failures in the batch before do not stop this one.
     if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -372,13 +335,19 @@ jobs:
       fail-fast: false
       matrix:
         game: ${{ fromJSON(needs.build.outputs.batch4) }}
-    env: *game-env
-    steps: *game-steps
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
 
   game-5:
-    name: *game-name
+    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: [build, game-4]
-    # Failures in the batch before do not stop this one.
     if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -386,13 +355,19 @@ jobs:
       fail-fast: false
       matrix:
         game: ${{ fromJSON(needs.build.outputs.batch5) }}
-    env: *game-env
-    steps: *game-steps
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
 
   game-6:
-    name: *game-name
+    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: [build, game-5]
-    # Failures in the batch before do not stop this one.
     if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -400,8 +375,15 @@ jobs:
       fail-fast: false
       matrix:
         game: ${{ fromJSON(needs.build.outputs.batch6) }}
-    env: *game-env
-    steps: *game-steps
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+      - name: Test the game
+        uses: ./.forgejo/actions/game-test
+        with:
+          slug: ${{ matrix.game }}
+          assets-url: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          assets-token: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
 
   status:
     name: Status of all games

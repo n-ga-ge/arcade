@@ -1,0 +1,84 @@
+# What one game job of .forgejo/workflows/ci.yml does after checking out:
+# fetch the player built by the build job, a browser, the firmware and the
+# game, run the test and upload its result.
+#
+# testdata/ holds the copyrighted firmware and game card. Nothing from it may
+# be uploaded or cached: the upload at the end names only the result and the
+# screenshot.
+name: Test a game
+description: Start one game of the catalogue in headless Chromium and check how far it gets.
+inputs:
+  slug:
+    description: The game's slug, as in catalog/games/<slug>.json.
+    required: true
+  assets-url:
+    description: Where tools/assets/fetch.py downloads the firmware and the game from.
+    required: true
+  assets-token:
+    description: Bearer token for assets-url.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Node
+      shell: bash
+      run: tools/ci/setup-toolchain.sh --only node
+
+    - name: Download the player
+      uses: https://data.forgejo.org/forgejo/download-artifact@v4
+      with:
+        name: player
+        path: eka2l1/build/web/bin
+
+    - name: Test dependencies cache key
+      id: deps-key
+      shell: bash
+      run: echo "deps=$(cat package.json package-lock.json 2>/dev/null | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+    # Filled by the build job; the same paths and key as there.
+    - name: Test dependencies cache
+      id: deps
+      uses: https://data.forgejo.org/actions/cache/restore@v4
+      with:
+        path: |
+          node_modules
+          ~/.cache/ms-playwright
+        key: test-deps-${{ steps.deps-key.outputs.deps }}
+
+    - name: Install the Node packages
+      if: steps.deps.outputs.cache-hit != 'true'
+      shell: bash
+      run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+    # Downloads the browser only if the cache did not have it. The system
+    # libraries it needs are not in the runner's image and are installed
+    # every time.
+    - name: Install Chromium
+      shell: bash
+      run: npx playwright install --with-deps chromium
+
+    - name: Download the firmware and the game
+      shell: bash
+      env:
+        SLUG: ${{ inputs.slug }}
+        ASSETS_URL: ${{ inputs.assets-url }}
+        ASSETS_TOKEN: ${{ inputs.assets-token }}
+      run: python3 -I tools/assets/fetch.py --fw "$SLUG" --out testdata
+
+    - name: Test
+      shell: bash
+      env:
+        SLUG: ${{ inputs.slug }}
+      run: node tools/web/gametest.mjs --game "$SLUG" --out results
+
+    # Only the result and the screenshot: never anything from testdata/.
+    - name: Upload the result
+      if: ${{ !cancelled() }}
+      uses: https://data.forgejo.org/forgejo/upload-artifact@v4
+      with:
+        name: result-${{ inputs.slug }}
+        path: |
+          results/*.json
+          results/*.png
+        if-no-files-found: warn
+        retention-days: 14
