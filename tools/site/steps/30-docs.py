@@ -41,7 +41,9 @@ import unicodedata
 # The checkout this script belongs to, not an inherited ARCADE_ROOT: a shell set
 # up in another checkout must not make this one publish that one's pages.
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-FORGE = "https://github.com/n-ga-ge/arcade/blob/main/"
+# Where the public can read the repository: the pages are for visitors, and
+# the forge the project is developed on is private.
+FORGE = "https://github.com/n-ga.ge/arcade/blob/main/"
 PUBLIC = "docs/public"                    # the folder that is published
 HOME = PUBLIC + "/index.md"               # the overview, served at /docs/
 SITE_NAME = "n-ga.ge"
