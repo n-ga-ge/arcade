@@ -1,6 +1,9 @@
 {
   "slug": "ghost-recon-jungle-storm",
   "title": "Tom Clancy's Ghost Recon: Jungle Storm",
+  "publisher": "Gameloft",
+  "year": 2004,
+  "genre": "Tactical shooter",
   "uid": "0x101FD3F0",
   "variantOf": null,
   "dump": "Ghost Recon Jungle Storm",
@@ -12,8 +15,214 @@
       ]
     ]
   },
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "N-Gage and Gameloft screens, title, profile, main menu, Campaign mission 01 \"Mercy Sword\" on Veteran: briefing, map, weapon and team screens, loading, then first-person play with HUD and the tutorial messages. Walking, looking, firing, the pause menu and quitting back to the menu work. The libraries moved from the dump's top-level Libs are found.",
+  "notes": [
+    "Menus are chosen with 5 or the left soft key; the right soft key goes back. Yes/No questions start on No.",
+    "The first mission teaches the keys with messages; 5 closes each message.",
+    "Multiplayer needs Bluetooth or N-Gage Arena and cannot work here.",
+    "The title screen starts a demo when left idle; 5 returns to the title."
+  ],
+  "controls": {
+    "source": "The game's defaults from Options > Map Keys (preset Default; the game can remap them there) and its tutorial messages. Moving, looking, firing and the soft keys were confirmed in the first mission.",
+    "actions": {
+      "up": "Look up; move through menus",
+      "down": "Look down; move through menus",
+      "left": "Turn left; change a menu value",
+      "right": "Turn right; change a menu value",
+      "ok": "Zoom",
+      "lsk": "Pause menu with the objectives (in a mission); Select (menus)",
+      "rsk": "Back (menus)",
+      "1": "Grenade",
+      "2": "Forward",
+      "3": "Team command",
+      "4": "Strafe left",
+      "5": "Fire; select (menus); close a message",
+      "6": "Strafe right",
+      "7": "Change weapon",
+      "8": "Backward",
+      "9": "Change stance",
+      "star": "Reload",
+      "0": "Toggle map",
+      "hash": "Toggle character"
+    },
+    "keyboard": {
+      "2": [
+        "KeyW",
+        "Digit2",
+        "Numpad2"
+      ],
+      "8": [
+        "KeyS",
+        "Digit8",
+        "Numpad8"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyD",
+        "Digit6",
+        "Numpad6"
+      ],
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "ok": [
+        "KeyZ",
+        "Enter"
+      ],
+      "1": [
+        "KeyG",
+        "Digit1",
+        "Numpad1"
+      ],
+      "7": [
+        "KeyQ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "9": [
+        "KeyC",
+        "Digit9",
+        "Numpad9"
+      ],
+      "star": [
+        "KeyR",
+        "Minus"
+      ],
+      "3": [
+        "KeyT",
+        "Digit3",
+        "Numpad3"
+      ],
+      "0": [
+        "KeyM",
+        "Digit0",
+        "Numpad0"
+      ],
+      "hash": [
+        "Tab",
+        "Equal"
+      ],
+      "lsk": [
+        "Escape",
+        "Backquote"
+      ],
+      "rsk": [
+        "Backspace"
+      ],
+      "clear": [
+        "Delete"
+      ]
+    },
+    "gamepad": {
+      "2": [
+        "a1-"
+      ],
+      "8": [
+        "a1+"
+      ],
+      "4": [
+        "a0-"
+      ],
+      "6": [
+        "a0+"
+      ],
+      "up": [
+        "a3-",
+        "b12"
+      ],
+      "down": [
+        "a3+",
+        "b13"
+      ],
+      "left": [
+        "a2-",
+        "b14"
+      ],
+      "right": [
+        "a2+",
+        "b15"
+      ],
+      "5": [
+        "b7",
+        "b0"
+      ],
+      "ok": [
+        "b6"
+      ],
+      "1": [
+        "b5"
+      ],
+      "3": [
+        "b4"
+      ],
+      "7": [
+        "b3"
+      ],
+      "star": [
+        "b2"
+      ],
+      "rsk": [
+        "b1"
+      ],
+      "9": [
+        "b11"
+      ],
+      "hash": [
+        "b10"
+      ],
+      "0": [
+        "b8"
+      ],
+      "lsk": [
+        "b9"
+      ]
+    },
+    "notes": [
+      "First-person layout: move and strafe on WASD, look and turn on the arrows, Space fires (and selects in menus), Z or Enter zooms, R reloads, Q changes weapon, C changes stance, G throws a grenade, T gives a team command, M shows the map, Tab switches character, Escape pauses, Backspace goes back.",
+      "On a gamepad the left stick moves, the right stick looks, the right trigger or A fires and selects, the left trigger zooms, X reloads, Y changes weapon, B goes back, the shoulders give a team command and throw a grenade, Start pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "5",
+        "wait": 5000,
+        "repeat": 22
+      },
+      {
+        "key": "2",
+        "hold": 2000,
+        "wait": 500,
+        "repeat": 2
+      },
+      {
+        "key": "left",
+        "hold": 600,
+        "wait": 1000
+      }
+    ]
+  }
 }
