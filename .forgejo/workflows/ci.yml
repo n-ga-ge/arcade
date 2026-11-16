@@ -65,10 +65,10 @@ jobs:
       - name: Plan the later jobs
         id: plan
         env:
-          ASSETS_URL: ${{ vars.ASSETS_URL }}
-          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ASSETS_URL: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'stand-in' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'stand-in' }}
           EVENT: ${{ forge.event_name }}
           REF: ${{ forge.ref }}
         run: |
@@ -270,8 +270,8 @@ jobs:
 
       - name: Download the firmware and the game
         env:
-          ASSETS_URL: ${{ vars.ASSETS_URL }}
-          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+          ASSETS_URL: ${{ vars.ASSETS_URL || 'https://stand-in.invalid/' }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
         run: python3 -I tools/assets/fetch.py --fw "$SLUG" --out testdata
 
       - name: Test
@@ -361,8 +361,8 @@ jobs:
 
       - name: Deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'stand-in' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'stand-in' }}
           CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'n-ga-ge' }}
           DEPLOY_TARGET: ${{ needs.build.outputs.deploy }}
           DEPLOY_BRANCH: ${{ forge.head_ref || forge.ref_name }}
