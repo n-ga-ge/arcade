@@ -1,0 +1,5 @@
+# Local settings for `npx wrangler dev`: copy to .dev.vars (ignored by git).
+# A made-up token for trying the CI access path; the real one is a Worker secret.
+ASSETS_TOKEN=local-dev-token
+# The local dev server of the site, so a page served there may load from here.
+ALLOWED_ORIGINS=http://127.0.0.1:8080 http://localhost:8080
