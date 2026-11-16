@@ -7,8 +7,8 @@
   "uid": "0x101FD3D2",
   "variantOf": null,
   "dump": "FIFA 2004",
-  "status": "ingame",
-  "statusNote": "With the N-Gage libraries on the card: language flags, EA Sports logo, title, main menu, a friendly (teams, kit, line-up, controls diagram) and the match plays with pause menu and instant replay. The dump as stored has no System/Libs, and without GAMECOMMS.DLL the app exits at launch (\"Can't find GAMECOMMS.DLL\", a System error dialog, no screen).",
+  "status": "broken",
+  "statusNote": "Exits at launch with no screen: the dump has no System/Libs, the emulator logs \"Can't find GAMECOMMS.DLL\" and the app ends on a System error dialog. With the N-Gage libraries of another card (GAMECOMMS.DLL and the three beside it) added to System/Libs it plays: language flags, EA Sports logo, title, main menu, a friendly with teams, kit, line-up and controls diagram, then the match with pause menu and instant replay. The script and controls here were made that way; once the dump is complete, status and test.expect can go to ingame.",
   "notes": [
     "The game opens on five flags for the language; the blinking one is selected, OK confirms.",
     "Menus show their own key hints: 5 selects (OK works too), 7 goes back.",
@@ -126,7 +126,7 @@
     ]
   },
   "test": {
-    "expect": "ingame",
+    "expect": "broken",
     "script": [
       {
         "wait": 15000
