@@ -1,11 +1,120 @@
 {
   "slug": "pocket-kingdom",
   "title": "Pocket Kingdom: Own the World",
+  "publisher": "Sega",
+  "year": 2004,
+  "genre": "Strategy RPG",
   "uid": "0x101FD3DD",
   "variantOf": null,
   "dump": "Pocket Kingdom - Own the World",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "The game was built around online play on N-Gage Arena, which no longer exists and is greyed out here. Offline Play is what works: buy units and items in the Shop, form a party under Party > Form, then send it out from Map > Search to find items and bases.",
+    "Key 5 or OK selects and key 7 goes back. Either soft key opens the system menu with Resume, Volume, Save and Title.",
+    "To keep your progress, use Save in the system menu (going to Title also offers to save)."
+  ],
+  "controls": {
+    "source": "Observed in the game's menus during Offline Play: the pad, OK, 5 (select), 7 (back) and both soft keys (system menu). No controls screen was found in the game; publisher and year are from general knowledge of the game.",
+    "actions": {
+      "up": "Move the cursor",
+      "down": "Move the cursor",
+      "left": "Move the cursor",
+      "right": "Move the cursor",
+      "ok": "Select; next dialogue text",
+      "lsk": "System menu (resume, volume, save, title)",
+      "rsk": "System menu (resume, volume, save, title)",
+      "5": "Select",
+      "7": "Back; skip dialogue text"
+    },
+    "notes": [
+      "The standard layout suits this game: arrows move the cursor, Enter is OK, Q or W opens the system menu, and 5 and 7 on the digit row select and go back.",
+      "On a gamepad A or X selects, Y goes back, and LB, RB, Start or Back opens the system menu."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 4
+      },
+      {
+        "key": "7",
+        "wait": 1500,
+        "repeat": 5
+      },
+      {
+        "key": "ok",
+        "wait": 3000
+      },
+      {
+        "key": "7",
+        "wait": 1500,
+        "repeat": 5
+      },
+      {
+        "key": "down",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 2500,
+        "repeat": 2
+      },
+      {
+        "key": "down",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 2500,
+        "repeat": 3
+      },
+      {
+        "key": "7",
+        "wait": 1500,
+        "repeat": 5
+      },
+      {
+        "key": "ok",
+        "wait": 2500,
+        "repeat": 6
+      },
+      {
+        "key": "7",
+        "wait": 1500,
+        "repeat": 5
+      },
+      {
+        "key": "right",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 3000
+      },
+      {
+        "key": "7",
+        "wait": 1500,
+        "repeat": 5
+      },
+      {
+        "key": "right",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 3500,
+        "repeat": 10
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  },
+  "statusNote": "Offline Play works: the title, a new game, the castle with its advisor's tutorial, the shop (bought an item and a unit), forming a party, the world map and an area search that brought back an item all ran, and saving from the system menu gives a Continue entry on the title. N-Gage Arena, the online game this was built around, is greyed out on the title menu."
 }
