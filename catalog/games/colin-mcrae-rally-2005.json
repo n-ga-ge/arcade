@@ -1,11 +1,262 @@
 {
   "slug": "colin-mcrae-rally-2005",
   "title": "Colin McRae Rally 2005",
+  "year": 2004,
+  "genre": "Racing",
   "uid": "0x101FD405",
   "variantOf": null,
   "dump": "Colin McRae Rally 2005",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "pack": {
+    "exclude": [
+      "System/Apps/6r66/6R66.AIF"
+    ]
+  },
+  "status": "ingame",
+  "statusNote": "Codemasters logo, main menu, a single stage as a guest driver: Finland stage 1 loads and the car drives in 3D with pace notes, pause menu and camera change. Needs the zip packed without the stub app's 6R66.AIF; with it the player launches the 416-byte stub (\"E32Image is corrupt\") and shows nothing.",
+  "notes": [
+    "Before the first stage the game asks for a three-letter tag. Type it on the number keys like a phone (2 gives a, 3 gives d, ...), then press OK.",
+    "Before each stage the service area opens on Information; move right to Race and press OK to start.",
+    "Multiplayer (Bluetooth) and N-Gage Arena cannot work here.",
+    "The main menu starts a demo run when left idle for about 45 seconds; any key returns to the menu."
+  ],
+  "controls": {
+    "source": "The game's defaults, read from its Options > Controls screen (the game can reassign them there). The soft keys and OK were observed in menus and in a stage.",
+    "actions": {
+      "up": "Move through menus",
+      "down": "Move through menus",
+      "left": "Steer left; previous menu tab",
+      "right": "Steer right; next menu tab",
+      "ok": "Select (menus)",
+      "lsk": "Pause (in a stage); OK (menus)",
+      "rsk": "Back (menus)",
+      "2": "Change camera",
+      "3": "Rear view",
+      "4": "Handbrake",
+      "5": "Accelerate",
+      "6": "Gear up",
+      "7": "Brake, then reverse",
+      "8": "Gear down"
+    },
+    "keyboard": {
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "5": [
+        "KeyA",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "4": [
+        "Space",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyS",
+        "Digit6",
+        "Numpad6"
+      ],
+      "8": [
+        "KeyX",
+        "Digit8",
+        "Numpad8"
+      ],
+      "2": [
+        "KeyC",
+        "Digit2",
+        "Numpad2"
+      ],
+      "3": [
+        "KeyV",
+        "Digit3",
+        "Numpad3"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "lsk": [
+        "KeyQ",
+        "KeyP"
+      ],
+      "rsk": [
+        "KeyW",
+        "Escape"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "5": [
+        "b7"
+      ],
+      "7": [
+        "b6"
+      ],
+      "4": [
+        "b1"
+      ],
+      "6": [
+        "b5"
+      ],
+      "8": [
+        "b4"
+      ],
+      "2": [
+        "b3"
+      ],
+      "3": [
+        "b2"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "rsk": [
+        "b8"
+      ]
+    },
+    "notes": [
+      "Racing layout: steer on the arrows, A accelerates, Z brakes, Space is the handbrake, S and X shift up and down, C changes the camera, V looks back. On a gamepad the triggers accelerate and brake, the shoulder buttons shift, B is the handbrake, Start pauses.",
+      "The digit row still types the keypad, which the tag entry needs."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 3
+      },
+      {
+        "key": "2",
+        "wait": 2500
+      },
+      {
+        "key": "3",
+        "wait": 2500
+      },
+      {
+        "key": "4",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 6
+      },
+      {
+        "key": "right",
+        "wait": 2000,
+        "repeat": 3
+      },
+      {
+        "key": "ok",
+        "wait": 60000
+      },
+      {
+        "key": "5",
+        "hold": 4000,
+        "wait": 500,
+        "repeat": 3
+      }
+    ]
+  }
 }
