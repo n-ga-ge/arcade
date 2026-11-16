@@ -72,6 +72,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             parts = inside.split("/", 2)
             if len(parts) == 3 and parts[0] == "b":
                 inside = parts[2]
+            # A folder address is its index page, in the overlay as anywhere.
+            if inside == "" or inside.endswith("/"):
+                inside += "index.html"
             candidate = super().translate_path("/" + inside)
             if os.path.isfile(candidate):
                 return candidate
