@@ -67,7 +67,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return super().translate_path(clean[len(prefix) - 1:])
         if self.shell and clean.startswith(self.player):
             self.directory = self.shell
-            candidate = super().translate_path("/" + clean[len(self.player):])
+            inside = clean[len(self.player):]
+            # An assembled site keeps the player's files in b/<build id>/.
+            parts = inside.split("/", 2)
+            if len(parts) == 3 and parts[0] == "b":
+                inside = parts[2]
+            candidate = super().translate_path("/" + inside)
             if os.path.isfile(candidate):
                 return candidate
         self.directory = self.site

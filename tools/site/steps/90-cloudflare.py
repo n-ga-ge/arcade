@@ -27,6 +27,7 @@ uploading, so a tree that was changed after the build is checked again.
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 from html.parser import HTMLParser
@@ -56,6 +57,8 @@ FORBIDDEN_EXTENSIONS = {
 # the rest of it) are Symbian executables too, and the web build ships them in
 # this folder. Any other Symbian executable came out of a dump.
 OWN_DLL_FOLDER = "play/patch"
+# The site build keeps each build of the player in play/b/<id>/.
+OWN_DLL_FOLDERS = re.compile(r"play/(?:b/[0-9a-f]+/)?patch")
 
 # wrangler does not upload these (the list is in its Pages validator); a site
 # that contained one would silently lose it. The first three only count at the
@@ -182,7 +185,7 @@ def check_file(path, relative, known, problems):
     extension = os.path.splitext(relative)[1].lower()
     with open(path, "rb") as fh:
         kind = signature(fh.read(HEAD_BYTES))
-    own_dll = extension == ".dll" and os.path.dirname(relative) == OWN_DLL_FOLDER
+    own_dll = extension == ".dll" and OWN_DLL_FOLDERS.fullmatch(os.path.dirname(relative)) is not None
     if extension in FORBIDDEN_EXTENSIONS:
         problems.append(f"{relative}: {extension} files are firmware or game material and must not be published")
     elif extension == ".dll" and not own_dll:

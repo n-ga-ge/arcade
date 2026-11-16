@@ -4,8 +4,13 @@
   python3 -I tools/site/build.py [--out dist] [--bin DIR] [--shell DIR] [--status DIR]
 
   /                    site/ (the front page), copied as is
-  /play/               the web build (eka2l1/build/web/bin), with a config.json
-                       that points the player at the catalogue and the assets
+  /play/               the player's page and a config.json that points it at the
+                       catalogue and the assets
+  /play/b/<id>/        every other file of the web build (eka2l1/build/web/bin).
+                       <id> is a hash of those files, so each build has its own
+                       address: a browser or a cache that still holds a script
+                       of the last build can never pair it with this build's
+                       wasm, and the files can be cached for good
   /catalog/index.json  one summary per game, merged with the CI status
   /catalog/games/      catalog/games/<slug>.json without the local-only fields
   /catalog/status.json, /catalog/shots/   from --status, when given
@@ -23,8 +28,10 @@ Game files and the firmware are not part of the site: they are served from
 /assets/ by the assets Worker in production and by the dev server locally.
 """
 import argparse
+import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -53,6 +60,50 @@ def copy_tree(source, target, skip=()):
             if name.endswith(skip):
                 continue
             shutil.copy2(os.path.join(folder, name), os.path.join(target, relative, name))
+
+
+def version_player(play):
+    """Move the player's files into play/b/<id>/ and point the page at them.
+
+    The page (index.html) and config.json keep their addresses. Everything the
+    page loads is addressed relative to the file that loads it, so rewriting
+    the references in index.html is enough."""
+    keep = {"index.html", "config.json"}
+    files = []
+    for folder, _, names in os.walk(play):
+        for name in names:
+            path = os.path.join(folder, name)
+            relative = os.path.relpath(path, play).replace(os.sep, "/")
+            if relative not in keep:
+                files.append((relative, path))
+    digest = hashlib.sha256()
+    for relative, path in sorted(files):
+        digest.update(relative.encode() + b"\0")
+        with open(path, "rb") as fh:
+            digest.update(hashlib.sha256(fh.read()).digest())
+    build = digest.hexdigest()[:12]
+    target = os.path.join(play, "b", build)
+    os.makedirs(target)
+    for entry in os.listdir(play):
+        if entry not in keep and entry != "b":
+            shutil.move(os.path.join(play, entry), os.path.join(target, entry))
+
+    index = os.path.join(play, "index.html")
+    with open(index, encoding="utf-8") as fh:
+        page = fh.read()
+
+    def point(match):
+        attribute, address = match.group(1), match.group(2)
+        if re.match(r"[a-z][a-z0-9+.-]*:|/|#", address, re.I) or not os.path.exists(os.path.join(target, address.split("?")[0].split("#")[0])):
+            return match.group(0)
+        return f'{attribute}="b/{build}/{address}"'
+
+    page, changed = re.subn(r'\b(src|href)="([^"]+)"', point, page)
+    if not changed or f"b/{build}/" not in page:
+        sys.exit("the player's index.html refers to none of its files: cannot give the build its own folder")
+    with open(index, "w", encoding="utf-8") as fh:
+        fh.write(page)
+    return build
 
 
 def write_json(path, value):
@@ -121,6 +172,7 @@ def main():
         with open(config_path) as fh:
             config = json.load(fh)
     write_json(config_path, {**PLAYER_CONFIG, **config})
+    build = version_player(play)
 
     games = build_catalog(out, args.status)
 
@@ -130,7 +182,7 @@ def main():
         if name.endswith(".py") and name[:2].isdigit():
             subprocess.run([sys.executable, "-I", os.path.join(steps, name), out], check=True, env={**os.environ, "ARCADE_ROOT": ROOT})
             ran.append(name)
-    print(f"built {out}: {games} games, player from {args.bin}" + (f", steps: {', '.join(ran)}" if ran else ""))
+    print(f"built {out}: {games} games, player {build} from {args.bin}" + (f", steps: {', '.join(ran)}" if ran else ""))
 
 
 if __name__ == "__main__":
