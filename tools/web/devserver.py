@@ -4,7 +4,8 @@
 Serves the build output with the cross-origin isolation headers the page needs
 (SharedArrayBuffer for threads), and maps /local/ to the workspace's testdata
 folder so firmware and game dumps can be loaded by URL without ever being
-copied into the build or the repository.
+copied into the build or the repository. /noiso/ serves the same files without
+the isolation headers, to test how the page reports an unsupported setup.
 
   devserver.py [port]            default 8080, bound to 127.0.0.1
 """
@@ -23,6 +24,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def translate_path(self, path):
         clean = path.split("?", 1)[0].split("#", 1)[0]
+        if clean.startswith("/noiso/"):
+            # Same files, served without the isolation headers (see end_headers).
+            path = path[len("/noiso"):]
+            clean = clean[len("/noiso"):]
         if clean.startswith("/local/"):
             self.directory = LOCAL
             return super().translate_path(clean[len("/local"):])
@@ -30,9 +35,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return super().translate_path(path)
 
     def end_headers(self):
-        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
-        self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
-        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        if not self.path.startswith("/noiso/"):
+            self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+            self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+            self.send_header("Cross-Origin-Resource-Policy", "same-origin")
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 

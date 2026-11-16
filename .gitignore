@@ -12,5 +12,5 @@
 # Generated output and screenshots of the game.
 tools/**/out/
 tools/**/shots/
-tools/**/results/
+tools/**/results*/
 *.log
