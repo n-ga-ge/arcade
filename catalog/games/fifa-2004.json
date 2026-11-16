@@ -1,11 +1,156 @@
 {
   "slug": "fifa-2004",
   "title": "FIFA Football 2004",
+  "publisher": "Electronic Arts",
+  "year": 2003,
+  "genre": "Sports",
   "uid": "0x101FD3D2",
   "variantOf": null,
   "dump": "FIFA 2004",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "With the N-Gage libraries on the card: language flags, EA Sports logo, title, main menu, a friendly (teams, kit, line-up, controls diagram) and the match plays with pause menu and instant replay. The dump as stored has no System/Libs, and without GAMECOMMS.DLL the app exits at launch (\"Can't find GAMECOMMS.DLL\", a System error dialog, no screen).",
+  "notes": [
+    "The game opens on five flags for the language; the blinking one is selected, OK confirms.",
+    "Menus show their own key hints: 5 selects (OK works too), 7 goes back.",
+    "Multiplayer Mode needs Bluetooth and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's own Game Controls diagram, shown before kick-off (controls preset \"FIFA 2004\"). Moving, pass, shoot, instant replay and the pause menu were confirmed in a match.",
+    "actions": {
+      "up": "Move player; move through menus",
+      "down": "Move player; move through menus",
+      "left": "Move player; change a menu value",
+      "right": "Move player; change a menu value",
+      "ok": "Select (menus)",
+      "lsk": "Pause menu",
+      "rsk": "Pause menu",
+      "4": "Sprint",
+      "5": "Shoot (with the ball); conservative tackle (without); select (menus)",
+      "7": "Pass (with the ball); switch player (without); back (menus)",
+      "8": "Lob (with the ball); hard tackle (without)",
+      "9": "Instant replay"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "7": [
+        "KeyS",
+        "Digit7",
+        "Numpad7"
+      ],
+      "5": [
+        "KeyD",
+        "Digit5",
+        "Numpad5"
+      ],
+      "8": [
+        "KeyF",
+        "Digit8",
+        "Numpad8"
+      ],
+      "9": [
+        "KeyR",
+        "Digit9",
+        "Numpad9"
+      ],
+      "ok": [
+        "Enter",
+        "Space"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b1"
+      ],
+      "8": [
+        "b2"
+      ],
+      "9": [
+        "b3"
+      ],
+      "4": [
+        "b5",
+        "b7"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "rsk": [
+        "b8"
+      ]
+    },
+    "notes": [
+      "Football layout: move on the arrows; A sprints, S passes, D shoots, F lobs, R shows the replay; Escape opens the pause menu.",
+      "On a gamepad A shoots and selects, B passes and goes back, X lobs, Y shows the replay, the right shoulder or trigger sprints, Start pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 24
+      },
+      {
+        "key": "right",
+        "hold": 1500,
+        "wait": 500
+      },
+      {
+        "key": "7",
+        "hold": 200,
+        "wait": 2000
+      },
+      {
+        "key": "up",
+        "hold": 1500,
+        "wait": 500
+      }
+    ]
+  }
 }

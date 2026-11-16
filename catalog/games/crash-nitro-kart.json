@@ -1,11 +1,209 @@
 {
   "slug": "crash-nitro-kart",
   "title": "Crash Nitro Kart",
+  "year": 2004,
+  "genre": "Racing",
   "uid": "0x101FD3F1",
   "variantOf": null,
   "dump": "Crash Nitro Kart",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Main menu, then Single Player > Arcade > Single Race > Medium > Crash > first track: the race runs with karts, items, minimap and the pause menu. The lettering in every menu is drawn scrambled (still just readable); the race itself looks right.",
+  "notes": [
+    "Menus are chosen with the left soft key or 5, not with OK; the right soft key goes back.",
+    "The menu lettering is scrambled in this build. Main menu from the top: Single Player, Multiplayer, N-Gage Arena, Options, High Scores, Quit. Single Player offers Adventure, Arcade and Time Trial.",
+    "Multiplayer (Bluetooth) and N-Gage Arena cannot work here.",
+    "The main menu starts a demo race when left idle for about 25 seconds; a soft key returns to the menu."
+  ],
+  "controls": {
+    "source": "The game's defaults from its Options > Controls screen (Hop 2, Brake 8, Fire 4, Accel 5; the game can change them there), read from scrambled lettering. Accelerate, hop, the soft keys and the pause menu were confirmed in a race; steering, brake and fire were not checked there.",
+    "actions": {
+      "up": "Move through menus",
+      "down": "Move through menus",
+      "left": "Steer left",
+      "right": "Steer right",
+      "lsk": "Select (menus); pause (in a race)",
+      "rsk": "Back (menus)",
+      "2": "Hop",
+      "4": "Fire (use the item)",
+      "5": "Accelerate; select (menus)",
+      "8": "Brake"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "KeyA",
+        "Digit5",
+        "Numpad5"
+      ],
+      "8": [
+        "KeyZ",
+        "Digit8",
+        "Numpad8"
+      ],
+      "2": [
+        "KeyS",
+        "Digit2",
+        "Numpad2"
+      ],
+      "4": [
+        "Space",
+        "Digit4",
+        "Numpad4"
+      ],
+      "lsk": [
+        "Enter",
+        "KeyQ"
+      ],
+      "rsk": [
+        "Escape",
+        "KeyW",
+        "Backspace"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0",
+        "b7"
+      ],
+      "8": [
+        "b2",
+        "b6"
+      ],
+      "2": [
+        "b5",
+        "b4"
+      ],
+      "4": [
+        "b1",
+        "b3"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "rsk": [
+        "b8"
+      ]
+    },
+    "notes": [
+      "Racing layout: steer on the arrows, A accelerates, Z brakes, S hops, Space fires. Enter is the left soft key because that is what selects in this game's menus; Escape goes back.",
+      "On a gamepad A or the right trigger accelerates (and selects in menus), X or the left trigger brakes, the shoulder buttons hop, B or Y fires, Start pauses and Select goes back."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 10000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "rsk",
+        "wait": 2500
+      },
+      {
+        "key": "lsk",
+        "wait": 4000
+      },
+      {
+        "key": "down",
+        "wait": 2000
+      },
+      {
+        "key": "lsk",
+        "wait": 4000,
+        "repeat": 5
+      },
+      {
+        "wait": 12000
+      },
+      {
+        "key": "5",
+        "hold": 4000,
+        "wait": 500,
+        "repeat": 3
+      }
+    ]
+  }
 }
