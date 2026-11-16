@@ -3,9 +3,10 @@
 #   build    builds the WebAssembly player from the eka2l1 submodule (or takes
 #            the one an earlier run built from the same emulator commit),
 #            checks the catalogue and decides which of the later jobs can run
-#   game     one job per catalogue entry, named after the game: starts the game
+#   game-N   one job per catalogue entry, named after the game: starts the game
 #            in headless Chromium and fails when it falls short of the level its
-#            entry expects (test.expect)
+#            entry expects (test.expect). The games are dealt into batches that
+#            run one after another, see "Batches" below
 #   status   collects the results into status.json and the screenshots the
 #            front page shows; runs even when games fail
 #   deploy   builds the site and publishes it to Cloudflare: production on
@@ -33,6 +34,16 @@
 # name. Packing the dumps and uploading them to R2 is a workflow of the private
 # repository, not part of this one.
 #
+# Batches. Forgejo 16 ignores strategy.max-parallel and the runner takes every
+# job it is offered, but its Docker cannot create more than about 30 job
+# networks at a time ("all predefined address pools have been fully
+# subnetted"), and other repositories use the same runner. So the games are
+# dealt into BATCHES matrices of nearly equal size (tools/ci/gen-matrix.py),
+# each batch waits for the one before it, and a batch should stay near a dozen
+# jobs. To add a batch: raise BATCHES in the plan step, add a batchN output to
+# build, copy the last game-N job with its numbers raised, and add the new job
+# to the needs of status.
+#
 # Action URLs are written out in full, as Forgejo recommends; the artifact
 # actions are Forgejo's forks, because the upstream v4 ones refuse to run
 # anywhere but github.com.
@@ -50,8 +61,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     outputs:
-      slugs: ${{ steps.plan.outputs.slugs }}
       titles: ${{ steps.plan.outputs.titles }}
+      batch1: ${{ steps.plan.outputs.batch1 }}
+      batch2: ${{ steps.plan.outputs.batch2 }}
+      batch3: ${{ steps.plan.outputs.batch3 }}
+      batch4: ${{ steps.plan.outputs.batch4 }}
+      batch5: ${{ steps.plan.outputs.batch5 }}
+      batch6: ${{ steps.plan.outputs.batch6 }}
       game: ${{ steps.plan.outputs.game }}
       status: ${{ steps.plan.outputs.status }}
       deploy: ${{ steps.plan.outputs.deploy }}
@@ -69,6 +85,7 @@ jobs:
           ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN || 'stand-in' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'stand-in' }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'stand-in' }}
+          BATCHES: 6
           EVENT: ${{ forge.event_name }}
           REF: ${{ forge.ref }}
         run: |
@@ -86,11 +103,11 @@ jobs:
           }
           say() { echo "$1"; echo "- $1" >> "$GITHUB_STEP_SUMMARY"; }
 
-          python3 -I tools/ci/gen-matrix.py >> "$GITHUB_OUTPUT"
+          python3 -I tools/ci/gen-matrix.py --batches "$BATCHES" >> "$GITHUB_OUTPUT"
 
           why=$(lacking tools/web/gametest.mjs package.json tools/assets/fetch.py ASSETS_URL= ASSETS_TOKEN=)
           if [ -z "$why" ]; then
-            say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games"
+            say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games, in $BATCHES batches"
             echo "game=true" >> "$GITHUB_OUTPUT"
             why=$(lacking tools/ci/status.py)
           else
@@ -128,6 +145,30 @@ jobs:
           else
             say "deploy: skipped ($why)"
           fi
+
+      # The game jobs all need the same Node packages and browser. They only
+      # read this cache; it is filled here, once, instead of by a dozen jobs
+      # that all find it empty at the same moment.
+      - name: Test dependencies cache key
+        if: steps.plan.outputs.game == 'true'
+        id: deps-key
+        run: echo "deps=$(cat package.json package-lock.json 2>/dev/null | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Test dependencies cache
+        if: steps.plan.outputs.game == 'true'
+        id: deps
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
+          key: test-deps-${{ steps.deps-key.outputs.deps }}
+
+      - name: Download the test dependencies
+        if: steps.plan.outputs.game == 'true' && steps.deps.outputs.cache-hit != 'true'
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npx playwright install chromium
 
       # The player depends on the emulator commit and on the scripts that
       # build it, and on nothing else in this repository. Most pushes change
@@ -219,21 +260,22 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  game:
+  # The six game jobs are the same but for their batch and for what they wait
+  # on, so the name, the environment and the steps are written once, in game-1.
+  game-1:
     # Shown as "<title> (<slug>)": Forgejo appends the matrix value itself.
-    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
+    name: &game-name ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: build
     if: needs.build.outputs.game == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
-      max-parallel: 6
       matrix:
-        game: ${{ fromJSON(needs.build.outputs.slugs) }}
-    env:
+        game: ${{ fromJSON(needs.build.outputs.batch1) }}
+    env: &game-env
       SLUG: ${{ matrix.game }}
-    steps:
+    steps: &game-steps
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
 
@@ -246,25 +288,27 @@ jobs:
           name: player
           path: eka2l1/build/web/bin
 
-      - name: Cache key
-        id: key
+      - name: Test dependencies cache key
+        id: deps-key
         run: echo "deps=$(cat package.json package-lock.json 2>/dev/null | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
-      - name: Node packages and browser cache
+      # Filled by build; the same paths and key as there.
+      - name: Test dependencies cache
         id: deps
-        uses: https://data.forgejo.org/actions/cache@v4
+        uses: https://data.forgejo.org/actions/cache/restore@v4
         with:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: test-deps-${{ steps.key.outputs.deps }}
+          key: test-deps-${{ steps.deps-key.outputs.deps }}
 
       - name: Install the Node packages
         if: steps.deps.outputs.cache-hit != 'true'
         run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-      # Downloads the browser unless the cache had it; the system libraries it
-      # needs are installed either way.
+      # Downloads the browser only if the cache did not have it; the system
+      # libraries it needs are not in the runner's image and are installed
+      # every time.
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
@@ -289,9 +333,79 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  game-2:
+    name: *game-name
+    needs: [build, game-1]
+    # Failures in the batch before do not stop this one.
+    if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch2) }}
+    env: *game-env
+    steps: *game-steps
+
+  game-3:
+    name: *game-name
+    needs: [build, game-2]
+    # Failures in the batch before do not stop this one.
+    if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch3) }}
+    env: *game-env
+    steps: *game-steps
+
+  game-4:
+    name: *game-name
+    needs: [build, game-3]
+    # Failures in the batch before do not stop this one.
+    if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch4) }}
+    env: *game-env
+    steps: *game-steps
+
+  game-5:
+    name: *game-name
+    needs: [build, game-4]
+    # Failures in the batch before do not stop this one.
+    if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch5) }}
+    env: *game-env
+    steps: *game-steps
+
+  game-6:
+    name: *game-name
+    needs: [build, game-5]
+    # Failures in the batch before do not stop this one.
+    if: ${{ !cancelled() && needs.build.outputs.game == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJSON(needs.build.outputs.batch6) }}
+    env: *game-env
+    steps: *game-steps
+
   status:
     name: Status of all games
-    needs: [build, game]
+    needs: [build, game-1, game-2, game-3, game-4, game-5, game-6]
     if: ${{ !cancelled() && needs.build.outputs.status == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
