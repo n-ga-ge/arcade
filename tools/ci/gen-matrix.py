@@ -3,10 +3,15 @@
 
   python3 -I tools/ci/gen-matrix.py [--catalog DIR] [--pretty]
 
-The output is one line of JSON, a list of {"slug", "title"} objects sorted by
-title, which the workflow feeds to `strategy.matrix` through `fromJSON`. The
-title becomes the job's name, and Forgejo needs every job of a matrix to have
-its own name, so a title that occurs twice gets its slug appended.
+Prints two lines in the form a workflow step appends to $GITHUB_OUTPUT:
+
+  slugs=["alien-front","ashen",...]             the matrix, in title order
+  titles={"alien-front":"Alien Front",...}      what each job is called
+
+The matrix holds only the slugs because Forgejo names a job of a matrix that
+comes from another job's output "<name> (<matrix values>)": with the title as
+the name and the slug as the only value, a job reads "Alien Front
+(alien-front)", and the slug keeps the names apart should two titles be equal.
 """
 import argparse
 import json
@@ -33,29 +38,21 @@ def load(catalog):
     return games
 
 
-def unique_titles(games):
-    seen = {}
-    for game in games:
-        seen[game['title'].casefold()] = seen.get(game['title'].casefold(), 0) + 1
-    for game in games:
-        if seen[game['title'].casefold()] > 1:
-            game['title'] = f"{game['title']} ({game['slug']})"
-    return games
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--catalog', type=pathlib.Path, default=ROOT / 'catalog' / 'games')
     parser.add_argument('--pretty', action='store_true', help='one game per line, for reading')
     args = parser.parse_args()
-    games = unique_titles(load(args.catalog))
+    games = load(args.catalog)
     games.sort(key=lambda game: (game['title'].casefold(), game['slug']))
     if args.pretty:
         for game in games:
             print(f"{game['slug']:40} {game['title']}")
-    else:
-        # ensure_ascii keeps the line safe to pass through a job output.
-        print(json.dumps(games, ensure_ascii=True, separators=(',', ':')))
+        return
+    # One line each, ASCII only: safe to pass through a job output.
+    dump = lambda value: json.dumps(value, ensure_ascii=True, separators=(',', ':'))
+    print('slugs=' + dump([game['slug'] for game in games]))
+    print('titles=' + dump({game['slug']: game['title'] for game in games}))
 
 
 if __name__ == '__main__':

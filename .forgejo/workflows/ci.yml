@@ -1,7 +1,8 @@
 # CI for n-ga.ge/arcade on Forgejo Actions (runners labelled ubuntu-latest).
 #
-#   build    builds the WebAssembly player from the eka2l1 submodule, checks the
-#            catalogue and decides which of the later jobs can run
+#   build    builds the WebAssembly player from the eka2l1 submodule (or takes
+#            the one an earlier run built from the same emulator commit),
+#            checks the catalogue and decides which of the later jobs can run
 #   game     one job per catalogue entry, named after the game: starts the game
 #            in headless Chromium and fails when it falls short of the level its
 #            entry expects (test.expect)
@@ -49,7 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     outputs:
-      matrix: ${{ steps.plan.outputs.matrix }}
+      slugs: ${{ steps.plan.outputs.slugs }}
+      titles: ${{ steps.plan.outputs.titles }}
       game: ${{ steps.plan.outputs.game }}
       status: ${{ steps.plan.outputs.status }}
       deploy: ${{ steps.plan.outputs.deploy }}
@@ -84,7 +86,7 @@ jobs:
           }
           say() { echo "$1"; echo "- $1" >> "$GITHUB_STEP_SUMMARY"; }
 
-          echo "matrix=$(python3 -I tools/ci/gen-matrix.py)" >> "$GITHUB_OUTPUT"
+          python3 -I tools/ci/gen-matrix.py >> "$GITHUB_OUTPUT"
 
           why=$(lacking tools/web/gametest.mjs package.json tools/assets/fetch.py ASSETS_URL= ASSETS_TOKEN=)
           if [ -z "$why" ]; then
@@ -127,33 +129,80 @@ jobs:
             say "deploy: skipped ($why)"
           fi
 
-      - name: Check out the emulator
-        run: tools/ci/checkout-eka2l1.sh
-
-      - name: Cache keys
+      # The player depends on the emulator commit and on the scripts that
+      # build it, and on nothing else in this repository. Most pushes change
+      # neither, and then the player of an earlier run is used as it is.
+      - name: Player cache key
         id: key
         run: |
+          eka2l1=$(git ls-tree HEAD eka2l1 | awk '{print $3}')
+          echo "eka2l1=$eka2l1" >> "$GITHUB_OUTPUT"
           echo "toolchain=$(sha256sum tools/ci/setup-toolchain.sh | cut -c1-16)" >> "$GITHUB_OUTPUT"
-          echo "eka2l1=$(git -C eka2l1 rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "player=$( (echo "$eka2l1"; cat tools/ci/setup-toolchain.sh tools/ci/build-web.sh tools/ci/checkout-eka2l1.sh) | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Player cache
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: eka2l1/build/web/bin
+          key: player-${{ steps.key.outputs.player }}
+
+      - name: Is there a player already?
+        id: player
+        run: |
+          if [ -s eka2l1/build/web/bin/eka2l1_web.wasm ]; then
+            echo "using the player built earlier for emulator commit ${{ steps.key.outputs.eka2l1 }}"
+            echo "cached=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no player for emulator commit ${{ steps.key.outputs.eka2l1 }} yet: building it"
+          fi
+
+      - name: Check out the emulator
+        if: steps.player.outputs.cached != 'true'
+        run: tools/ci/checkout-eka2l1.sh
 
       - name: Toolchain cache
+        if: steps.player.outputs.cached != 'true'
         uses: https://data.forgejo.org/actions/cache@v4
         with:
           path: .toolchain
           key: toolchain-${{ steps.key.outputs.toolchain }}
 
       - name: Set up the toolchain
+        if: steps.player.outputs.cached != 'true'
         run: tools/ci/setup-toolchain.sh
 
       # Saved once per emulator commit; any earlier one is a good start.
       - name: Compiler cache
+        if: steps.player.outputs.cached != 'true'
         uses: https://data.forgejo.org/actions/cache@v4
         with:
           path: ~/.cache/ccache
           key: ccache-emscripten-${{ steps.key.outputs.eka2l1 }}
           restore-keys: ccache-emscripten-
 
+      # Configuring takes six minutes, nearly all of it some 300 "does this
+      # function exist" probes that each link a program through emcc. CMake
+      # keeps their answers in CMakeCache.txt, and the answers can only change
+      # with the toolchain, the build script, the place of the checkout or a
+      # CMake file of the emulator, so the file is reused while none of those
+      # has changed.
+      - name: Configure cache key
+        if: steps.player.outputs.cached != 'true'
+        id: configure
+        run: |
+          key=$( (pwd; cat tools/ci/setup-toolchain.sh tools/ci/build-web.sh
+                  git -C eka2l1 ls-files --stage --recurse-submodules -- 'CMakeLists.txt' '*/CMakeLists.txt' '*.cmake' '*.cmake.in') | sha256sum | cut -c1-16)
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Configure cache
+        if: steps.player.outputs.cached != 'true'
+        uses: https://data.forgejo.org/actions/cache@v4
+        with:
+          path: eka2l1/build/web/CMakeCache.txt
+          key: configure-${{ steps.configure.outputs.key }}
+
       - name: Build
+        if: steps.player.outputs.cached != 'true'
         run: |
           . tools/env.sh
           ccache --zero-stats >/dev/null
@@ -171,7 +220,8 @@ jobs:
           retention-days: 14
 
   game:
-    name: ${{ matrix.game.title }}
+    # Shown as "<title> (<slug>)": Forgejo appends the matrix value itself.
+    name: ${{ fromJSON(needs.build.outputs.titles)[matrix.game] }}
     needs: build
     if: needs.build.outputs.game == 'true'
     runs-on: ubuntu-latest
@@ -180,9 +230,9 @@ jobs:
       fail-fast: false
       max-parallel: 6
       matrix:
-        game: ${{ fromJSON(needs.build.outputs.matrix) }}
+        game: ${{ fromJSON(needs.build.outputs.slugs) }}
     env:
-      SLUG: ${{ matrix.game.slug }}
+      SLUG: ${{ matrix.game }}
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
@@ -232,7 +282,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: https://data.forgejo.org/forgejo/upload-artifact@v4
         with:
-          name: result-${{ matrix.game.slug }}
+          name: result-${{ matrix.game }}
           path: |
             results/*.json
             results/*.png
@@ -270,7 +320,7 @@ jobs:
           retention-days: 30
 
   deploy:
-    name: Deploy (${{ needs.build.outputs.deploy }})
+    name: Deploy
     needs: [build, status]
     # A failed game does not hold the site back: the front page reports it.
     # A failed status job does, and a skipped one means a site without results.
