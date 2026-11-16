@@ -1,11 +1,170 @@
 {
   "slug": "red-faction",
   "title": "Red Faction",
+  "publisher": "THQ Wireless",
+  "year": 2003,
+  "genre": "First-person shooter",
   "uid": "0x101FD3D0",
   "variantOf": null,
   "dump": "Red Faction",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "The main menu, help and credits work, and a new game loads the first level (The Mines) and plays: walking, turning, sidestepping and shooting work, and the in-game menu opens.",
+  "notes": [
+    "Menus are selected with the left soft key; the OK key does nothing there. The right soft key goes back.",
+    "In play either soft key opens the menu (sound, music, quit to menu).",
+    "VS (multiplayer) needs Bluetooth, which is not available here."
+  ],
+  "controls": {
+    "source": "The game's Help, page 4 (Game Controls). Forward, turn, fire, sidestep and the menu key were confirmed in play; the menu keys were observed. The OK key did nothing in menus or in play.",
+    "actions": {
+      "up": "Move forward",
+      "down": "Move backward",
+      "left": "Turn left",
+      "right": "Turn right",
+      "lsk": "Select (menus); menu (in play)",
+      "rsk": "Menu (in play); back (menus)",
+      "1": "Previous weapon",
+      "2": "Jump",
+      "3": "Next weapon",
+      "4": "Sidestep left",
+      "5": "Fire / use; No (confirmations)",
+      "6": "Sidestep right",
+      "7": "Look mode; Yes (confirmations)",
+      "9": "Last weapon"
+    },
+    "keyboard": {
+      "up": [
+        "KeyW",
+        "ArrowUp"
+      ],
+      "down": [
+        "KeyS",
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft",
+        "KeyQ"
+      ],
+      "right": [
+        "ArrowRight",
+        "KeyE"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyD",
+        "Digit6",
+        "Numpad6"
+      ],
+      "5": [
+        "KeyF",
+        "Digit5",
+        "Numpad5"
+      ],
+      "2": [
+        "Space",
+        "Digit2",
+        "Numpad2"
+      ],
+      "7": [
+        "KeyV",
+        "Digit7",
+        "Numpad7"
+      ],
+      "1": [
+        "BracketLeft",
+        "Digit1",
+        "Numpad1"
+      ],
+      "3": [
+        "BracketRight",
+        "Digit3",
+        "Numpad3"
+      ],
+      "9": [
+        "Tab",
+        "Digit9",
+        "Numpad9"
+      ],
+      "lsk": [
+        "Enter",
+        "Backquote"
+      ],
+      "rsk": [
+        "Escape",
+        "Backspace"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "4": [
+        "a2-"
+      ],
+      "6": [
+        "a2+"
+      ],
+      "lsk": [
+        "b0",
+        "b10"
+      ],
+      "2": [
+        "b1"
+      ],
+      "9": [
+        "b2"
+      ],
+      "7": [
+        "b3"
+      ],
+      "1": [
+        "b4"
+      ],
+      "3": [
+        "b5"
+      ],
+      "5": [
+        "b7"
+      ],
+      "rsk": [
+        "b9"
+      ]
+    },
+    "notes": [
+      "First-person layout: move and sidestep on WASD, turn on the arrows or Q/E. F fires or uses, Space jumps, V toggles look mode, [ and ] change weapon, Tab picks the last weapon. Enter selects in menus and Escape opens the menu or goes back. On a gamepad the left stick moves and turns, the right stick sidesteps and the right trigger fires."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 20000
+      },
+      {
+        "key": "lsk",
+        "wait": 5000
+      },
+      {
+        "key": "lsk",
+        "wait": 30000
+      }
+    ]
+  }
 }
