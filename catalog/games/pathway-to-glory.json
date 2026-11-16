@@ -1,11 +1,54 @@
 {
   "slug": "pathway-to-glory",
   "title": "Pathway to Glory",
+  "publisher": "Nokia",
+  "year": 2004,
+  "genre": "Turn-based tactics",
   "uid": "0x101FD3F8",
   "variantOf": null,
   "dump": "Pathway To Glory",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "broken",
+  "notes": [
+    "Start game > Solo player > New creates a campaign; the first mission is Pantelleria, summer 1943.",
+    "The game is turn-based: move the cursor over the map and press OK to send the selected soldier there (the green line shows the path and what it costs). Key 7 opens the mission menu with End turn, Mission data, Use (weapons and gear), Commands and End mission.",
+    "Cooperative and multiplayer games need Bluetooth or N-Gage Arena and are not available in the browser."
+  ],
+  "controls": {
+    "source": "The shortcuts shown in the game's own Commands menu (stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus; the cursor, OK and key 7 were observed in the first mission. All of it was seen with GAMECOMMS.DLL added to the card (see the status note). Publisher and year are from the game's logo screens and general knowledge.",
+    "actions": {
+      "up": "Move the cursor / scroll the map",
+      "down": "Move the cursor / scroll the map",
+      "left": "Move the cursor / scroll the map",
+      "right": "Move the cursor / scroll the map",
+      "ok": "Select (menus); send the selected soldier to the cursor",
+      "lsk": "Select / next (menus)",
+      "rsk": "Back / cancel (menus)",
+      "1": "Previous soldier",
+      "3": "Next soldier",
+      "7": "Mission menu (end turn, use gear, commands)",
+      "8": "Stance up",
+      "9": "Look at the cursor",
+      "0": "Stance down"
+    },
+    "notes": [
+      "The standard layout suits this game: arrows move the cursor, Enter is OK, Q and W are the soft keys, and the digit row gives 1, 3, 7, 8, 9 and 0."
+    ]
+  },
+  "test": {
+    "expect": "broken",
+    "script": [
+      {
+        "wait": 12000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 18
+      },
+      {
+        "wait": 4000
+      }
+    ]
+  },
+  "statusNote": "The app exits as soon as it is launched and nothing is drawn (0 frames, screenshot fails with \"no active emulator surface\"). The log shows why: \"Can't find GAMECOMMS.DLL\", \"Try loading 6RAJ.app ... failed\", then a \"System error\" note. The dump holds only System/Apps/6RAJ and lacks the card's System/Libs, and the firmware has no GameComms. With a GAMECOMMS.DLL from another card added to the zip as System/Libs/GAMECOMMS.DLL the game runs: title, menus, campaign creation, briefing, team and gear selection, and the first mission (Pantelleria) plays on the battle map. The controls and the test script below were made that way; the script reaches the mission once the zip has the library."
 }
