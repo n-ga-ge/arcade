@@ -16,16 +16,23 @@
 //   session   pause/resume, hidden-tab pause, restart, heap growth across restarts
 //   gamepad   a (mocked) standard gamepad drives the game into 3D
 //   touch     on-screen controls drive the game into 3D; layout fits the viewport
+//   controls  game layout picked automatically, rebinding by keyboard and gamepad, reset
+//   display   every scaling filter renders, resolutions resize the canvas, speed holds
+//   urlload   "Load from URL" and the site's one-click Play button
+//   saves     an in-game save is exported, deleted, imported back and survives a reload
 import { chromium, firefox, devices } from 'playwright';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { PNG } from 'pngjs';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, value, i, all) => {
   if (value.startsWith('--')) acc.push([value.slice(2), all[i + 1] && !all[i + 1].startsWith('--') ? all[i + 1] : true]);
   return acc;
 }, []));
 
-const TOOLCHAIN = process.env.EKA2L1_TOOLCHAIN || '/home/user/Documents/ShadowkeyWebPort/.toolchain';
+// Set by tools/env.sh. Without it (CI) Playwright's own browsers are used.
+const TOOLCHAIN = process.env.EKA2L1_TOOLCHAIN || '';
 const port = args.port || 8080;
 const base = `http://127.0.0.1:${port}`;
 const query = 'fw=/local/NGAGE.ROM&game=/local/shadowkey.zip';
@@ -95,6 +102,10 @@ async function open(browser, { device = 'desktop', url = `${base}/?${query}`, in
   page.on('console', (message) => { if (message.type() === 'error' || message.type() === 'warning') log.push(`[${message.type()}] ${message.text()}`); });
   page.on('pageerror', (error) => log.push(`[pageerror] ${error.message}`));
   page.on('crash', () => log.push('[crash]'));
+  if (args.verbose) {
+    page.on('console', (message) => console.log(`  [${message.type()}] ${message.text().slice(0, 240)}`));
+    page.on('pageerror', (error) => console.log(`  [pageerror] ${error.message.slice(0, 240)}`));
+  }
   if (init) await page.addInitScript(init);
   const started = Date.now();
   await page.goto(url);
@@ -264,6 +275,11 @@ const TESTS = {
     const { context, page, log } = await open(browser);
     const first = await waitRunning(page);
 
+    // Leaving while the first storage pass is still copying must not leave a
+    // half-written install behind: the next visit has to come up either way.
+    await page.reload();
+    const interrupted = await waitRunning(page).then((run) => `runs after ${run.ms} ms`, (error) => `broken: ${error.message}`);
+
     // A file on the guest's C: drive stands in for a save game: same drive,
     // same storage path.
     const marker = `saved-${Date.now()}`;
@@ -284,7 +300,7 @@ const TESTS = {
     });
     await context.close();
 
-    return { pass: back === marker && requested.length === 0, firstVisitMs: first.ms, reloadMs: Date.now() - t0 - 0, restoreToRunningMs: second.ms,
+    return { pass: back === marker && requested.length === 0 && interrupted.startsWith('runs'), firstVisitMs: first.ms, reloadDuringFirstSave: interrupted, reloadMs: Date.now() - t0 - 0, restoreToRunningMs: second.ms,
       saveFileRestored: back === marker, downloadsOnReload: requested.length, errors: log.length };
   },
 
@@ -317,7 +333,8 @@ const TESTS = {
     const restarts = [];
     for (let i = 0; i < 3; i++) {
       const t0 = Date.now();
-      await page.click('#btn-restart');
+      await page.click('#btn-menu');
+      await page.click('#m-restart');
       await page.waitForFunction(() => window.eka2l1Page.app && document.getElementById('status').textContent === window.eka2l1Page.app.name, null, { timeout: 60000 });
       await sleep(3000);
       restarts.push({ ms: Date.now() - t0 - 3000, advancing: await framesAdvance(page, 2000) });
@@ -406,9 +423,9 @@ const TESTS = {
     const DPAD = { up: [0.5, 0.1], down: [0.5, 0.9], left: [0.1, 0.5], right: [0.9, 0.5] };
     const press = async (key, hold = 120) => {
       if (key === 'ok') {
-        await pointer('.pad-right [data-key="ok"]', 'pointerdown');
+        await pointer('.pad-left [data-key="ok"]', 'pointerdown');
         await sleep(hold);
-        await pointer('.pad-right [data-key="ok"]', 'pointerup');
+        await pointer('.pad-left [data-key="ok"]', 'pointerup');
       } else {
         await pointer('#dpad', 'pointerdown', DPAD[key]);
         await sleep(hold);
@@ -421,7 +438,7 @@ const TESTS = {
     let realTap = 'not available';
     if (DEVICES[device].hasTouch) {
       const before = (await state(page)).keysSent;
-      await page.locator('.pad-right [data-key="ok"]').tap();
+      await page.locator('.pad-left [data-key="ok"]').tap();
       await sleep(300);
       realTap = (await state(page)).keysSent - before >= 2 ? 'delivered' : 'lost';
     }
@@ -434,12 +451,284 @@ const TESTS = {
     const layoutOk = layout.controlsVisible && layout.controlsClearOfPicture && !layout.scrolls && layout.touchClass && layout.smallestControl >= 40 && layout.scale >= 1;
     return { pass: layoutOk && perf.fps >= 15 && realTap !== 'lost', ...layout, realTap, fpsTurning: perf.fps, heapMB: perf.heapMB, errors: log.length };
   },
+
+  async controls(browser, name) {
+    const init = () => {
+      const pad = { id: 'Test pad (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard', timestamp: 0,
+        axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
+      window.__padButton = (index, down) => { pad.buttons[index] = { pressed: down, touched: down, value: down ? 1 : 0 }; };
+      Object.defineProperty(Navigator.prototype, 'getGamepads', { configurable: true, value: () => [pad, null, null, null] });
+    };
+    const { context, page, log } = await open(browser, { init });
+    await waitRunning(page);
+
+    // Record every key the emulator is sent, by scan code.
+    await page.evaluate(() => {
+      window.__sent = [];
+      const original = window.eka2l1.key.bind(window.eka2l1);
+      window.eka2l1.key = (scancode, down) => { window.__sent.push([scancode, down]); original(scancode, down); };
+    });
+    const sentBy = async (code) => {
+      await page.evaluate(() => { window.__sent.length = 0; });
+      await page.keyboard.down(code); await sleep(80); await page.keyboard.up(code); await sleep(80);
+      return page.evaluate(() => window.__sent.map(([scancode, down]) => `${scancode.toString(16)}${down ? '+' : '-'}`).join(' '));
+    };
+    const openControls = async () => { await page.click('#btn-menu'); await page.click('#m-controls'); };
+    const closeDialog = (id) => page.evaluate((d) => document.getElementById(d).close(), id);
+
+    // The game's own layout is chosen automatically: W walks, A strafes.
+    await openControls();
+    const layout = await page.evaluate(() => document.querySelector('#profile-select option:checked').textContent);
+    const rows = await page.evaluate(() => document.querySelectorAll('#bindings tbody tr').length);
+    const actions = await page.evaluate(() => [...document.querySelectorAll('#bindings tbody tr td:nth-child(2)')].map((td) => td.textContent).filter(Boolean).length);
+    await closeDialog('controls');
+    const w = await sentBy('KeyW');
+    const a = await sentBy('KeyA');
+
+    // Bind P to OK by keyboard, use it, then remove it.
+    const before = await sentBy('KeyP');
+    await openControls();
+    await page.click('#bindings .chip.add[data-device="keyboard"][data-key="ok"]');
+    await page.keyboard.press('KeyP');
+    await page.waitForSelector('#bindings .chip[data-device="keyboard"][data-key="ok"][data-input="KeyP"]');
+    await closeDialog('controls');
+    const bound = await sentBy('KeyP');
+
+    // The binding is remembered across a reload.
+    await page.reload();
+    await waitRunning(page);
+    await page.evaluate(() => {
+      window.__sent = [];
+      const original = window.eka2l1.key.bind(window.eka2l1);
+      window.eka2l1.key = (scancode, down) => { window.__sent.push([scancode, down]); original(scancode, down); };
+    });
+    const afterReload = await sentBy('KeyP');
+
+    // Bind a gamepad button (R3) to the map key.
+    await openControls();
+    await page.click('#bindings .chip.add[data-device="gamepad"][data-key="9"]');
+    await sleep(200);
+    await page.evaluate(() => window.__padButton(11, true));
+    await page.waitForSelector('#bindings .chip[data-device="gamepad"][data-key="9"][data-input="b11"]');
+    await page.evaluate(() => window.__padButton(11, false));
+    const padLabel = await page.evaluate(() => document.querySelector('#bindings .chip[data-device="gamepad"][data-key="9"][data-input="b11"]').textContent);
+
+    // Reset returns the layout to its defaults.
+    await page.click('#controls-reset');
+    const resetHint = await page.evaluate(() => document.getElementById('controls-hint').textContent);
+    await closeDialog('controls');
+    const afterReset = await sentBy('KeyP');
+
+    // The guide lists the game's actions.
+    await page.click('#btn-menu'); await page.click('#m-guide');
+    const guide = await page.evaluate(() => document.getElementById('guide-body').textContent);
+    await context.close();
+
+    const pass = /Shadowkey/.test(layout) && rows === 20 && actions >= 17 && w === '10+ 10-' && a === '34+ 34-'
+      && before === '' && bound === 'a7+ a7-' && afterReload === 'a7+ a7-' && padLabel === 'R3' && /defaults/.test(resetHint)
+      && afterReset === '' && /Move forward/.test(guide) && /Side step left/.test(guide) && /FSR 2/.test(guide);
+    return { pass, layout, rows, actionsListed: actions, keyW: w, keyA: a, pBefore: before || 'nothing', pBound: bound, pAfterReload: afterReload,
+      gamepadBinding: padLabel, pAfterReset: afterReset || 'nothing', guideHasActions: /Move forward/.test(guide), errors: log.length };
+  },
+
+  async display(browser, name) {
+    const { context, page, log } = await open(browser);
+    await waitRunning(page);
+    await page.mouse.click(5, 5);
+    await toGameplay(keyboardPress(page)); // a still scene, redrawn every frame
+
+    const shot = async () => PNG.sync.read(await page.locator('#canvas').screenshot());
+    const brightness = (png) => { let sum = 0; for (let i = 0; i < png.data.length; i += 4) sum += png.data[i] + png.data[i + 1] + png.data[i + 2]; return sum / (png.data.length / 4) / 3; };
+    const difference = (x, y) => { let sum = 0; const n = Math.min(x.data.length, y.data.length); for (let i = 0; i < n; i += 4) sum += Math.abs(x.data[i] - y.data[i]) + Math.abs(x.data[i + 1] - y.data[i + 1]) + Math.abs(x.data[i + 2] - y.data[i + 2]); return sum / (n / 4) / 3; };
+
+    await page.click('#btn-menu'); await page.click('#m-display');
+    const filters = await page.evaluate(() => [...document.querySelectorAll('#filter-select option')].map((option) => option.value));
+    const resolutions = await page.evaluate(() => [...document.querySelectorAll('#resolution-select option')].map((option) => option.value));
+
+    // Every filter, at the resolution that matches the display.
+    await page.selectOption('#resolution-select', 'auto');
+    const results = {};
+    let reference = null;
+    let smooth = null;
+    const failed = [];
+    for (const filter of filters) {
+      await page.selectOption('#filter-select', filter);
+      await page.evaluate(() => document.getElementById('display').close());
+      await sleep(1500);
+      const png = await shot();
+      if (filter === 'nearest') reference = png;
+      if (filter === 'linear') smooth = png;
+      const lit = brightness(png);
+      const diff = reference && filter !== 'nearest' ? difference(reference, png) : 0;
+      // A shader that failed to compile falls back to plain smoothing, so a
+      // shader filter must differ from that too.
+      const versusSmooth = smooth && filter !== 'linear' && filter !== 'nearest' ? difference(smooth, png) : 1;
+      results[filter] = `${lit.toFixed(0)}/${diff.toFixed(1)}/${versusSmooth.toFixed(2)}`;
+      if (lit < 15 || (filter !== 'nearest' && diff < 0.05) || versusSmooth < 0.02) failed.push(filter);
+      if (filter === 'fsr' || filter === 'fsr_sharp' || filter === 'nearest') fs.writeFileSync(path.join(outDir, `${name}-display-${filter}.png`), PNG.sync.write(png));
+      await page.click('#btn-menu'); await page.click('#m-display');
+    }
+
+    // Speed with the heaviest filter at display resolution.
+    await page.selectOption('#filter-select', 'fsr_sharp');
+    await page.evaluate(() => document.getElementById('display').close());
+    const heavy = await measure(page, 8, (down) => (down ? page.keyboard.down('ArrowLeft') : page.keyboard.up('ArrowLeft')));
+    await page.click('#btn-menu'); await page.click('#m-display');
+
+    // Each resolution resizes the canvas.
+    const sizes = {};
+    let sizesOk = true;
+    for (const resolution of resolutions) {
+      await page.selectOption('#resolution-select', resolution);
+      await sleep(900);
+      const size = await page.evaluate(() => ({ want: window.eka2l1Page.surface, got: [document.getElementById('canvas').width, document.getElementById('canvas').height] }));
+      sizes[resolution] = `${size.got[0]}x${size.got[1]}`;
+      if (size.got[0] !== size.want.width || size.got[1] !== size.want.height) sizesOk = false;
+      if (resolution !== 'auto' && size.got[0] !== 176 * Number(resolution)) sizesOk = false;
+    }
+
+    // The choice is kept for the next visit.
+    await page.selectOption('#filter-select', 'fsr');
+    await page.selectOption('#resolution-select', '4');
+    await page.reload();
+    await waitRunning(page);
+    await sleep(1500);
+    const kept = await page.evaluate(() => window.eka2l1Page.surface);
+    await page.evaluate(() => { localStorage.removeItem('eka2l1.settings.v1'); });
+    await context.close();
+
+    const pass = failed.length === 0 && sizesOk && heavy.fps >= 15 && kept.filter === 'fsr' && kept.width === 704;
+    return { pass, filters: filters.length, broken: failed.join(',') || 'none', brightnessVsNearestVsSmooth: JSON.stringify(results), sizes: JSON.stringify(sizes),
+      fpsFsrSharp: heavy.fps, graphicsMsFsrSharp: heavy.graphicsMsPerFrame, keptAfterReload: `${kept.filter} ${kept.width}x${kept.height}`, errors: log.length };
+  },
+
+  async urlload(browser, name) {
+    // No parameters: the page offers the loader. Type the URLs and press the button.
+    const { context, page, log } = await open(browser, { url: `${base}/` });
+    await page.waitForSelector('#setup:not([hidden])', { timeout: 60000 });
+    const playHidden = await page.evaluate(() => document.getElementById('btn-play').hidden);
+    await page.fill('#fw-url', `${base}/local/NGAGE.ROM`);
+    await page.fill('#game-url', `${base}/local/shadowkey.zip`);
+    const t0 = Date.now();
+    await page.click('#btn-load-url');
+    await waitRunning(page);
+    const loadMs = Date.now() - t0;
+    const address = await page.evaluate(() => location.search);
+    const linked = address.includes('game=') && address.includes('fw=');
+
+    // The address now starts the game by itself.
+    await page.reload();
+    const again = await waitRunning(page);
+
+    // A bad URL is reported, and the loader comes back.
+    await page.click('#btn-menu'); await page.click('#m-load');
+    await page.waitForSelector('#setup:not([hidden])');
+    const fwAsked = await page.evaluate(() => !document.getElementById('fw-url-row').hidden);
+    await page.fill('#game-url', `${base}/local/missing.zip`);
+    await page.click('#btn-load-url');
+    await page.waitForFunction(() => document.getElementById('status').classList.contains('error'), null, { timeout: 30000 });
+    const badMessage = await page.evaluate(() => document.getElementById('status').textContent);
+    const setupBack = await page.evaluate(() => !document.getElementById('setup').hidden);
+    await context.close();
+
+    // A site config offers one-click Play.
+    const site = await open(browser, { url: 'about:blank' });
+    await site.page.route('**/config.json', (route) => route.fulfill({ contentType: 'application/json',
+      body: JSON.stringify({ title: 'Shadowkey', fw: '/local/NGAGE.ROM', game: '/local/shadowkey.zip' }) }));
+    await site.page.goto(`${base}/`);
+    await site.page.waitForSelector('#btn-play:not([hidden])', { timeout: 60000 });
+    const playLabel = await site.page.evaluate(() => document.getElementById('btn-play').textContent);
+    await site.page.click('#btn-play');
+    await waitRunning(site.page);
+    const playAdvances = await framesAdvance(site.page);
+    await site.context.close();
+
+    const pass = playHidden && linked && again.ms < 30000 && !fwAsked && /download failed \(404\)/.test(badMessage) && setupBack
+      && playLabel === 'Play Shadowkey' && playAdvances > 0;
+    return { pass, loadMs, addressUpdated: linked, reloadStartsGameMs: again.ms, firmwareAskedAgain: fwAsked, badUrlMessage: badMessage.slice(0, 60),
+      loaderReturns: setupBack, playButton: playLabel, playRuns: playAdvances > 0, errors: log.length };
+  },
+
+  async saves(browser, name) {
+    const { context, page, log } = await open(browser);
+    await waitRunning(page);
+    await page.mouse.click(5, 5);
+    const press = keyboardPress(page);
+    await toGameplay(press);
+
+    const SAVE = 'C:/System/Apps/6R51/game00.sav';
+    const readSave = () => page.evaluate(async (file) => {
+      const res = await window.eka2l1.request('GET', '/v1/files?path=' + encodeURIComponent(file));
+      return res.ok ? Array.from(res.body) : null;
+    }, SAVE);
+    const menuKey = async (code, wait = 700) => { await page.keyboard.down(code); await sleep(120); await page.keyboard.up(code); await sleep(wait); };
+
+    // Save from the game's own menu: menu, Save Game, first slot, dismiss, back.
+    const beforeSave = await readSave();
+    await menuKey('Backspace', 1500);
+    await menuKey('ArrowDown');
+    await menuKey('Enter', 1500);
+    await menuKey('Enter', 3000);
+    await guestShot(page, path.join(outDir, `${name}-saves-guest.png`));
+    await menuKey('Enter', 1500);
+    await menuKey('Enter', 2000);
+    const saved = await readSave();
+
+    // Export through the Saves panel.
+    await page.click('#btn-menu'); await page.click('#m-saves');
+    await page.waitForSelector('#saves[open]');
+    const listed = await page.evaluate(() => [...document.querySelectorAll('#save-list tbody tr td:first-child')].map((td) => td.textContent));
+    const [download] = await Promise.all([page.waitForEvent('download'), page.click('#saves-export')]);
+    const zipPath = path.join(outDir, `${name}-saves-export.zip`);
+    await download.saveAs(zipPath);
+    const zipList = execFileSync('unzip', ['-Z1', zipPath]).toString().trim().split('\n');
+    const zipped = Array.from(execFileSync('unzip', ['-p', zipPath, 'System/Apps/6R51/game00.sav']));
+
+    // Lose the save, then import the export.
+    await page.evaluate(async () => {
+      for (const file of ['game00.sav', 'current.sav']) {
+        await window.eka2l1.request('DELETE', '/v1/files?path=' + encodeURIComponent('C:/System/Apps/6R51/' + file));
+      }
+    });
+    const gone = await readSave();
+    await page.setInputFiles('#save-import-file', zipPath);
+    await page.waitForFunction(() => /Imported/.test(document.getElementById('saves-status').textContent), null, { timeout: 30000 });
+    const importMessage = await page.evaluate(() => document.getElementById('saves-status').textContent);
+    const restored = await readSave();
+
+    // A zip that tries to write outside the save folder is refused.
+    const evil = path.join(outDir, `${name}-saves-evil.zip`);
+    fs.rmSync(evil, { force: true });
+    const stage = fs.mkdtempSync(path.join(outDir, 'evil-'));
+    fs.mkdirSync(path.join(stage, 'System', 'Data'), { recursive: true });
+    fs.writeFileSync(path.join(stage, 'System', 'Data', 'x.dat'), 'x');
+    execFileSync('zip', ['-q', '-r', evil, 'System'], { cwd: stage });
+    fs.rmSync(stage, { recursive: true, force: true });
+    await page.setInputFiles('#save-import-file', evil);
+    await page.waitForFunction(() => /no files under/.test(document.getElementById('saves-status').textContent), null, { timeout: 30000 });
+    const outside = await page.evaluate(async () => (await window.eka2l1.request('GET', '/v1/files?path=' + encodeURIComponent('C:/System/Data/x.dat'))).status);
+    fs.rmSync(evil, { force: true });
+    await page.evaluate(() => document.getElementById('saves').close());
+
+    // The save is still there after a reload (stored by the import).
+    await page.reload();
+    await waitRunning(page);
+    const afterReload = await readSave();
+    await context.close();
+
+    const same = (x, y) => Boolean(x && y && x.length === y.length && x.every((v, i) => v === y[i]));
+    const pass = beforeSave === null && Boolean(saved) && saved.length > 1000 && listed.includes('6R51/game00.sav') && zipList.includes('System/Apps/6R51/game00.sav')
+      && same(saved, zipped) && gone === null && same(saved, restored) && outside === 404 && same(saved, afterReload);
+    return { pass, inGameSaveBytes: saved ? saved.length : 0, listedFiles: listed.length, zipEntries: zipList.length, exportMatches: same(saved, zipped),
+      deleted: gone === null, importMessage: importMessage.slice(0, 40), importRestores: same(saved, restored), outsidePathRefused: outside === 404,
+      survivesReload: same(saved, afterReload), errors: log.length };
+  },
 };
 
 // --- runner ------------------------------------------------------------------
 
 const browsers = String(args.browsers || 'chrome,firefox').split(',');
-const tests = String(args.tests || 'support,boot,gameplay,persist,session,gamepad,touch').split(',');
+const tests = String(args.tests || 'support,boot,gameplay,persist,session,gamepad,touch,controls,display,urlload,saves').split(',');
 const touchDevices = String(args.devices || 'phone,phone-landscape,iphone,tablet,tablet-landscape').split(',');
 
 const results = [];

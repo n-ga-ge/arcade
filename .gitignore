@@ -1,6 +1,7 @@
 # User-supplied, copyrighted firmware and game dumps: never commit.
 /NGAGE.ROM
 /The_Elder_Scrolls_Travels_Shadowkey/
+/games/
 /testdata/
 
 # The EKA2L1 fork is its own repository (branch web-port).
@@ -10,7 +11,11 @@
 /.toolchain/
 
 # Generated output and screenshots of the game.
+/dist/
 tools/**/out/
 tools/**/shots/
 tools/**/results*/
 *.log
+
+# Node packages: a link into the toolchain locally, an npm install on CI.
+/node_modules
