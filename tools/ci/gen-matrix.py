@@ -3,17 +3,17 @@
 
   python3 -I tools/ci/gen-matrix.py [--batches N] [--catalog DIR] [--pretty]
 
-Prints lines in the form a workflow step appends to $GITHUB_OUTPUT:
+Prints one line per batch, in the form a workflow step appends to
+$GITHUB_OUTPUT. The games are dealt, in title order, into N batches of nearly
+equal size:
 
-  titles={"alien-front":"Alien Front",...}      what each job is called
-  batch1=["alien-front","ashen",...]            the games, in title order,
-  batch2=[...]                                  dealt into N batches of nearly
-  ...                                           equal size
+  batch1={"slugs":["alien-front","ashen",...],"titles":{"alien-front":"Alien Front",...}}
+  batch2=...
 
-Each batch is the matrix of one job in the workflow, and the batches run one
-after another. Forgejo 16 ignores strategy.max-parallel, so without batches
-every game job starts at once, and the runner's Docker cannot create more than
-about 30 job networks at a time.
+Each batch feeds one job of the workflow: "slugs" is its matrix and "titles"
+names its jobs. The batches run one after another, because Forgejo 16 ignores
+strategy.max-parallel: without batches every game job starts at once, and the
+runner's Docker cannot create more than about 30 job networks at a time.
 
 A matrix holds only slugs because Forgejo names a job of a matrix that comes
 from another job's output "<name> (<matrix values>)": with the title as the
@@ -62,12 +62,15 @@ def main():
         sys.exit(f'cannot deal {len(games)} games into {args.batches} batches')
     # One line each, ASCII only: safe to pass through a job output.
     dump = lambda value: json.dumps(value, ensure_ascii=True, separators=(',', ':'))
-    print('titles=' + dump({game['slug']: game['title'] for game in games}))
     size, extra = divmod(len(games), args.batches)
     start = 0
     for number in range(1, args.batches + 1):
         end = start + size + (1 if number <= extra else 0)
-        print(f'batch{number}=' + dump([game['slug'] for game in games[start:end]]))
+        batch = games[start:end]
+        print(f'batch{number}=' + dump({
+            'slugs': [game['slug'] for game in batch],
+            'titles': {game['slug']: game['title'] for game in batch},
+        }))
         start = end
 
 

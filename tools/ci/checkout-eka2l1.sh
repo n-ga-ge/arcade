@@ -68,21 +68,26 @@ PLAIN_GIT=(git)
 # Never wait for someone to type a password.
 export GIT_TERMINAL_PROMPT=0
 
-# The fork: a repository of the forge this checkout came from.
-FORGE=$(git -C "$ROOT" remote get-url origin | sed -nE 's#^(https?://[^/]+)/.*#\1#p')
+# The fork: a repository of the forge this checkout came from. The token is
+# only for an https remote; an ssh one brings its own key.
+FORGE=$(git -C "$ROOT" remote get-url origin 2>/dev/null | sed -nE 's#^(https?://[^/]+)/.*#\1#p' || true)
 FORK_GIT=(git)
+USED_TOKEN=
 if [ -n "${FORGE_TOKEN:-}" ] && [ -n "$FORGE" ]; then
   # git passes credential.* settings, and only those, on to the clone it
   # starts for a submodule. The helper reads the token from the environment
   # when git asks; the empty first value drops any helper configured before.
   FORK_GIT=(git -c "credential.$FORGE.helper=" -c "credential.$FORGE.helper=!f() { test \"\$1\" = get && echo username=x-access-token && echo \"password=\$FORGE_TOKEN\"; }; f")
+  USED_TOKEN=1
 fi
 if ! shallow_update FORK_GIT "$ROOT" eka2l1; then
-  echo "checkout-eka2l1: could not fetch the eka2l1 submodule from ${FORGE:-its remote}." >&2
-  if [ -n "${FORGE_TOKEN:-}" ]; then
+  echo "checkout-eka2l1: could not fetch the eka2l1 submodule${FORGE:+ from $FORGE}." >&2
+  if [ -n "$USED_TOKEN" ]; then
     echo "  FORGE_TOKEN was used and did not get in. In CI it is the FORGE_TOKEN secret, or the job's" >&2
     echo "  own token when that secret is not set; a job's token cannot be relied on to read another" >&2
     echo "  private repository." >&2
+  elif [ -n "${FORGE_TOKEN:-}" ]; then
+    echo "  FORGE_TOKEN is set but was not used: this checkout's origin is not an https URL." >&2
   else
     echo "  FORGE_TOKEN is not set." >&2
   fi

@@ -11,6 +11,9 @@ inputs:
   slug:
     description: The game's slug, as in catalog/games/<slug>.json.
     required: true
+  deps-key:
+    description: Key of the cache the build job filled with the Node packages and the browser.
+    required: true
   assets-url:
     description: Where tools/assets/fetch.py downloads the firmware and the game from.
     required: true
@@ -30,12 +33,7 @@ runs:
         name: player
         path: eka2l1/build/web/bin
 
-    - name: Test dependencies cache key
-      id: deps-key
-      shell: bash
-      run: echo "deps=$(cat package.json package-lock.json 2>/dev/null | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
-
-    # Filled by the build job; the same paths and key as there.
+    # Filled by the build job, which names the same paths.
     - name: Test dependencies cache
       id: deps
       uses: https://data.forgejo.org/actions/cache/restore@v4
@@ -43,7 +41,7 @@ runs:
         path: |
           node_modules
           ~/.cache/ms-playwright
-        key: test-deps-${{ steps.deps-key.outputs.deps }}
+        key: ${{ inputs.deps-key }}
 
     - name: Install the Node packages
       if: steps.deps.outputs.cache-hit != 'true'
@@ -81,4 +79,5 @@ runs:
           results/*.json
           results/*.png
         if-no-files-found: warn
+        overwrite: true
         retention-days: 14
