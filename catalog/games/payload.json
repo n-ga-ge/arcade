@@ -117,13 +117,11 @@
     "gamepad": {
       "up": [
         "b12",
-        "a1-",
-        "b7"
+        "a1-"
       ],
       "down": [
         "b13",
-        "a1+",
-        "b6"
+        "a1+"
       ],
       "left": [
         "b14",
@@ -132,6 +130,12 @@
       "right": [
         "b15",
         "a0+"
+      ],
+      "5": [
+        "b7"
+      ],
+      "7": [
+        "b6"
       ],
       "ok": [
         "b0"
@@ -166,7 +170,7 @@
     },
     "notes": [
       "Racing layout: W or the up arrow accelerates, S or down brakes, A and D or the arrows steer. Space uses the weapon, F raises the shield, E and R change weapon, B looks behind, C changes the camera, M shows the map and Tab the race info. Enter or 5 selects in menus, Backspace or 7 goes back, Esc pauses.",
-      "On a gamepad the left stick or pad steers, RT accelerates and LT brakes; X uses the weapon, B the shield, Y looks behind, LB and RB change weapon, A selects in menus, Start pauses, Back shows race info, and the stick clicks change the camera and show the map."
+      "On a gamepad the left stick or pad steers (up and down also accelerate and brake), RT accelerates and LT brakes; in menus RT or A selects and LT goes back. X uses the weapon, B the shield, Y looks behind, LB and RB change weapon, Start pauses, Back shows race info, and the stick clicks change the camera and show the map."
     ]
   },
   "test": {

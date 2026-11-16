@@ -12,7 +12,7 @@
     "Start > New Game > Single Player offers the Tutorial and the Ixan campaign.",
     "Briefing text advances with key 5 or the left soft key, not with OK.",
     "You fight on foot and in a Humvee, a tank and a helicopter; key 2 enters or leaves a vehicle. Options > Controls in the game shows the keys for each.",
-    "Either soft key pauses the game.",
+    "The right soft key pauses the game.",
     "N-Gage Arena and the Bluetooth multiplayer are not available in the browser."
   ],
   "controls": {
@@ -23,7 +23,7 @@
       "left": "Turn left",
       "right": "Turn right",
       "ok": "Select (menus)",
-      "lsk": "OK (menus); next briefing text; pause",
+      "lsk": "OK (menus); next briefing text",
       "rsk": "Back (menus); pause",
       "2": "Enter or exit a vehicle",
       "3": "Change weapon (on foot)",
@@ -149,7 +149,7 @@
     },
     "notes": [
       "Third-person layout: W and S (or the up and down arrows) move, the left and right arrows turn, A and D strafe. Space fires, G throws a grenade, E enters or leaves a vehicle, R changes weapon and M shows the mission status. Esc pauses.",
-      "On a gamepad the left stick moves and turns and the right stick strafes; RT fires, LT throws a grenade, X enters or leaves a vehicle, Y changes weapon, Back shows the mission status, and B or Start pauses."
+      "On a gamepad the left stick moves and turns and the right stick strafes; RT fires, LT throws a grenade, X enters or leaves a vehicle, Y changes weapon, Back shows the mission status, and B or Start pauses. RT or LB also moves the briefing text on."
     ]
   },
   "test": {

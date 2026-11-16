@@ -33,7 +33,8 @@
       "0": "Stance down"
     },
     "notes": [
-      "The standard layout suits this game: arrows move the cursor, Enter is OK, Q and W are the soft keys, and the digit row gives 1, 3, 6, 7, 8, 9 and 0."
+      "The standard layout suits this game: arrows move the cursor, Enter is OK, Q and W are the soft keys, and the digit row gives 1, 3, 6, 7, 8, 9 and 0.",
+      "On a gamepad A is OK, Y opens the mission menu (its Commands list has every action, so the number shortcuts are not needed), LB selects and RB goes back."
     ]
   },
   "test": {
