@@ -1,0 +1,17 @@
+{
+  "name": "n-ga.ge-arcade",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Test tooling for the n-ga.ge arcade: the per-game browser test and the browser suite.",
+  "scripts": {
+    "test": "node --test tools/web/gamecheck.test.mjs",
+    "test:game": "node tools/web/gametest.mjs",
+    "test:status": "python3 -I tools/ci/status.py",
+    "test:suite": "tools/web/suite.sh",
+    "browsers": "playwright install --only-shell chromium"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1",
+    "pngjs": "7.0.0"
+  }
+}
