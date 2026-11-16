@@ -23,7 +23,7 @@
       "left": "Move the cursor or the unit being placed",
       "right": "Move the cursor or the unit being placed",
       "5": "Start from the title; select and confirm (place a unit)",
-      "ok": "Select in menus; continue from the briefing and the turn banner",
+      "ok": "Start from the title (like 5); select in menus; continue from the briefing and the turn banner",
       "lsk": "Select in menus; pause in a battle",
       "rsk": "Back in menus; pause in a battle"
     }
