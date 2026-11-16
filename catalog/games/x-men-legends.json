@@ -1,11 +1,55 @@
 {
   "slug": "x-men-legends",
   "title": "X-Men Legends",
+  "publisher": "Activision",
+  "year": 2005,
+  "genre": "Action role-playing",
   "uid": "0x101FD3FE",
   "variantOf": null,
   "dump": "X-Men Legends",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: N-Gage, Activision, Marvel and Barking Lizards logos, title screen, main menu, Single-Player > New Game plays the intro video and loads the first street level; after the opening dialogue the team of four can be walked around and attacks, and the map, objectives, stats and pause menus open.",
+  "notes": [
+    "The logos at the start cannot be skipped and take about half a minute. The title screen then waits for any key.",
+    "Key 5 skips the intro video and steps through dialogue; OK does not.",
+    "The left soft key opens the pause menu (Resume, Load, Save, Options, Stats, Quit). The right soft key closes the map, the objectives and the stats screen.",
+    "Multiplayer needs Bluetooth and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's own Options > Controller screen (its default keys for the nine actions). Moving, attacking, the map, objectives, the stats menu, both soft keys and 5 for dialogue and the video were also tried in play.",
+    "actions": {
+      "up": "Move up",
+      "down": "Move down",
+      "left": "Move left",
+      "right": "Move right",
+      "ok": "Select (menus)",
+      "lsk": "Pause menu; select in menus",
+      "rsk": "Back",
+      "2": "Formation select",
+      "3": "Map",
+      "4": "Special select",
+      "5": "Attack; next line of dialogue; skip the video",
+      "6": "Item select",
+      "7": "Special",
+      "8": "Character select",
+      "9": "Objectives",
+      "0": "Stats menu"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 80
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  }
 }
