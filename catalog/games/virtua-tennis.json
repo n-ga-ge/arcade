@@ -1,11 +1,113 @@
 {
   "slug": "virtua-tennis",
   "title": "Virtua Tennis",
+  "publisher": "Sega",
+  "year": 2003,
+  "genre": "Sports (tennis)",
   "uid": "0x101FB884",
   "variantOf": null,
   "dump": "Virtua Tennis",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "The title screen waits for 5 or 7. Left alone, it switches to a demo match; any press of 5 brings the title back.",
+    "Menus are driven with 5 or the left soft key; the OK key (pad press) does nothing in this game.",
+    "Options shows the sound volume at 0 on a first start. Raise it there to hear the game.",
+    "The left soft key pauses a match (continue, end game)."
+  ],
+  "controls": {
+    "source": "Seen by pressing keys in the menus and in a match; the game has no controls screen. 5 and 7 both serve and hit. That the two are different strokes (a normal shot and a lob, as in other versions of Virtua Tennis) is general knowledge of the game and was not checked here.",
+    "actions": {
+      "up": "Move the player up the court; aim the shot",
+      "down": "Move the player down the court; aim the shot",
+      "left": "Move the player left; aim the shot",
+      "right": "Move the player right; aim the shot",
+      "5": "Serve and hit; select in menus",
+      "7": "Serve and hit (second stroke)",
+      "lsk": "Pause a match; OK in menus",
+      "rsk": "Back or Cancel in menus"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "Space",
+        "Enter",
+        "KeyZ",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyX",
+        "Digit7",
+        "Numpad7"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW",
+        "Backspace"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b1"
+      ],
+      "lsk": [
+        "b4",
+        "b9"
+      ],
+      "rsk": [
+        "b5",
+        "b8"
+      ]
+    },
+    "notes": [
+      "The two stroke keys are on Space or Z (5) and X (7), with the arrows moving the player. Enter also presses 5, because this game selects with 5 and ignores OK."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 25000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 14
+      }
+    ]
+  },
+  "statusNote": "Runs at full speed from the title through the main menu and player selection into an Arcade match: serving, moving, rallies, scoring and the pause menu all work."
 }

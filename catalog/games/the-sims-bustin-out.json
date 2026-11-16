@@ -1,11 +1,24 @@
 {
   "slug": "the-sims-bustin-out",
   "title": "The Sims Bustin' Out",
+  "publisher": "Electronic Arts",
+  "year": 2004,
+  "genre": "Life simulation",
   "uid": "0x101FD3DE",
   "variantOf": null,
   "dump": "The Sims Bustin Out",
-  "status": "untested",
-  "notes": [],
+  "status": "boots",
+  "notes": [
+    "Does not get past its title screen yet: it reports \"Game deck memory full\" although the emulated phone has free space."
+  ],
   "controls": null,
-  "test": null
+  "test": {
+    "expect": "boots",
+    "script": [
+      {
+        "wait": 60000
+      }
+    ]
+  },
+  "statusNote": "Shows the EA Games logo and its title screen, then stops there with the message \"Game deck memory full\". The game has just created C:\\System\\Apps\\6RAK\\THESIMS.SAV through the emulator's POSIX file server and the file stays at 0 bytes; nothing else is logged. OK does nothing; the left soft key leaves a white screen with no further frames."
 }

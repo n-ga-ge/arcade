@@ -1,11 +1,112 @@
 {
   "slug": "warhammer-40000",
   "title": "Warhammer 40,000: Glory in Death",
+  "publisher": "Nokia",
+  "year": 2006,
+  "genre": "Turn-based strategy",
   "uid": "0x101FD427",
   "variantOf": null,
   "dump": "Warhammer 40,000",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "The logos take about 45 seconds; then the title waits for key 5. Left alone for a quarter of a minute, the title loads a demo battle; a key press brings the title back.",
+    "A quick battle: Main Menu > Skirmish, then choose Done on each setup screen (Up from the top of a list jumps to Done), read the briefing and press 5.",
+    "A battle starts with deployment: 5 on a unit's card opens the grid, the pad moves the unit and 5 places it.",
+    "Either soft key pauses a battle (resume, save, audio settings, quit). In the pause menu the left soft key selects; OK does not.",
+    "The main menu also has a Tutorial. Multiplayer needs a second phone and cannot work here."
+  ],
+  "controls": {
+    "source": "Seen by pressing keys in the menus and in the deployment phase of a skirmish battle; the title screen itself says to press key 5. The game's Tutorial and the later phases of a turn (moving, shooting, ending the turn) were not gone through, so keys used only there are missing.",
+    "actions": {
+      "up": "Move the cursor or the unit being placed; move the selection in menus",
+      "down": "Move the cursor or the unit being placed; move the selection in menus",
+      "left": "Move the cursor or the unit being placed",
+      "right": "Move the cursor or the unit being placed",
+      "5": "Start from the title; select and confirm (place a unit)",
+      "ok": "Start from the title (like 5); select in menus; continue from the briefing and the turn banner",
+      "lsk": "Select in menus; pause in a battle",
+      "rsk": "Back in menus; pause in a battle"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 8000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 30
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "wait": 25000
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      },
+      {
+        "key": "up",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 4000
+      }
+    ]
+  },
+  "statusNote": "Runs from the logos to the title and main menu, through the Skirmish setup screens and the mission briefing into a battle: the map is drawn, turn 1 starts with the deployment phase, units are placed on the grid with the pad and 5, and the pause menu works."
 }

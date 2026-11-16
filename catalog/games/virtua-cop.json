@@ -1,11 +1,47 @@
 {
   "slug": "virtua-cop",
   "title": "Virtua Cop",
+  "genre": "Light-gun shooter",
   "uid": "0x10201FC6",
   "variantOf": null,
   "dump": "Virtua Cop",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "This game was never released; the card holds a development build (© 2004 Sega, made by Fuel Studios). All four levels (Docks, Garage, Lobby, Office) can be picked from the start.",
+    "Shoot enemies before the ring around them closes. The gun holds six shots; reload with 7.",
+    "After a game over, the left soft key (Done) leaves the statistics, and the high-score question is answered with the soft keys (Yes / No), not with OK.",
+    "Options > Languages offers English, German, French, Spanish and Italian. Multi Player and sending scores were not tried and need a second phone or N-Gage Arena."
+  ],
+  "controls": {
+    "source": "The game's own Start Game > Instructions text (arrow keys, 5, 7). OK firing and the soft keys were seen by pressing them in play and in the menus.",
+    "actions": {
+      "up": "Move the cursor up",
+      "down": "Move the cursor down",
+      "left": "Move the cursor left",
+      "right": "Move the cursor right",
+      "5": "Fire",
+      "7": "Reload",
+      "ok": "Fire; select in menus",
+      "lsk": "The left option on a screen (Done, Yes)",
+      "rsk": "The right option on a screen (No); back in menus"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 4
+      },
+      {
+        "key": "ok",
+        "wait": 24000
+      }
+    ]
+  },
+  "statusNote": "Runs at full speed from the Sega and Fuel Studios logos through the menus into the Docks level: the 3D scene, the aiming cursor, shooting, scoring, the camera moving on to the next enemy, game over and the statistics screen all work. The game is hard from the first second: an enemy who is not shot fires about every two seconds, so the 15 lives last half a minute."
 }
