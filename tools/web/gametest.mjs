@@ -382,17 +382,30 @@ async function pageShot() {
 }
 
 // How alike the page and the emulator's screenshot are, at the best of a few
-// moments (a game that is moving differs a little between the two pictures).
-// null when it could not be measured.
+// moments. The emulator is paused for the two pictures: a game that plays a
+// video or scrolls changes between one screenshot and the next, most of all
+// on a slow machine, and would look unlike itself. null when it could not be
+// measured.
 async function shownOnPage() {
+  const emulator = (verb) => ask(async (what) => {
+    const response = await window.eka2l1.request('POST', `/v1/emulator/${what}`);
+    return response.status;
+  }, verb, verb).catch(() => null);
   let best = null;
   for (let attempt = 0; attempt < 3; attempt++) {
-    const guest = await guestShot(false);
-    const shown = await pageShot();
-    const alike = guest && shown ? likeness(shown, guest.png) : null;
+    await emulator('pause');
+    let alike = null;
+    try {
+      await pause(400); // the last frame the game drew reaches the page
+      const guest = await guestShot(false);
+      const shown = await pageShot();
+      alike = guest && shown ? likeness(shown, guest.png) : null;
+    } finally {
+      await emulator('resume');
+    }
     if (alike !== null && (best === null || alike > best)) best = alike;
     if (best !== null && best >= SHOWN_AT) break;
-    await pause(700);
+    await pause(1500);
   }
   return best;
 }
@@ -483,15 +496,20 @@ async function steadyShot(tries, gapMs) {
 
 // Does the picture change by itself, or when a direction key is pressed? A
 // game in play does one or the other; a screen that is stuck does neither.
-async function pictureChanges(before, press) {
+// Does the picture change, by itself or when a key is pressed? The direction
+// keys are tried first; then the keys the entry says do something in this
+// game, because some games stand still until one of their own keys is used
+// (a golfer at the tee, a board waiting for a move).
+async function pictureChanges(before, press, actionKeys = []) {
   // These pictures are evidence only: the one kept as the game's thumbnail is
   // from before the keys were pressed.
   await pause(2000);
   let after = await guestShot(false);
   if (after && difference(before.png, after.png) > CHANGED_SHARE) return 'by itself';
-  for (const key of ['left', 'right', 'up', 'down']) {
+  const directions = ['left', 'right', 'up', 'down'];
+  for (const key of [...directions, ...actionKeys.filter((key) => !directions.includes(key))]) {
     await press(key, 300);
-    await pause(700);
+    await pause(directions.includes(key) ? 700 : 1500);
     after = await guestShot(false);
     if (after && difference(before.png, after.png) > CHANGED_SHARE) return `after ${key}`;
   }
@@ -679,10 +697,13 @@ async function test() {
 
   run.phase = 'checking that the picture changes';
   // After a nudge the screen may have moved on: compare against how it looks now.
-  const changes = await pictureChanges(nudged ? (await guestShot(false)) || shot : shot, press);
+  // The soft keys open menus in most games: they come last.
+  const actions = Object.keys((entry.controls && entry.controls.actions) || {});
+  const actionKeys = [...actions.filter((key) => key !== 'lsk' && key !== 'rsk'), ...actions.filter((key) => key === 'lsk' || key === 'rsk')];
+  const changes = await pictureChanges(nudged ? (await guestShot(false)) || shot : shot, press, actionKeys);
   run.checks.changes = changes;
   if (changes) run.reached = 'ingame';
-  else run.error = 'expected ingame: after the script the picture neither changed in 2 s nor after left, right, up or down';
+  else run.error = 'expected ingame: after the script the picture neither changed in 2 s nor after a direction key or one of the game\'s own keys';
 }
 
 try {

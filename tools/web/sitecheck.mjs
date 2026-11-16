@@ -143,12 +143,20 @@ async function checkGame(browser, entry) {
     // blank moment between two logos is not a fault.
     for (let attempt = 0; attempt < 6 && !(result.drawn && result.likeness !== null && result.likeness >= SHOWN_AT); attempt++) {
       await pause(attempt ? 2000 : 4000);
+      // Paused for the two pictures, so that a game that is moving is compared
+      // with itself and not with its next frame.
+      await page.evaluate(() => window.eka2l1.request('POST', '/v1/emulator/pause'));
+      await pause(400);
       const guest = Buffer.from(await page.evaluate(async () => Array.from((await window.eka2l1.request('GET', '/v1/screenshot')).body)));
-      if (picture(guest).blank) continue;
+      if (picture(guest).blank) {
+        await page.evaluate(() => window.eka2l1.request('POST', '/v1/emulator/resume'));
+        continue;
+      }
       result.drawn = true;
       await page.evaluate(() => { for (const id of ['overlay', 'setup']) { const e = document.getElementById(id); if (e) { e.dataset.was = String(e.hidden); e.hidden = true; } } });
       const shown = await page.locator('#canvas').screenshot();
       await page.evaluate(() => { for (const id of ['overlay', 'setup']) { const e = document.getElementById(id); if (e && e.dataset.was !== undefined) e.hidden = e.dataset.was === 'true'; } });
+      await page.evaluate(() => window.eka2l1.request('POST', '/v1/emulator/resume'));
       const alike = likeness(shown, guest);
       if (alike !== null && (result.likeness === null || alike > result.likeness)) {
         result.likeness = alike;
