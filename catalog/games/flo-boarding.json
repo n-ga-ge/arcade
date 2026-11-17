@@ -21,7 +21,8 @@
   "statusNote": "The card starts the Nokia Game launcher: splash, registration prompts (declined), a menu with Flo, Chat, Flo Boarding and Ranking. Flo Boarding loads from there: title, main menu, level and board selection, and the qualification race rides in 3D with timer, position, speed and pause menu. Needs the zip packed with an options folder: the dump's own is empty, the pack tool drops empty folders, and without it the launcher exits at start with a System error (\"Base directory of file e:\\System\\Apps\\Nokia_Game\\Options\\config.txt not found\").",
   "notes": [
     "The card opens on the Nokia Game launcher. Press a soft key on the first picture, answer No (right soft key) to registration and to logging in, then choose Flo Boarding in the menu.",
-    "Chat, Ranking, registration and the Bluetooth Duel need the Nokia Game online service or Bluetooth and cannot work here. Flo opens but her animations do not show.",
+    "Chat, Ranking and registration need the Nokia Game online service and cannot work here. Flo opens but her animations do not show.",
+    "The Bluetooth Duel is in Flo Boarding's own main menu. One player chooses Create a new race, a level and a board; the other chooses Join an existing race, then Connect on the first player's name, and a board. Both then press Start (left soft key).",
     "Some letters are missing from the launcher's text in this build; the game's own screens are fine."
   ],
   "multiplayer": {
@@ -29,8 +30,9 @@
       "bluetooth"
     ],
     "players": 2,
-    "menu": "Bluetooth Duel",
-    "status": "untested"
+    "menu": "Flo Boarding > Bluetooth Duel > Create a new race / Join an existing race",
+    "status": "plays",
+    "statusNote": "Two players in one room: one creates a race and picks the level, the other joins and connects to the name it finds, both pick a board and press Start; the race ran on both screens with both riders at the start, and the places (1st, 2nd) changed on both when one overtook. One player's pause is shown to the other, and the other is told \"Connection lost!\" when one ends the game."
   },
   "controls": {
     "source": "The game's own help text for Flo Boarding (the Help page of the Nokia Game menu, read from the card). Speeding up, turning, jumping, the pause menu and the launcher's soft keys were confirmed in play; rails and air tricks were not tried.",
