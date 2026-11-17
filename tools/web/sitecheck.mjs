@@ -1,6 +1,6 @@
 // Checks a deployed site the way a visitor meets it: the pages and their
-// headers, the game files behind the Worker, the front page, and then every
-// game, started from its link in a fresh browser.
+// headers, the game files behind the Worker, the multiplayer relay, the front
+// page, and then every game, started from its link in a fresh browser.
 //
 //   node tools/web/sitecheck.mjs [--base https://n-ga.ge] [--games a,b,c | --all] [--out DIR]
 //                                [--browser chrome|chrome-software] [--timeout 120]
@@ -21,8 +21,14 @@
 // script of the entry is not replayed here: the per-game CI job does that.
 // This is the check that the deployed pieces fit together.
 //
+// The relay (/net/, docs/deployment.md) is checked without a browser: its
+// health address must answer, and two connections must meet in a room made
+// for the purpose and pass a frame each way. The room is not public, so it
+// never shows in the site's list of open rooms.
+//
 // Exit code 0 when everything passed, 1 otherwise.
 import { chromium } from 'playwright';
+import { randomInt } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { SHOWN_AT, likeness, picture } from './gamecheck.mjs';
@@ -121,7 +127,113 @@ async function checkPages() {
   if (served.status === 200 && (!refused || refused.status === 403)) ok(local ? 'game files: served (a dev server has no access rule to check)' : 'game files: served to the site, refused to others');
 }
 
-// --- 2. the front page ------------------------------------------------------------
+// --- 2. the multiplayer relay -----------------------------------------------------
+
+const RELAY_WAIT = 15000;
+
+// One connection to a room, as the player's page makes it. Node's WebSocket
+// takes the Origin header a browser would send; the relay admits no other
+// page than the site's. next() resolves to { text }, { bytes } or { end }.
+function relaySocket(code, query, origin) {
+  const address = `${base.replace(/^http/, 'ws')}/net/room/${code}?${new URLSearchParams(query)}`;
+  const ws = new WebSocket(address, { headers: { Origin: origin } });
+  ws.binaryType = 'arraybuffer';
+  const queue = [];
+  let waiting = null;
+  const deliver = (message) => {
+    if (!waiting) { queue.push(message); return; }
+    clearTimeout(waiting.timer);
+    const { resolve } = waiting;
+    waiting = null;
+    resolve(message);
+  };
+  ws.addEventListener('message', (event) => deliver(typeof event.data === 'string' ? { text: event.data } : { bytes: [...new Uint8Array(event.data)] }));
+  ws.addEventListener('error', () => deliver({ end: 'the connection failed' }));
+  ws.addEventListener('close', (event) => deliver({ end: `the connection was closed with code ${event.code}` }));
+  return {
+    next: () => (queue.length ? Promise.resolve(queue.shift()) : new Promise((resolve) => {
+      waiting = { resolve, timer: setTimeout(() => { waiting = null; resolve({ end: `nothing arrived within ${RELAY_WAIT / 1000} s` }); }, RELAY_WAIT) };
+    })),
+    send: (data) => ws.send(data),
+    close: () => { try { ws.close(); } catch { /* never opened */ } },
+  };
+}
+
+// The next message of a connection as JSON, which must be of the kind `t`.
+async function relayMessage(socket, who, t) {
+  const message = await socket.next();
+  let data = null;
+  try { data = JSON.parse(message.text); } catch { /* not a text frame */ }
+  if (data?.t !== t) throw new Error(`${who} expected "${t}" and got ${message.end || (message.text ?? `a binary frame of ${message.bytes.length} bytes`)}`);
+  return data;
+}
+
+async function relayFrame(socket, who, expected) {
+  const message = await socket.next();
+  if (JSON.stringify(message.bytes) !== JSON.stringify(expected)) {
+    throw new Error(`${who} expected the frame [${expected}] and got ${message.end || message.text || `[${message.bytes}]`}`);
+  }
+}
+
+async function checkRelay() {
+  // 404 is what Pages, or a dev server without the relay, answers under /net/.
+  let health = null;
+  let status = 'does not answer';
+  try {
+    const response = await fetch(`${base}/net/health`);
+    const body = await response.text();
+    status = `answers ${response.status}`;
+    if (response.status === 200) {
+      status += ` with ${body.slice(0, 60).replace(/\s+/g, ' ').trim() || 'an empty body'}`;
+      try { health = JSON.parse(body); } catch { /* not the relay */ }
+    }
+  } catch (error) {
+    status = `cannot be reached (${error.cause?.message || error.message})`;
+  }
+  if (health?.ok !== true || health?.v !== 1) {
+    fail(`the multiplayer relay is not deployed: /net/health ${status} (expected 200 {"ok":true,"v":1}). On Cloudflare the relay is the Worker in cloudflare/net-worker/, which a production deployment publishes; locally it is part of the dev server (tools/web/devserver.py)`);
+    return;
+  }
+  const list = await fetch(`${base}/net/rooms`).then(async (response) => (response.status === 200 ? (await response.json()).rooms : null)).catch(() => null);
+  if (!Array.isArray(list)) fail('the multiplayer relay: /net/rooms does not answer with a list of rooms');
+
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code = Array.from({ length: 6 }, () => alphabet[randomInt(32)]).join('');
+  const origin = new URL(base).origin;
+  const sockets = [];
+  const connect = (query, from = origin) => sockets[sockets.push(relaySocket(code, query, from)) - 1];
+  try {
+    const host = connect({ v: 1, name: 'sitecheck host', create: 1, game: 'sitecheck' });
+    const hello = await relayMessage(host, 'the creator of a room', 'hello');
+    if (hello.id !== 1 || hello.room !== code || hello.public !== false) throw new Error(`the creator of a room got an unexpected hello: ${JSON.stringify(hello)}`);
+    const guest = connect({ v: 1, name: 'sitecheck guest' });
+    const joined = await relayMessage(guest, 'a member joining the room', 'hello');
+    if (joined.id !== 2 || joined.peers?.[0]?.id !== 1) throw new Error(`a member joining the room got an unexpected hello: ${JSON.stringify(joined)}`);
+    await relayMessage(host, 'the creator, when a member joined,', 'join');
+    guest.send(new Uint8Array([1, 0x6e, 0x67, 0x61]));
+    await relayFrame(host, 'the creator', [2, 0x6e, 0x67, 0x61]);
+    host.send(new Uint8Array([0, 0x67, 0x65]));
+    await relayFrame(guest, 'the member', [1, 0x67, 0x65]);
+    guest.close();
+    await relayMessage(host, 'the creator, when the member left,', 'leave');
+    // Only the site's own pages may open a room. A dev server takes any
+    // local page, so there is no rule to check there.
+    const local = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(new URL(base).hostname);
+    if (!local) {
+      const stranger = connect({ v: 1, name: 'sitecheck stranger' }, 'https://sitecheck.invalid');
+      const answer = await stranger.next();
+      if (!answer.end) throw new Error(`a page of another site (Origin https://sitecheck.invalid) was let into the room; the relay must refuse its upgrade`);
+    }
+    ok(local ? 'the multiplayer relay answers, and two connections exchange frames in a room (a dev server has no origin rule to check)'
+      : 'the multiplayer relay answers, two connections exchange frames in a room, and a page of another site is refused');
+  } catch (error) {
+    fail(`the multiplayer relay at /net/: ${error.message}`);
+  } finally {
+    for (const socket of sockets) socket.close();
+  }
+}
+
+// --- 3. the front page ------------------------------------------------------------
 
 async function checkFrontPage(browser, catalog) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -142,7 +254,7 @@ async function checkFrontPage(browser, catalog) {
   return listed;
 }
 
-// --- 3. one game ---------------------------------------------------------------------
+// --- 4. one game ---------------------------------------------------------------------
 
 async function checkGame(browser, entry) {
   const result = { slug: entry.slug, title: entry.title, status: entry.status, started: false, firstFrameMs: null, drawn: false, likeness: null, pass: false, note: '' };
@@ -202,7 +314,7 @@ async function checkGame(browser, entry) {
   return result;
 }
 
-// --- 4. a second visit ----------------------------------------------------------------
+// --- 5. a second visit ----------------------------------------------------------------
 
 async function checkReturn(slug) {
   const profile = fs.mkdtempSync(path.join(outDir, 'profile-'));
@@ -240,6 +352,7 @@ async function checkReturn(slug) {
 console.log(`checking ${base} with ${mode}`);
 const catalog = await (await fetch(`${base}/catalog/index.json`)).json();
 await checkPages();
+await checkRelay();
 const browser = await launch();
 const listed = await checkFrontPage(browser, catalog);
 const wanted = typeof args.games === 'string' ? args.games.split(',').map((slug) => slug.trim()).filter(Boolean)
