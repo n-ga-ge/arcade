@@ -23,21 +23,24 @@
   # the resource policy above for requests made with CORS.
   ! Access-Control-Allow-Origin
 
-  # Caching. No file name carries a content hash (eka2l1_web.wasm, .data and
-  # .js keep their names from one build to the next, as do the pages, the
-  # scripts and the catalogue), so nothing may be reused without asking the
-  # server first: a browser that mixed an old wasm with a new page would
-  # break. "max-age=0, must-revalidate" makes the browser keep its copy and
+  # Caching. The pages, the catalogue, the front page's files and
+  # /play/config.json keep their names from one deployment to the next, so
+  # nothing here may be reused without asking the server first.
+  # "max-age=0, must-revalidate" makes the browser keep its copy and
   # revalidate it on every use. Pages sends an ETag for every asset and
   # answers an unchanged one with 304 and no body, so a returning visitor
-  # pays one small round trip per file and downloads the 10 MB wasm again
-  # only after a deployment changed it; a 304 also keeps the browser's
-  # compiled-code cache for the wasm valid. This is also what Pages sends by
+  # pays one small round trip per file. This is also what Pages sends by
   # default; it is written out so that the policy does not depend on a
-  # default. Longer lifetimes ("immutable") would need hashed file names,
-  # and stale-while-revalidate would show one stale mixed version after each
-  # deployment. Cloudflare's own edge cache is not governed by this header:
-  # Pages keeps assets at the edge until the next deployment replaces them.
+  # default. stale-while-revalidate would show one stale mixed version after
+  # each deployment. Cloudflare's own edge cache is not governed by this
+  # header: Pages keeps assets at the edge until the next deployment replaces
+  # them.
+  #
+  # The zone overrides this for scripts and style sheets: its Browser Cache
+  # TTL turns their lifetime into "max-age=14400", four hours, whatever this
+  # file says. The front page's /style.css and /js/*.js are served that way.
+  # The player's files must never be mixed across builds, so they get
+  # addresses that change with their content instead: the /play/b/* rule.
   Cache-Control: public, max-age=0, must-revalidate
 
   # Security headers. HTTPS only from the first visit on.
@@ -69,12 +72,15 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 
 /play/b/*
-  # The player's own files. tools/site/build.py puts each build in a folder
-  # named after a hash of its content, so these addresses never change their
-  # content and can be kept for good. That also takes them out of reach of the
-  # zone's Browser Cache TTL, which rewrites short lifetimes on scripts and
-  # styles: a script of the last build kept for hours next to a fresh wasm is
-  # what "wasmExports.Dc is not a function" was.
+  # The player's own files: everything of the web build but the page and
+  # config.json. tools/site/build.py puts each build in a folder named after
+  # a hash of its content, /play/b/<hash>/, and points the page there, so
+  # these addresses never change their content and can be kept for good. That
+  # also takes them out of reach of the zone's Browser Cache TTL, which
+  # rewrites short lifetimes on scripts and styles: a script of the last
+  # build kept for hours next to a fresh wasm is what "wasmExports.Dc is not
+  # a function" was. tools/web/sitecheck.mjs fails on a player file that is
+  # neither here nor revalidated.
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable
 
@@ -82,9 +88,9 @@
 # .wasm is served as application/wasm (which streaming compilation requires)
 # without being told. "wrangler pages dev" shows the same types locally.
 
-# Search engines should list the live site only. Dev deployments (the dev host
-# name and every *.pages.dev address, production's own included) are for
-# looking at, not for finding.
+# Search engines should list the live site only. The dev site (dev.n-ga.ge,
+# which shows the Pages branch "dev") and every *.pages.dev address,
+# production's own included, are for looking at, not for finding.
 https://dev.n-ga.ge/*
   X-Robots-Tag: noindex
 

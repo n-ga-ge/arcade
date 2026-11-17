@@ -22,13 +22,18 @@
 #   CF_PAGES_DEV_BRANCH           Pages branch that dev deployments go to (default dev)
 #
 # The branch decides what is deployed. "main" is production: the site goes
-# live, and the Worker in cloudflare/assets-worker/ (when that folder exists)
-# is deployed after it. Anything else (another branch, a pull request, a tag)
-# is a dev deployment: it is uploaded as the Pages branch "dev"
-# (CF_PAGES_DEV_BRANCH), so it appears at https://dev.<project>.pages.dev and
-# at the host name pointed there (dev.n-ga.ge), replacing the dev deployment
-# before it, and it leaves the Worker alone. The branch and the commit come
-# from --branch, else from Forgejo's CI variables, else from the checkout.
+# live and the assets Worker is deployed after it. Anything else is a dev
+# deployment: it goes to the Pages branch "dev" and leaves the Worker alone.
+#
+# (--help prints this comment up to here.) In full: on "main" the Worker in
+# cloudflare/assets-worker/ (when that folder exists) is deployed after the
+# site, with CLOUDFLARE_API_TOKEN_WORKERS when that is set, and ASSETS_TOKEN
+# is then stored on it. Anything else (another branch, a pull request, a tag)
+# is uploaded as the Pages branch "dev" (CF_PAGES_DEV_BRANCH), so it appears
+# at https://dev.<project>.pages.dev and at the host name pointed there
+# (dev.n-ga.ge), replacing the dev deployment before it. The branch and the
+# commit come from --branch, else from Forgejo's CI variables, else from the
+# checkout.
 #
 # --dry-run does everything that needs no credentials: it resolves the branch
 # and the commit, checks dist/ again, fetches the pinned wrangler, bundles the
@@ -72,7 +77,7 @@ if [ -z "$BRANCH" ]; then
   BRANCH=${FORGEJO_HEAD_REF:-${GITHUB_HEAD_REF:-}}
   if [ -z "$BRANCH" ]; then
     BRANCH=${FORGEJO_REF_NAME:-${GITHUB_REF_NAME:-}}
-    # A tag is not a branch: it gets a preview of its own, even one called main.
+    # A tag is not a branch: it is a dev deployment, even one called main.
     [ "${FORGEJO_REF_TYPE:-${GITHUB_REF_TYPE:-}}" != tag ] || BRANCH=tag-$BRANCH
   fi
   [ -n "$BRANCH" ] || BRANCH=$(git -C "$ARCADE_ROOT" symbolic-ref --short -q HEAD || true)
@@ -124,9 +129,9 @@ compgen -G "$DIST/play/b/*/eka2l1_web.wasm" >/dev/null || [ -f "$DIST/play/eka2l
 python3 -I "$ARCADE_ROOT/tools/site/steps/90-cloudflare.py" "$DIST" --check
 command -v npx >/dev/null || die "npx is not on PATH: wrangler needs Node.js 22 or later"
 
-# Tokens are stored per job (..._PAGES here, ..._R2 for the upload); wrangler
-# only reads CLOUDFLARE_API_TOKEN, so the deployment's token is handed to it
-# under that name.
+# Tokens are stored per job (..._PAGES here, ..._WORKERS for the Worker below,
+# ..._R2 for the upload); wrangler only reads CLOUDFLARE_API_TOKEN, so the
+# deployment's token is handed to it under that name.
 if [ -n "${CLOUDFLARE_API_TOKEN_PAGES:-}" ]; then
   export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN_PAGES
 fi
