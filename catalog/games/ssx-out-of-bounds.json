@@ -13,7 +13,7 @@
     "On the first start the game asks for a profile name (the digit keys type letters, the left soft key accepts) and a favourite rider.",
     "In menus 5 selects and 7 goes back. In a race, tricks fill the boost meter and 5 spends it; after a fall, tap 5 to recover.",
     "The keys can be changed in the game under Options > Key Mapping.",
-    "Multiplayer in the main menu (Host or Join, up to four players) does not work yet: the joining player's search finds nobody. N-Gage Arena was Nokia's online service and cannot work."
+    "Multiplayer in the main menu (Host or Join, up to four players): the joining player picks the host from the list, the host accepts and presses Connect. The host picks a rider, then the joining player, then the host picks the peak and the track, and the race starts for both. N-Gage Arena was Nokia's online service and cannot work."
   ],
   "multiplayer": {
     "modes": [
@@ -22,8 +22,8 @@
     ],
     "players": 4,
     "menu": "Multiplayer > Host / Join",
-    "status": "broken",
-    "statusNote": "One player chooses Host, accepts the warning that the Bluetooth name will change and waits at \"Waiting for players to join SSX game\"; the other chooses Join and gets \"Search Complete: None Found\". The host puts the game's identifier in front of its Bluetooth name as characters the emulator removes, so the joiner probably does not recognise it. Tried with the original game."
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Host and accepts the warning that the Bluetooth name will change, the other Join and the host in the list; the host accepts and presses Connect, each picks a rider, the host the track. A race ran on both screens with both riders in view; a pause is shown to the other player, and when one gives up the other is told. Tried with the original game, two players."
   },
   "controls": {
     "source": "The game's Options > Key Mapping screen (its defaults) and the key help shown before a race. Steering, the pause menu on the right soft key and the keys used in the menus and the name entry were observed in play.",
