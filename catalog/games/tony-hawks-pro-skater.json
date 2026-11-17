@@ -10,16 +10,19 @@
   "notes": [
     "Start Game > Instructions plays a two-minute demonstration with the keys written on screen.",
     "A run lasts two minutes. The left soft key pauses it (continue, sound levels, retry, end run).",
-    "N-Gage Arena on the main menu is Nokia's online service, which no longer exists. The 2 Player mode was not tried."
+    "N-Gage Arena on the main menu is Nokia's online service, which no longer exists.",
+    "Start Game > 2 Player has Bluetooth (Host Game, Join Game) and Horse Play, which asks for two skaters on one device and was not played. Over Bluetooth the host waits, the other player's search lists the host and Continue (left soft key) joins; the host picks the game (Tag Play, Graffiti, Trick Attack, Skate Race) and the course, both pick a skater. A pause by one player pauses both."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
-      "arena"
+      "arena",
+      "hotseat"
     ],
     "players": 2,
-    "menu": "2 Player",
-    "status": "untested"
+    "menu": "Start Game > 2 Player > Bluetooth > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins the host its search lists; the host picks the game and the course. A Trick Attack run of two minutes ran on both screens: each one's score showed as the opponent's on the other, a pause paused both, and it ended with both scores. The host is told when the client leaves. Whether each sees the other's skater is not known; other games not tried."
   },
   "controls": {
     "source": "The game's own Start Game > Instructions demonstration (movement, 5, 4, 6, 7). The soft keys, menu keys and that 5 also selects in menus were seen by pressing them.",

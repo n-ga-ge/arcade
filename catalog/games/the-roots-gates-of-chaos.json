@@ -14,14 +14,16 @@
     "The character's name is typed phone-style on the digit keys. To keep the suggested name PLAYER, press the left soft key.",
     "Story pages and the tutorial's parchment messages are dismissed with 5.",
     "In play either soft key opens the game menu (Return, Options, Help, Save and Quit). Help has a long manual.",
-    "Multiplayer (cooperative and competitive) needs Bluetooth or N-Gage Arena and cannot work here."
+    "A Bluetooth game: both players choose Start and a character. The host chooses New Game and then Multiplayer and waits (Awaiting clients); the other chooses Join Game and the host in the list; the host then starts with the left soft key. After the story a Waypoints list opens: 7 closes it, 5 does nothing there."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Start > a character > Enter Game > New Game > Multiplayer (host) / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one starts a New Game in Multiplayer mode and waits, the other chooses Join Game and the host in the list, and the host starts. Both came through the story into the Town of Bark, where each saw the other's character walk; one player's game menu tells the other that the game is paused, and when the joiner saved and quit the host played on. No enemy was fought together."
   },
   "controls": {
     "source": "The game's Help > Controls pages. Moving, attacking, 5 on messages and the soft keys were also tried in the tutorial; the skill, potion, map and menu keys are from the Help only.",
