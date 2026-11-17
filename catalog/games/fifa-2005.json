@@ -22,7 +22,7 @@
     ],
     "menu": "Multiplayer > Host / Join",
     "status": "broken",
-    "statusNote": "Two players in one room do not find each other: one chooses Host and waits for clients, the other chooses Join and its search ends with None Found, also at a second try. The host gives the phone a Bluetooth name with a marker in front of the player's name, and the marker does not reach the other player whole, so the joining game does not recognise the host."
+    "statusNote": "Two players in one room do not find each other: one chooses Host and waits for clients, the other chooses Join and its search ends with None Found, also at a second try. The host gives the phone a Bluetooth name with a marker in front of the player's name; the joining game is told of that device but does not list it, probably because the marker does not arrive whole."
   },
   "controls": {
     "source": "The game's own Game Controls diagrams (Defending and Attacking), shown before kick-off. Moving, pass, instant replay and the pause menu were confirmed in a match.",
