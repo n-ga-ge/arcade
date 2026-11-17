@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 """Print the CI job matrix: one entry per game in the catalogue.
 
-  python3 -I tools/ci/gen-matrix.py [--batches N] [--catalog DIR] [--pretty]
+  python3 -I tools/ci/gen-matrix.py [--catalog DIR] [--pretty]
 
-Prints one line per batch, in the form a workflow step appends to
-$GITHUB_OUTPUT. The games are dealt, in title order, into N batches of nearly
-equal size:
+Prints one line, in the form a workflow step appends to $GITHUB_OUTPUT, with
+the games in title order:
 
-  batch1={"slugs":["alien-front","ashen",...],"titles":{"alien-front":"Alien Front",...}}
-  batch2=...
+  matrix={"slugs":["alien-front","ashen",...],"titles":{"alien-front":"Alien Front",...}}
 
-Each batch feeds one job of the workflow: "slugs" is its matrix and "titles"
-names its jobs. The batches run one after another, because Forgejo 16 ignores
-strategy.max-parallel: without batches every game job starts at once, and the
-runner's Docker cannot create more than about 30 job networks at a time.
+"slugs" is the matrix of the workflow's game job and "titles" names its jobs.
 
 A matrix holds only slugs because Forgejo names a job of a matrix that comes
 from another job's output "<name> (<matrix values>)": with the title as the
@@ -48,7 +43,6 @@ def load(catalog):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--catalog', type=pathlib.Path, default=ROOT / 'catalog' / 'games')
-    parser.add_argument('--batches', type=int, default=1, help='how many batch<n> lines to deal the games into')
     parser.add_argument('--pretty', action='store_true', help='one game per line, for reading')
     args = parser.parse_args()
     games = load(args.catalog)
@@ -57,22 +51,11 @@ def main():
         for game in games:
             print(f"{game['slug']:40} {game['title']}")
         return
-    # The workflow has one job per batch and none of them may be left without games.
-    if not 1 <= args.batches <= len(games):
-        sys.exit(f'cannot deal {len(games)} games into {args.batches} batches')
-    # One line each, ASCII only: safe to pass through a job output.
-    dump = lambda value: json.dumps(value, ensure_ascii=True, separators=(',', ':'))
-    size, extra = divmod(len(games), args.batches)
-    start = 0
-    for number in range(1, args.batches + 1):
-        end = start + size + (1 if number <= extra else 0)
-        batch = games[start:end]
-        print(f'batch{number}=' + dump({
-            'slugs': [game['slug'] for game in batch],
-            'titles': {game['slug']: game['title'] for game in batch},
-        }))
-        start = end
-
+    # One line, ASCII only: safe to pass through a job output.
+    print('matrix=' + json.dumps({
+        'slugs': [game['slug'] for game in games],
+        'titles': {game['slug']: game['title'] for game in games},
+    }, ensure_ascii=True, separators=(',', ':')))
 
 if __name__ == '__main__':
     main()
