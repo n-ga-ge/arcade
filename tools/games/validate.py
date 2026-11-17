@@ -114,6 +114,8 @@ def main():
         texts += [(f"notes[{i}]", note, 600) for i, note in enumerate(game.get("notes") or [])]
         texts += [(f"controls.notes[{i}]", note, 600) for i, note in enumerate(controls.get("notes") or [])]
         texts += [(f"controls.actions.{key}", action, 120) for key, action in (controls.get("actions") or {}).items()]
+        if isinstance(game.get("enhance"), dict):
+            texts.append(("enhance.note", game["enhance"].get("note"), 400))
         for name, value, limit in texts:
             if isinstance(value, str) and len(value) > limit:
                 mine.append(f"{slug}.{name}: {len(value)} characters, the player shows {limit}")
