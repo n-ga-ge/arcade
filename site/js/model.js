@@ -1,5 +1,6 @@
 // The catalogue as the front page sees it: loading /catalog/index.json, the
-// status vocabulary, searching, filtering and ordering. No DOM in here.
+// status and multiplayer vocabulary, searching, filtering and ordering. No DOM
+// in here.
 
 export const CATALOG_URL = '/catalog/';
 export const SOURCE_URL = 'https://github.com/n-ga-ge/arcade';
@@ -30,6 +31,41 @@ export const CI = {
   none: { id: 'none', label: 'CI not run', means: 'No automated run has been recorded for this game.' },
 };
 
+// How a game can be played with others, in the order the page lists the ways.
+// Only Bluetooth is something this site can carry between two visitors.
+const MODES = ['bluetooth', 'arena', 'hotseat'];
+export const modeText = (mode, players) => ({
+  bluetooth: players ? `Bluetooth, up to ${players} players` : 'Bluetooth',
+  arena: 'N-Gage Arena: not available, its servers are gone',
+  hotseat: 'Several players on one device',
+}[mode]);
+
+// How far Bluetooth play gets on this site, in the words that follow
+// "Bluetooth play on this site:".
+const MULTIPLAYER = {
+  untested: 'not tried yet',
+  broken: 'not working',
+  connects: 'two players reach each other',
+  plays: 'works',
+};
+export const multiplayerWords = (status) => MULTIPLAYER[status];
+
+// The entry's `multiplayer` field, or null when the game has none (most
+// catalogues written before the field existed, and single-player games).
+function multiplayerOf(raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.modes)) return null;
+  const modes = MODES.filter((mode) => raw.modes.includes(mode));
+  if (!modes.length) return null;
+  return {
+    modes,
+    bluetooth: modes.includes('bluetooth'),
+    players: Number.isInteger(raw.players) && raw.players >= 2 && raw.players <= 8 ? raw.players : null,
+    menu: typeof raw.menu === 'string' ? raw.menu : '',
+    status: Object.hasOwn(MULTIPLAYER, raw.status) ? raw.status : 'untested',
+    statusNote: typeof raw.statusNote === 'string' ? raw.statusNote : '',
+  };
+}
+
 // Case and accents do not matter when searching ("pokemon" finds "Pokémon").
 const fold = (text) => String(text).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -46,6 +82,7 @@ function normalise(raw, version) {
     genre: raw.genre ? String(raw.genre) : '',
     variantOf: raw.variantOf ? String(raw.variantOf) : null,
     hasControls: Boolean(raw.hasControls),
+    multiplayer: multiplayerOf(raw.multiplayer),
     ci,
     ciState: !ci ? CI.none : ci.pass === true ? CI.pass : CI.fail,
     shot: null,
@@ -84,7 +121,10 @@ export async function loadCatalog(signal) {
       base.variants.push(game);
     }
   }
-  return { games, bySlug, commit, generated: parseDate(index.generated) };
+  // Whether the catalogue knows of any game two visitors could play together:
+  // without one the page has no multiplayer filter and asks for no rooms.
+  const multiplayer = games.some((game) => game.multiplayer?.bluetooth);
+  return { games, bySlug, commit, generated: parseDate(index.generated), multiplayer };
 }
 
 function parseDate(value) {
@@ -105,15 +145,17 @@ const ORDERS = {
 export const isOrder = (name) => Object.hasOwn(ORDERS, name);
 export const isStatus = (id) => RANK.has(id);
 
-
-// What the page shows for a search, status filter and order, plus how many of
-// the searched games have each status (the numbers on the filter).
-export function select(games, { q, status, sort }) {
+// What the page shows for a search, status filter, multiplayer filter and
+// order, plus the numbers on the filters: how many of the games that pass the
+// other filters have each status, and how many can be played over Bluetooth.
+export function select(games, { q, status, sort, mp }) {
   // Every word typed has to appear somewhere in the title, publisher, genre or year.
   const words = fold(q).split(/\s+/).filter(Boolean);
-  const found = games.filter((game) => words.every((word) => game.haystack.includes(word)));
+  const searched = games.filter((game) => words.every((word) => game.haystack.includes(word)));
+  const found = mp ? searched.filter((game) => game.multiplayer?.bluetooth) : searched;
   const counts = Object.fromEntries(STATUSES.map((entry) => [entry.id, 0]));
   for (const game of found) counts[game.status] += 1;
+  const multiplayer = searched.filter((game) => game.multiplayer?.bluetooth && (!status || game.status === status)).length;
   const shown = (status ? found.filter((game) => game.status === status) : found).sort(ORDERS[isOrder(sort) ? sort : '']);
-  return { shown, counts, found: found.length };
+  return { shown, counts, found: found.length, multiplayer };
 }

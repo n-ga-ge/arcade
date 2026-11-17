@@ -99,7 +99,7 @@ p { margin: 0; }
 .lede { font-size: clamp(22px, 2.2vw + 14px, 34px); line-height: 1.15; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
 .sub { margin-top: 8px; max-width: 60ch; color: var(--plate-dim); }
 
-/* Search, order and status filter */
+/* Search, order, status filter and multiplayer switch */
 .controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 12px; align-items: end; }
 .field { display: grid; gap: 4px; min-width: 0; }
 .field-label { padding: 0; font: 600 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
@@ -110,7 +110,8 @@ p { margin: 0; }
 .controls select { padding-right: 6px; }
 .controls input[type="search"]::placeholder { color: var(--dim); opacity: 1; }
 .controls input[type="search"]:focus-visible, .controls select:focus-visible { outline-offset: 0; border-color: var(--accent); }
-.filters { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 4px; }
+.filter-row { grid-column: 1 / -1; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.filters { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 4px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { position: relative; display: block; cursor: pointer; }
 .chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
@@ -122,7 +123,7 @@ p { margin: 0; }
 .chip-none .chip-face { color: var(--dim); font-weight: 500; }
 .chip:hover .chip-face { border-color: var(--ink); }
 .chip input:checked + .chip-face { background: var(--ink); border-color: var(--ink); color: var(--page); }
-.chip input:checked + .chip-face .chip-count, .chip input:checked + .chip-face .sig { color: inherit; }
+.chip input:checked + .chip-face .chip-count, .chip input:checked + .chip-face .sig, .chip input:checked + .chip-face .mp-mark { color: inherit; }
 .chip input:focus-visible + .chip-face { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (pointer: coarse) {
   .chip-face { min-height: 44px; }
@@ -130,7 +131,7 @@ p { margin: 0; }
 }
 /* On the narrowest phones the search box gets a row of its own. */
 @media (max-width: 359px) { .controls .field { grid-column: 1 / -1; } }
-/* Six filters in two rows rather than three on most phones. */
+/* The filters in two or three rows rather than four on most phones. */
 @media (max-width: 479px) { .chip-face { gap: 6px; padding-inline: 8px; font-size: 13.5px; } }
 .summary { margin: 14px 0 12px; font: 12px/1.4 var(--mono); letter-spacing: .04em; color: var(--dim); }
 
@@ -148,6 +149,13 @@ p { margin: 0; }
 .ci-pass .ci-mark { color: var(--ok); }
 .ci-fail .ci-mark { color: var(--bad); }
 .ci-fail { color: var(--ink); }
+/* Multiplayer: two players and the word. The colour says how far Bluetooth
+   play gets here, which the detail view says in words. */
+.mp { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; }
+.mp-mark { flex: none; width: 14px; height: 12px; fill: currentColor; color: var(--idle); }
+.mp-plays .mp-mark { color: var(--ok); }
+.mp-connects .mp-mark { color: var(--info); }
+.mp-broken .mp-mark { color: var(--bad); }
 
 /* The grid of cards */
 .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
@@ -176,6 +184,9 @@ p { margin: 0; }
 .card-variant, .card-by { font-size: 12.5px; line-height: 1.35; color: var(--dim); overflow-wrap: anywhere; }
 .card-variant { font-style: italic; }
 .card .status { margin-top: auto; padding-top: 5px; }
+.card-net { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 3px 8px; }
+/* How many rooms are open for the game: the one lit thing on a card. */
+.card-rooms { margin-left: auto; padding: 1px 6px; border-radius: 2px; background: var(--signal); color: #15171c; font: 700 11px/1.5 var(--mono); letter-spacing: .04em; white-space: nowrap; }
 .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 30px; }
 .more {
   position: relative; z-index: 2; flex: none; min-height: 30px; margin-right: -4px; padding: 3px 8px; border: 1px solid transparent; border-radius: 2px;
@@ -188,6 +199,26 @@ p { margin: 0; }
   .card-foot { flex-wrap: wrap; }
   .more { margin-left: -10px; }
 }
+
+/* Open rooms: on the page above the games, and in a game's detail view. A row
+   on the page is as wide as one and a half or two cards. */
+.rooms { display: grid; gap: 6px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--edge); }
+.rooms-title { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: 18px; line-height: 1.25; }
+.rooms-sub { color: var(--dim); font-size: 14px; }
+.rooms .room-list { margin-top: 6px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 314px), 1fr)); gap: 8px 16px; }
+.rooms-more { justify-self: start; margin: 0 0 0 -8px; }
+.room-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.room { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 10px 8px 12px; border: 1px solid var(--edge); border-left: 3px solid var(--signal); background: var(--card); }
+.room-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.room-game { font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.room-game a { color: inherit; text-decoration: none; }
+.room-game a:hover { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.room-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; font-size: 13px; line-height: 1.45; color: var(--dim); overflow-wrap: anywhere; }
+.room-meta code { letter-spacing: .08em; }
+.room-join { flex: none; min-height: 36px; padding-inline: 14px; }
+@media (pointer: coarse) { .room-join { min-height: 44px; } }
+.rooms-heading { font-weight: 700; }
+.detail-rooms .room { background: var(--field); }
 
 /* The screen */
 .screen { position: relative; width: 100%; max-width: 176px; aspect-ratio: 176 / 208; margin-inline: auto; overflow: hidden; background: var(--lcd); box-shadow: 0 0 0 1px #000; }
@@ -247,6 +278,7 @@ p { margin: 0; }
 .facts dt { font: 600 11px/1.9 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
 .facts dd { margin: 0; overflow-wrap: anywhere; }
 .plain { list-style: none; margin: 0; padding: 0; }
+.mp-fact { display: grid; gap: 4px; }
 .detail-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
 .detail-actions .primary { min-width: 120px; }
 @media (min-width: 700px) {
@@ -278,6 +310,7 @@ p { margin: 0; }
   .card::before, .card::after { display: none; }
   .chip input:checked + .chip-face { outline: 2px solid Highlight; }
   .stamp { border: 1px solid CanvasText; }
+  .card-rooms { border: 1px solid CanvasText; }
   .masthead { background-image: none; border-bottom-color: CanvasText; }
   .wm-ink { fill: CanvasText; }
   .wm-dot { fill: Highlight; }
