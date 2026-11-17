@@ -12,14 +12,16 @@
     "5 confirms on the title screen and in every menu; the left soft key selects and the right one goes back.",
     "A new game starts with a training mission in which Redding explains the keys as you go.",
     "In play the left soft key opens the menu (Objectives, Notes, E-mail, Config with Load Game and Quit); the right soft key resumes.",
-    "Multiplayer and N-Gage Arena need Bluetooth or the online service and cannot work here."
+    "Multiplayer (Host Game, Join Game, Bluetooth Settings) does not work yet: the game keeps asking to enable Bluetooth. N-Gage Arena was Nokia's online service and cannot work."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host Game / Join Game",
+    "status": "broken",
+    "statusNote": "Host Game and Join Game both ask \"Bluetooth is required for multiplayer. Do you want to enable Bluetooth?\", and Yes brings the same question back, also after Bluetooth Active was ticked under Bluetooth Settings. So neither player gets to host or to search. The game switches Bluetooth on through a phone service the emulator does not implement, and probably goes on reading it as off."
   },
   "controls": {
     "source": "The training mission's own instructions (controller keys move, 2, 4, 6 and 8 position the camera) and its on-screen prompt \"7: Interact\"; the other keys were observed in the training room. The game has no controls screen. Firing was not tried (the training starts without ammunition).",

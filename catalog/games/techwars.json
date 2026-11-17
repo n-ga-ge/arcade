@@ -22,13 +22,15 @@
     "The game starts in Spanish. For English choose Opciones on the main menu, then press right on Idioma.",
     "5 continues and selects everywhere; the pad moves through menus and left and right change a value.",
     "A duel is lost when the bot runs into a light bar or the arena edge, so it has to be steered from the first second. After the last round the game waits for 7 to go back to the menu; a quick tap was sometimes missed there, so press it again if nothing happens.",
-    "Multiplayer needs a Bluetooth link to a second phone and cannot work here."
+    "Multiplayer (Multijugador while the game is in Spanish): one player chooses Host Server and waits at \"Server ON\", the other chooses Join Server and then the host's name in the list; the duel starts at once on both. After a match the winner's screen offers 5 for another one and 7 leaves; the loser's only has 7."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host Server / Join Server",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Host Server, the other Join Server and the host in the list, named as in the room; a duel starts at once. Two matches ran to the end with the same rounds and scores on both screens, and the host's bot ran into the joiner's light bar. While one pauses the other waits; after the joiner quit, the host said \"Waiting for opponents\" until it left too."
   },
   "controls": {
     "source": "The game's own controls screen at start-up and its help pages (Options > Help): left and right move the bot, 7 is turbo. The soft keys and the menu keys were observed. The help also lists \"R. Hand: Change Sight\"; which key that is was not found.",
