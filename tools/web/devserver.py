@@ -20,6 +20,10 @@ checkout): /assets/NGAGE.ROM and /assets/games/<slug>.zip are the paths the
 deployed site uses. /noiso/ serves the same files without the isolation
 headers, to test how the page reports an unsupported setup.
 
+In both, /net/ is the multiplayer room relay (relay.py): /net/health,
+/net/rooms and the WebSocket /net/room/<CODE>, as on the deployed site. Its
+rooms live in this process and are gone when it stops.
+
   --shell DIR   page sources (eka2l1/src/emu/web/shell of some checkout) that
                 take precedence over the player's own files, so page changes
                 can be tried against a wasm that was built elsewhere
@@ -31,6 +35,11 @@ import argparse
 import functools
 import http.server
 import os
+import sys
+
+sys.dont_write_bytecode = True  # no __pycache__ in the checkout
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I leaves the script's folder off the path
+import relay  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -55,6 +64,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     assets = None    # folder served at /local/ and /assets/
     shell = None     # optional overlay for the player's page files
     player = "/"     # URL prefix the player lives under
+    net = relay.Relay()   # the multiplayer room relay, at /net/
+
+    def do_GET(self):
+        # The relay answers these itself. A room keeps this thread until its
+        # WebSocket closes, which the threading server allows.
+        if self.path.startswith("/net/"):
+            return self.net.handle(self)
+        return super().do_GET()
+
+    def do_HEAD(self):
+        if self.path.startswith("/net/"):
+            return self.net.handle(self)
+        return super().do_HEAD()
 
     def translate_path(self, path):
         clean = path.split("?", 1)[0].split("#", 1)[0]
@@ -86,11 +108,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Cross-Origin-Opener-Policy", "same-origin")
             self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
             self.send_header("Cross-Origin-Resource-Policy", "same-origin")
-        self.send_header("Cache-Control", "no-store")
+        if not self.path.startswith("/net/"):   # the relay sets it on its own answers
+            self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
     def log_message(self, fmt, *args):
         pass
+
+
+class Server(http.server.ThreadingHTTPServer):
+    # Two pages that join a room open their connections at the same moment,
+    # and a test opens dozens: the default backlog of 5 would make some wait
+    # a second for a retry.
+    request_queue_size = 64
 
 
 if __name__ == "__main__":
@@ -111,6 +141,6 @@ if __name__ == "__main__":
     Handler.assets = os.path.abspath(args.assets)
     Handler.shell = os.path.abspath(args.shell) if args.shell else None
     Handler.player = "/play/" if args.site else "/"
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), functools.partial(Handler, directory=Handler.site))
+    server = Server(("127.0.0.1", args.port), functools.partial(Handler, directory=Handler.site))
     print(f"serving {Handler.site} on http://127.0.0.1:{args.port}/  (/assets/ and /local/ -> {Handler.assets})", flush=True)
     server.serve_forever()
