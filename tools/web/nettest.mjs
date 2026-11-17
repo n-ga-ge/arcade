@@ -186,10 +186,28 @@ const SOLO = {
   },
 };
 
+// Call of Duty: Left ends the logos, the intro and the slideshow an idle main
+// menu turns into, and does nothing in the main menu itself, so a few of them
+// leave the cursor on the first entry whatever the game was showing. (Back
+// would ask whether to quit.) The presses are short: under load this game's
+// menus take a press held a quarter of a second for two.
+const COD_MENU = [
+  { wait: 25000 },
+  { key: 'left', hold: 120, wait: 4000, repeat: 4 },
+  { key: 'down', hold: 120, wait: 1500, repeat: 2 }, // Multiplayer
+  { key: 'ok', hold: 120, wait: 3500 }, // -> Join Game / Host Game
+];
+// Both players choose a weapon and a side before the match; the cursor starts
+// on the weapon, and Ready is two down.
+const COD_READY = [{ wait: 4000 }, { key: 'down', hold: 120, wait: 1500, repeat: 2 }, { key: 'ok', hold: 120, wait: 3000 }];
+const carried = (state) => open(state).filter(gamePort).reduce((sum, conn) => sum + conn.txBytes + conn.rxBytes, 0);
+
 // Tier 2. `host` is replayed on page A until it has a listener that is not
 // service discovery; `join` on page B; `joined` is what A's /v1/net must then
 // show; `start` is replayed on A until both hold an open connection; `play`,
-// on A, only takes the two games further before the screenshots.
+// on A, and `playJoiner`, on B after it, only take the two games further
+// before the screenshots; `playing`, where a game has one, is what A's
+// /v1/net shows once the match runs.
 const SESSIONS = {
   // The joiner looks for devices, asks the host's service discovery for the
   // game's channel, connects and hangs up at once: that only tells the host
@@ -208,6 +226,39 @@ const SESSIONS = {
     start: [{ wait: 3000 }, { key: '5', hold: 300, wait: 5000, repeat: 4, until: (state) => open(state).some(gamePort) }],
     // Capture the Flag, its settings, the arena: then the match begins.
     play: [{ wait: 3000 }, { key: '5', hold: 300, wait: 6000, repeat: 3 }, { wait: 8000 }],
+  },
+  // The host renames the phone to the game's UID followed by its old name and
+  // a joiner lists only devices named so: without the host's own name on the
+  // link the search ends with "No Host found". The joiner then asks the
+  // host's service discovery for the channel, connects and hangs up, as in
+  // Rayman 3; the host's list shows it, "Connect" connects back on two RFCOMM
+  // channels and "Start Game" begins. A deathmatch on the first map.
+  'call-of-duty': {
+    host: [
+      ...COD_MENU,
+      { key: 'down', hold: 120, wait: 1500 }, // Host Game
+      { key: 'ok', hold: 120, wait: 3000 }, // -> the map and the rules, cursor on the map
+      { key: 'up', hold: 120, wait: 1500 }, // Host, the last entry
+      { key: 'ok', hold: 120, wait: 5000, until: hosting },
+    ],
+    join: [
+      ...COD_MENU,
+      { key: 'ok', hold: 120, wait: 6000, until: (state) => state.totals.inquiries > 0 }, // Join Game: "Host(s) found"
+      { wait: 3000 },
+      { key: 'ok', hold: 120, wait: 6000, repeat: 3, until: event('connect', 'rfcomm', 0) }, // the host in the list
+    ],
+    joined: event('accept', 'rfcomm', 0),
+    start: [
+      { wait: 3000 },
+      { key: 'ok', hold: 120, wait: 6000, repeat: 3, until: (state) => open(state).some(gamePort) }, // Connect
+      { wait: 2000 },
+      { key: 'ok', hold: 120, wait: 8000, repeat: 2, until: (state) => open(state).some((conn) => gamePort(conn) && conn.txBytes > 0) }, // Start Game
+    ],
+    play: COD_READY,
+    playJoiner: [...COD_READY, { wait: 15000 }],
+    // The lobby exchanges under a hundred bytes; a running match a few
+    // hundred a second.
+    playing: (state) => carried(state) > 2000,
   },
 };
 
@@ -792,6 +843,11 @@ async function tier2(throughPage = false) {
     if (!data(ready).length) throw await stuck('no connection stayed open between the two', ready);
     await until(() => b.net(), (state) => data(state).length > 0, 15000);
     if (plan.play) await a.play(plan.play);
+    if (plan.playJoiner) await b.play(plan.playJoiner);
+    if (plan.playing) {
+      const state = await until(() => a.net(), plan.playing, 30000);
+      if (!plan.playing(state)) throw await stuck('the two connected, but the match did not start', state);
+    }
 
     // Compare the two ends with both guests stopped: nothing is sent then, and
     // what was on its way has arrived.
