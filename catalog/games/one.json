@@ -15,6 +15,13 @@
     "Either soft key pauses a fight. The pause menu has Settings > Customise Controls and the Skills list of moves.",
     "Multiplayer over Bluetooth and N-Gage Arena is not available in the browser."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from its Settings > Customise Controls screen (keys 3 to 9). Directions, OK and the soft keys were observed in menus and in a fight.",
     "actions": {

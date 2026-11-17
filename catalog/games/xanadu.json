@@ -16,6 +16,13 @@
     "Either soft key opens the pause menu (Resume, Return to Main Menu, Audio, Exit Game).",
     "Bluetooth and N-Gage Arena cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Options > Controls screen (its defaults: Attack 5, Magic 7, Equip (L) 1, Equip (R) 3). Moving, attacking, the status menu and its keys, the pause menu and OK for dialogue were tried in play.",
     "actions": {

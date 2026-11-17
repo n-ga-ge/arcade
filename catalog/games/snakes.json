@@ -14,6 +14,14 @@
     "The instructions are under Start Game > Instructions and in the pause menu.",
     "Send Game, Multiplayer and N-Gage Arena need Bluetooth or the N-Gage Arena service and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "menu": "Multiplayer",
+    "status": "untested"
+  },
   "controls": {
     "source": "Observed in play: turning with left and right and with 4 and 6, the camera view on 3, the pause menu on both soft keys, OK and the direction keys in menus. The game's Instructions describe turning and a boost that speeds the snake up or slows it down, but name no keys; no key tried here used the boost.",
     "actions": {

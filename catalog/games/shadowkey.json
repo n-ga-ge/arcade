@@ -10,6 +10,12 @@
     "The left and right actions use whatever is readied in each hand; the queue keys cycle what is readied.",
     "The game can also remap its own keys under Options > Customize Controls. That changes which N-Gage key an action uses, on top of the bindings here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from its Options > Customize Controls menu.",
     "actions": {

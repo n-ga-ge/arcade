@@ -17,6 +17,12 @@
     "If the picture freezes just as the first level starts, restart the game: the level's own app occasionally crashes while it starts.",
     "Do not choose N-Gage Arena on the main menu: the online service does not exist here and the menu stopped responding after it."
   ],
+  "multiplayer": {
+    "modes": [
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults from Options > Config Keys (its 2D Controls and 3D Controls lists) and the first level's briefing pages, which describe the 7 combinations. The soft keys, OK and 5 in menus and the 3D level were observed. The 2D keys were read from the list, not tried in a 2D level.",
     "actions": {

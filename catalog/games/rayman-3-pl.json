@@ -14,6 +14,13 @@
     "Single Player has three save slots; pick an empty one to start. The story pages before the first level can be skipped with the left soft key.",
     "Multiplayer (Host Game, Join Game) needs Bluetooth and a second N-Gage. Do not choose Host Game here: the game stops drawing and has to be restarted."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Multiplayer > Host Game / Join Game",
+    "status": "untested"
+  },
   "controls": {
     "source": "Same as Rayman 3 (the Help screens are unchanged); this variant was only checked to start and to reach the first level with the same keys.",
     "actions": {

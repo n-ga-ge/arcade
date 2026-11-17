@@ -21,6 +21,13 @@
     "In play the left soft key opens the menu (Play > Go to the game returns) and the right soft key the inventory. In the inventory 5 uses an object, 7 throws it away, 4 reads and 8 drinks.",
     "Saving costs 200 gold, paid to the Wizard; after dying, use Resurrection in the game menu."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Main menu > Multiplayer: Yes / No, then New Adventure",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Help (controls during the game and in the inventory). Movement, the soft keys and * were also seen in play; attack, protect, spells and potion showed nothing with no enemy near, so they are as Help gives them. Help calls * \"Enemy\"; in play it showed the current adventure.",
     "actions": {

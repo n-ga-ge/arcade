@@ -14,6 +14,13 @@
     "In play either soft key opens the menu (sound, music, quit to menu).",
     "VS (multiplayer) needs Bluetooth, which is not available here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "VS",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Help, page 4 (Game Controls). Forward, turn, fire, sidestep and the menu key were confirmed in play; the menu keys were observed. The OK key did nothing in menus or in play.",
     "actions": {

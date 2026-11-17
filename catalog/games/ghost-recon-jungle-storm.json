@@ -23,6 +23,13 @@
     "Multiplayer needs Bluetooth or N-Gage Arena and cannot work here.",
     "The title screen starts a demo when left idle; 5 returns to the title."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults from Options > Map Keys (preset Default; the game can remap them there) and its tutorial messages. Moving, looking, firing and the soft keys were confirmed in the first mission.",
     "actions": {

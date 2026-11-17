@@ -15,6 +15,14 @@
     "The keys can be changed in the game under Options > Controller.",
     "Bluetooth and N-Gage Arena in the main menu are multiplayer and online features that cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "menu": "Main menu > Bluetooth",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Options > Controller screen (its defaults) for the digit keys. Moving, 5 selecting in menus and conversations, 2 and 3 turning the view, 9 opening the map, 7 closing it, the soft keys and OK doing nothing were observed in play.",
     "actions": {

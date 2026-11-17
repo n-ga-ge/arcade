@@ -15,6 +15,14 @@
     "The mission starts with a radio message that holds the controls until it has finished or you press 5.",
     "2 Players needs a Bluetooth link to a second N-Gage and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "players": 2,
+    "menu": "2 Players",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Help screen (inventory menu, 9): move and run, activate device / hide in shadows / climb, crouch / rappel, jump on 5, sticky camera on 4, menu on 9. The pistol on 7 and the soft keys are not on that screen and were observed in the first mission; the menus name 5 and 7 themselves.",
     "actions": {

@@ -16,6 +16,13 @@
     "The keys can be changed under Options > Controls; that is on top of the bindings here.",
     "Multiplayer and N-Gage Arena need Bluetooth or the online service and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults from Options > Controls (Control Configuration). Accelerate, turning, jump, the camera switch and the pause menu were also tried in a race; that 5 and OK select in menus was observed.",
     "actions": {

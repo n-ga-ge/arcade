@@ -14,6 +14,14 @@
     "From the game's Help: tap Counter rapidly to counter a strike or grapple; hit Strike and Grapple rapidly to win a submission; when the SmackDown! meter is charged, go for the impact.",
     "Multiplayer and N-Gage Arena on the main menu need a second phone or Nokia's online service and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "menu": "Main menu > Multiplayer",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from its pause menu > Controls screen (keys 1 to 9). The soft keys and OK in menus were seen by pressing them. Moving with the pad is the usual arrangement and could not be confirmed in the match that was tried, because the opponent kept the player's superstar down.",
     "actions": {
