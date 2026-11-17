@@ -1,11 +1,172 @@
 {
   "slug": "fifa-2005",
   "title": "FIFA Football 2005",
+  "publisher": "Electronic Arts",
+  "year": 2004,
+  "genre": "Sports",
   "uid": "0x101FD403",
   "variantOf": null,
   "dump": "FIFA 2005",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "EA Sports logo, FIFA licence screen, title, favourite-team prompt, main menu, a friendly (Arsenal v Tottenham): the teams walk out and the match plays in 3D with minimap, pause menu and instant replay.",
+  "notes": [
+    "The first screen asks for a favourite team: 5 picks the one shown, 9 means no favourite. Either way a confirmation follows with Cancel preselected; move up to Ok and press 5.",
+    "Menus show their own key hints: 5 selects (OK works too in most menus), 7 goes back.",
+    "Left idle on the first screens, the game starts a demo match; a soft key leaves it for the main menu.",
+    "Multiplayer (Bluetooth) and N-Gage Arena cannot work here."
+  ],
+  "controls": {
+    "source": "The game's own Game Controls diagrams (Defending and Attacking), shown before kick-off. Moving, pass, instant replay and the pause menu were confirmed in a match.",
+    "actions": {
+      "up": "Move player; move through menus",
+      "down": "Move player; move through menus",
+      "left": "Move player; change a menu value",
+      "right": "Move player; change a menu value",
+      "ok": "Select (menus)",
+      "lsk": "Pause menu",
+      "rsk": "Pause menu",
+      "4": "Sprint",
+      "5": "Shoot (attacking); conservative tackle (defending); select (menus)",
+      "6": "Through ball (attacking); last man back (defending)",
+      "7": "Pass, hold for a one-two; switch player, hold for keeper charge; back (menus)",
+      "8": "Lob (attacking); hard tackle (defending)",
+      "9": "Instant replay"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "7": [
+        "KeyS",
+        "Digit7",
+        "Numpad7"
+      ],
+      "5": [
+        "KeyD",
+        "Digit5",
+        "Numpad5"
+      ],
+      "8": [
+        "KeyF",
+        "Digit8",
+        "Numpad8"
+      ],
+      "6": [
+        "KeyE",
+        "Digit6",
+        "Numpad6"
+      ],
+      "9": [
+        "KeyR",
+        "Digit9",
+        "Numpad9"
+      ],
+      "ok": [
+        "Enter",
+        "Space"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b1"
+      ],
+      "8": [
+        "b2"
+      ],
+      "6": [
+        "b3"
+      ],
+      "4": [
+        "b5",
+        "b7"
+      ],
+      "9": [
+        "b4"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "rsk": [
+        "b8"
+      ]
+    },
+    "notes": [
+      "Football layout: move on the arrows; A sprints, S passes, D shoots, F lobs, E plays a through ball, R shows the replay; Escape opens the pause menu.",
+      "On a gamepad A shoots and selects, B passes and goes back, X lobs, Y plays a through ball, the right shoulder or trigger sprints, the left shoulder shows the replay, Start pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "key": "9",
+        "wait": 4000,
+        "repeat": 28
+      },
+      {
+        "key": "up",
+        "wait": 2000
+      },
+      {
+        "key": "5",
+        "wait": 5000,
+        "repeat": 14
+      },
+      {
+        "key": "right",
+        "hold": 1500,
+        "wait": 500
+      },
+      {
+        "key": "7",
+        "hold": 200,
+        "wait": 2000
+      },
+      {
+        "key": "up",
+        "hold": 1500,
+        "wait": 500
+      }
+    ]
+  }
 }

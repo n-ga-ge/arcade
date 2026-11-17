@@ -1,11 +1,81 @@
 {
   "slug": "high-seize",
   "title": "High Seize",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Turn-based strategy",
   "uid": "0x101FD408",
   "variantOf": null,
   "dump": "High Seize",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Rating and RedLynx screens, intro cutscene, main menu, Single-player > New game with the default commander and perk, the \"Broken Tranquility\" briefing, then the first battle: the sea map with both fleets, the adviser's messages, unit selection with its move range, the order menu, the pause menu and the help pages.",
+  "notes": [
+    "Battles are turn based: put the cursor on one of your ships, press 5 to select it, move the cursor inside the highlighted range and press 5 again, then pick an order.",
+    "N-Gage Arena cannot work here. The multiplayer game was not tried."
+  ],
+  "controls": {
+    "source": "The game's own Help pages (Battle view help and Travel view help, default key configuration). The cursor, 5, 3, the soft keys and the pause menu were confirmed in the first battle.",
+    "actions": {
+      "up": "Move the cursor; move through menus",
+      "down": "Move the cursor; move through menus",
+      "left": "Move the cursor",
+      "right": "Move the cursor",
+      "ok": "Select (menus)",
+      "lsk": "Pause menu (in a battle); Select, Ok or Next (menus)",
+      "rsk": "Cancel, Back or Exit (menus)",
+      "1": "Previous unit that can still act (battle); previous open mission (travel)",
+      "2": "Map of the battlefield (battle) or of the world (travel)",
+      "3": "Next unit that can still act (battle); next open mission (travel)",
+      "4": "Show the attack range of the unit under the cursor (battle)",
+      "5": "Select a unit, confirm a move or action (battle); sail to the cursor (travel)",
+      "6": "Information about what is under the cursor",
+      "7": "Cancel the selection or move; open the battle or travel menu"
+    },
+    "gamepad": {
+      "1": [
+        "b6"
+      ],
+      "3": [
+        "b7"
+      ],
+      "2": [
+        "b1"
+      ],
+      "4": [
+        "b10"
+      ],
+      "6": [
+        "b11"
+      ]
+    },
+    "notes": [
+      "On a gamepad X is the primary key (5) and Y the secondary (7), the triggers step to the previous and next unit, B shows the map, and pressing the left or right stick shows a unit's range or the information."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 10000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 30
+      },
+      {
+        "key": "3",
+        "wait": 2500
+      },
+      {
+        "key": "5",
+        "wait": 2500
+      },
+      {
+        "key": "right",
+        "wait": 1000,
+        "repeat": 2
+      }
+    ]
+  }
 }

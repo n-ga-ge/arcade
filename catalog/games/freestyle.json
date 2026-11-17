@@ -1,11 +1,65 @@
 {
   "slug": "freestyle",
-  "title": "FreeStyle",
+  "title": "Moto Cross Free Style",
+  "publisher": "StormBASIC Games",
+  "year": 2005,
+  "genre": "Sports",
   "uid": "0x102089D5",
   "variantOf": null,
   "dump": "FreeStyle",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "StormBASIC logo, main menu, New Game, jump selection (Jump #01), then the jump itself: the key icons scroll past, the bike rides up the ramp and jumps, and a missed jump ends in the score and Game Over screens and back at the menu. Pause menu and Help work.",
+  "notes": [
+    "It is a timing game: after you press 5 the bike sets off and direction and number icons cross the screen. Press each matching key as its icon passes the box on the left. One wrong key or more than two missed icons fails the jump.",
+    "Menus are in English, the Help pages and some prompts in Spanish.",
+    "On-line scores (key 8 after a game, and the global score table) need the publisher's server and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's own Help pages (in Spanish) and its on-screen prompts; the soft keys, OK, 5 and the pause menu were confirmed in play.",
+    "actions": {
+      "up": "Press when the up arrow passes the box; move through menus",
+      "down": "Press when the down arrow passes the box; move through menus",
+      "left": "Press when the left arrow passes the box; previous jump (selection)",
+      "right": "Press when the right arrow passes the box; next jump (selection)",
+      "ok": "Select (menus); start the jump",
+      "lsk": "Accept or Continue (menus); pause menu (during a jump)",
+      "rsk": "Back or Cancel (menus)",
+      "5": "Start the jump; continue after it; show what unlocks a locked jump",
+      "8": "Send the score on-line after a game (cannot work here)"
+    },
+    "notes": [
+      "The other number keys are used when their number appears among the icons of a jump.",
+      "A gamepad has the directions and 5 (X) only; jumps that show other numbers need the keyboard's digit row."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 45000
+      },
+      {
+        "key": "ok",
+        "wait": 6000,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 1500
+      },
+      {
+        "key": "down",
+        "wait": 700,
+        "repeat": 2
+      },
+      {
+        "key": "up",
+        "wait": 700
+      },
+      {
+        "key": "left",
+        "wait": 1500
+      }
+    ]
+  }
 }

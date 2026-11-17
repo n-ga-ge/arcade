@@ -1,11 +1,167 @@
 {
   "slug": "glimmerati",
   "title": "Glimmerati",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Racing",
   "uid": "0x101FD406",
   "variantOf": null,
   "dump": "Glimmerati",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "N-Gage logo, animated intro, main menu, character name, Story Mode: the Davina de Luxa Show and the Monaco cutscenes play, then car selection and the first race in Milan drives (top-down 3D, speedometer, radar, map on 9, pause menu).",
+  "notes": [
+    "A new game first asks for a character name; type it on the number keys like a phone (2 gives a), then press OK.",
+    "Story scenes show Continue and Skip on the soft keys. On the grid, press 5 to start the race.",
+    "N-Gage Arena and the multiplayer race (Bluetooth) cannot work here."
+  ],
+  "controls": {
+    "source": "The game's defaults from Options > Control Settings (the game can change them there). Accelerating, steering, the map, the soft keys and the pause menu were confirmed in a race.",
+    "actions": {
+      "up": "Move through menus",
+      "down": "Move through menus",
+      "left": "Turn left",
+      "right": "Turn right",
+      "ok": "Select (menus)",
+      "lsk": "Select or Continue (menus and scenes); pause (in a race)",
+      "rsk": "Back, Skip or Cancel; Resume (pause menu)",
+      "5": "Accelerate; start the race on the grid",
+      "6": "Nitro boost",
+      "7": "Brake",
+      "9": "Map"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "KeyA",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "6": [
+        "Space",
+        "Digit6",
+        "Numpad6"
+      ],
+      "9": [
+        "KeyM",
+        "Digit9",
+        "Numpad9"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "5": [
+        "b7",
+        "b2"
+      ],
+      "7": [
+        "b6",
+        "b3"
+      ],
+      "6": [
+        "b1"
+      ],
+      "9": [
+        "b5"
+      ],
+      "lsk": [
+        "b9",
+        "b4"
+      ],
+      "rsk": [
+        "b8"
+      ]
+    },
+    "notes": [
+      "Racing layout: steer on the arrows, A accelerates, Z brakes, Space fires the nitro, M shows the map, Escape pauses. The digit row still types the keypad, which the name entry needs.",
+      "On a gamepad the right trigger or X accelerates, the left trigger or Y brakes, B fires the nitro, the right shoulder shows the map, Start pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 10000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 20
+      },
+      {
+        "key": "2",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 5000
+      },
+      {
+        "key": "ok",
+        "wait": 6000
+      },
+      {
+        "key": "rsk",
+        "wait": 5000,
+        "repeat": 10
+      },
+      {
+        "key": "ok",
+        "wait": 12000
+      },
+      {
+        "key": "5",
+        "wait": 5000
+      },
+      {
+        "key": "5",
+        "hold": 4000,
+        "wait": 500,
+        "repeat": 3
+      }
+    ]
+  }
 }
