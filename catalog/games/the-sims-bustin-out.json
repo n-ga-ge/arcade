@@ -7,18 +7,157 @@
   "uid": "0x101FD3DE",
   "variantOf": null,
   "dump": "The Sims Bustin Out",
-  "status": "boots",
+  "status": "ingame",
   "notes": [
-    "Does not get past its title screen yet: it reports \"Game deck memory full\" although the emulated phone has free space."
+    "The game is in English; Options has a Language setting.",
+    "Save from the pause menu (either soft key, then Save Game). Load-a-Sim on the main menu brings a saved sim back."
   ],
-  "controls": null,
+  "controls": {
+    "source": "The game has no controls screen. Select, Go Back, Resume, Save Game, Yes and No are from the labels above the soft keys; the direction pad, 5, the soft keys and * were tried in the menus, in Create-a-Sim, while walking on the farm and in a conversation. Next to a sign and a tree 5, OK, 7, 0 and # did nothing; using an object was not seen.",
+    "actions": {
+      "up": "Walk; move in menus",
+      "down": "Walk; move in menus; scroll a sim's answer (conversation)",
+      "left": "Walk; change a value or the save slot",
+      "right": "Walk; change a value or the save slot",
+      "5": "Talk to the sim next to you; pick a line; start, select and confirm in menus; type a letter (name)",
+      "lsk": "Pause menu (in play); Select, Yes, Save Game or Load Game (menus)",
+      "rsk": "Pause menu (in play); Go Back, Resume, Cancel or No (menus)",
+      "star": "Open and close the Goals screen (in play)"
+    },
+    "notes": [
+      "Create-a-Sim: on the name screen pick letters with 5, then choose Done. On the personality screen hand out all the points (right on a trait) before 5 accepts the sim.",
+      "Walk up to a sim and press 5 to talk. Uncle Hayseed, who walks around the farm with a ! above his head, has the first task.",
+      "The keyboard and gamepad use the standard layout."
+    ]
+  },
   "test": {
-    "expect": "boots",
+    "expect": "ingame",
     "script": [
       {
-        "wait": 60000
+        "wait": 45000
+      },
+      {
+        "key": "5",
+        "hold": 300,
+        "wait": 2500,
+        "repeat": 10
+      },
+      {
+        "key": "up",
+        "hold": 300,
+        "wait": 1000
+      },
+      {
+        "key": "5",
+        "hold": 300,
+        "wait": 3500
+      },
+      {
+        "key": "up",
+        "hold": 300,
+        "wait": 1000
+      },
+      {
+        "key": "5",
+        "hold": 300,
+        "wait": 3500
+      },
+      {
+        "key": "up",
+        "hold": 300,
+        "wait": 1000
+      },
+      {
+        "key": "5",
+        "hold": 300,
+        "wait": 3500
+      },
+      {
+        "key": "right",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 10
+      },
+      {
+        "key": "down",
+        "hold": 300,
+        "wait": 600
+      },
+      {
+        "key": "right",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 10
+      },
+      {
+        "key": "down",
+        "hold": 300,
+        "wait": 600
+      },
+      {
+        "key": "right",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 10
+      },
+      {
+        "key": "down",
+        "hold": 300,
+        "wait": 600
+      },
+      {
+        "key": "right",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 10
+      },
+      {
+        "key": "down",
+        "hold": 300,
+        "wait": 600
+      },
+      {
+        "key": "right",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 10
+      },
+      {
+        "key": "down",
+        "hold": 300,
+        "wait": 600
+      },
+      {
+        "key": "right",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 10
+      },
+      {
+        "key": "down",
+        "hold": 300,
+        "wait": 600
+      },
+      {
+        "key": "5",
+        "hold": 300,
+        "wait": 4000,
+        "repeat": 5
+      },
+      {
+        "wait": 6000
+      },
+      {
+        "key": "down",
+        "hold": 1200,
+        "wait": 500
+      },
+      {
+        "key": "right",
+        "hold": 1200,
+        "wait": 500
       }
     ]
   },
-  "statusNote": "Shows the EA Games logo and its title screen, then stops there with the message \"Game deck memory full\". The game has just created C:\\System\\Apps\\6RAK\\THESIMS.SAV through the emulator's POSIX file server and the file stays at 0 bytes; nothing else is logged. OK does nothing; the left soft key leaves a white screen with no further frames."
+  "statusNote": "EA Games and Maxis logos, the title screen, the main menu and Create-a-Sim (name, looks, personality) work, and a new game plays at full speed: after Uncle Hayseed's letter the sim walks around the farm in SimValley and talks to Uncle Hayseed, with the clock running and the pause menu, the Goals screen and the options working. Save Game wrote slot 1 to C:\\System\\Apps\\6RAK\\THESIMS.SAV, and after a restart of the game Load-a-Sim showed that slot and loaded it at the place it was saved. Using objects, jobs and the other places were not tried."
 }

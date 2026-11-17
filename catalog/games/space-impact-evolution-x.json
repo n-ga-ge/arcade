@@ -6,17 +6,84 @@
   "uid": "0x101F8A5E",
   "variantOf": null,
   "dump": "Space Impact Evolution X",
-  "status": "broken",
-  "statusNote": "The card installs and the app (caption \"Space Impact\", Athena.app) is launched, but it never draws: the frame count stays at 0 and /v1/screenshot answers 409 no_screen (\"no active emulator surface\"). At info level the log shows Athena.app, its .r01 resource file and the UI framework libraries loading (last ones: eikdlg, numbergrouping, phoneclient), then the read of System\\Shareddata\\100058ec.ini, and nothing more for 105 seconds: no panic, no thread kill, no reaction to keys.",
+  "status": "ingame",
+  "statusNote": "Plays: the Space Impact logo, the main menu about twelve seconds after the start, New game > Play, the craft selection, and the first level, where the ship steers, fires and scores. Played through the loss of all lives to the name entry for the high scores and back to the menu. Save game in the pause menu wrote savegame0.sav to C:\\System\\Apps\\Athena, and the name entry wrote highscores1.dat there; loading a save was not tried.",
   "notes": [
-    "A plain Series 60 application rather than an N-Gage card title. It does not get as far as a picture in this emulator yet."
+    "The game reaches its main menu by itself, a few seconds after the Space Impact logo.",
+    "The right soft key pauses a game and opens Continue, Save game, Options and End game.",
+    "Save game and the high scores ask for a three-letter name: type it with the number keys (2 gives A, 3 gives D, 4 gives G), then choose Ok.",
+    "New game also offers 2-player as server or client, a game over Bluetooth. Nobody has tried it between two players of the site yet.",
+    "A plain Series 60 application rather than an N-Gage card title: it has no N-Gage start screens."
   ],
-  "controls": null,
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "players": 2,
+    "menu": "Play > New game > 2-player (server) / 2-player (client)",
+    "status": "untested"
+  },
+  "controls": {
+    "source": "The game's Help screen and its Options > Control keys screen (Fire: 5, Fire Special: 7, the defaults); the soft keys and OK by pressing them in the menus and in play.",
+    "actions": {
+      "up": "Fly up",
+      "down": "Fly down",
+      "left": "Fly left",
+      "right": "Fly right",
+      "ok": "Select (menus)",
+      "lsk": "Select (menus)",
+      "rsk": "Back (menus); pause menu (in play)",
+      "5": "Fire; hold for a more powerful shot",
+      "7": "Fire the special weapon"
+    },
+    "notes": [
+      "Options > Control keys changes which keys fire and steer."
+    ]
+  },
   "test": {
-    "expect": "broken",
+    "expect": "ingame",
     "script": [
       {
-        "wait": 20000
+        "wait": 30000
+      },
+      {
+        "key": "ok",
+        "hold": 300,
+        "wait": 2500,
+        "repeat": 7
+      },
+      {
+        "key": "left",
+        "hold": 500,
+        "wait": 200
+      },
+      {
+        "key": "5",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 3
+      },
+      {
+        "key": "right",
+        "hold": 700,
+        "wait": 200
+      },
+      {
+        "key": "5",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 3
+      },
+      {
+        "key": "up",
+        "hold": 400,
+        "wait": 200
+      },
+      {
+        "key": "5",
+        "hold": 200,
+        "wait": 300,
+        "repeat": 3
       }
     ]
   }
