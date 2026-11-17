@@ -138,6 +138,15 @@ describe('refusals', () => {
   it.each(['K7M2Q', 'K7M2QXA', 'K7M2Q0', 'K7M2QI', ''])('answers bad-request to the code "%s"', async (code) =>
     refusedWith(await open(code, { v: 1, name: 'Ann' }), 'bad-request', 4400),
   );
+  it('answers bad-request to a code that only upper-cases to one, and does not reach that room', async () => {
+    // "ß" is "SS" in upper case, the long s is "S": six characters either way.
+    await create('ABCDSS');
+    await create('ABCDES');
+    for (const code of ['abcdß', 'abcdeſ', encodeURIComponent('abcdß'), encodeURIComponent('abcdeſ')]) {
+      await refusedWith(await open(code, { v: 1, name: 'Bo' }), 'bad-request', 4400);
+      await refusedWith(await open(code, { v: 1, name: 'Bo', create: 1, game: 'rayman-3' }), 'bad-request', 4400);
+    }
+  });
   it('does not create a room for a bad request', async () => {
     const code = freshCode();
     await refusedWith(await open(code, { v: 1, name: 'Ann', create: 1 }), 'bad-request', 4400);

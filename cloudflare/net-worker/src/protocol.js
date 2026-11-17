@@ -32,13 +32,16 @@ export const TOO_BIG = 1009;
 // gave up on because it had been silent for too long (room.js).
 export const SILENT = 4408;
 
-const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+// Both cases written out, and no flags: with "i" (and "u") a regular
+// expression also takes letters that only fold to these, such as "ſ" for "s".
+const CODE = /^[A-HJ-NP-Za-hj-np-z2-9]{6}$/;
 const GAME = /^[a-z0-9-]{1,64}$/;
 
-// The room code in upper case, or null when it is not one.
+// The room code in upper case, or null when it is not one. The code is
+// checked as it came and only then made upper case: upper-casing first would
+// turn "abcdß" into "ABCDSS" and let it pass.
 export function roomCode(value) {
-  const code = String(value ?? '').toUpperCase();
-  return CODE.test(code) ? code : null;
+  return typeof value === 'string' && CODE.test(value) ? value.toUpperCase() : null;
 }
 
 export function isGame(value) {

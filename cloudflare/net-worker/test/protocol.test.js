@@ -35,8 +35,24 @@ describe('roomCode', () => {
     expect(roomCode('K7M2QX')).toBe('K7M2QX');
     expect(roomCode('k7m2qx')).toBe('K7M2QX');
   });
-  it.each(['', 'K7M2Q', 'K7M2QXA', 'K7M2QI', 'K7M2QO', 'K7M2Q0', 'K7M2Q1', 'K7M2Q-', 'K7M 2Q', '%4B7M2QX', null])('refuses %j', (value) =>
-    expect(roomCode(value)).toBeNull(),
+  it('accepts every character of the alphabet in both cases, and no other ASCII character', () => {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for (let i = 0; i < 128; i++) {
+      const ch = String.fromCharCode(i);
+      const expected = alphabet.includes(ch.toUpperCase()) ? `AAAAA${ch.toUpperCase()}` : null;
+      expect(roomCode(`AAAAA${ch}`), `character ${i}`).toBe(expected);
+    }
+  });
+  it.each(['', 'K7M2Q', 'K7M2QXA', 'K7M2QI', 'K7M2QO', 'K7M2Q0', 'K7M2Q1', 'K7M2Q-', 'K7M 2Q', '%4B7M2QX', 'k7m2qi', 'k7m2ql0', null, undefined, 5, ['K7M2QX']])(
+    'refuses %j',
+    (value) => expect(roomCode(value)).toBeNull(),
+  );
+  // Letters whose upper case is, or looks like, letters of the alphabet:
+  // "ß" becomes "SS", the long s "S", the ligature "ﬀ" "FF"; the Kelvin sign
+  // and the dotless i fold to "k" and "I"; full-width letters are not ASCII.
+  it.each(['abcdß', 'ABCDß', 'abcdeſ', 'abcdﬀ', 'abcde\u212a', 'abcde\u0131', 'ＡＢＣＤＥＦ', 'abcde\u00e9', 'K7M2Q\u0301'])(
+    'refuses %j, which only upper-cases to a code',
+    (value) => expect(roomCode(value)).toBeNull(),
   );
 });
 
@@ -70,6 +86,19 @@ describe('parseJoin', () => {
       game: 'rayman-3',
       isPublic: true,
     }));
+  it('takes create and public only when they are exactly 1', () => {
+    for (const value of ['', '0', '01', '1.0', ' 1', 'true', 'yes', 'on']) {
+      // Not a create: so no game is needed, and none is taken.
+      expect(parseJoin('K7M2QX', query({ v: 1, name: 'Ann', create: value })), `create=${value}`).toEqual({
+        code: 'K7M2QX',
+        name: 'Ann',
+        create: false,
+        game: null,
+        isPublic: false,
+      });
+      expect(parseJoin('K7M2QX', query({ v: 1, name: 'Ann', create: 1, game: 'rayman-3', public: value })).isPublic, `public=${value}`).toBe(false);
+    }
+  });
   it('creates a private room without public=1', () => {
     expect(parseJoin('K7M2QX', query({ v: 1, name: 'Ann', create: 1, game: 'rayman-3' })).isPublic).toBe(false);
     expect(parseJoin('K7M2QX', query({ v: 1, name: 'Ann', create: 1, game: 'rayman-3', public: 'true' })).isPublic).toBe(false);
