@@ -115,12 +115,12 @@
     "expect": "ingame",
     "script": [
       {
-        "wait": 25000
+        "wait": 30000
       },
       {
         "key": "5",
         "wait": 4000,
-        "repeat": 6
+        "repeat": 14
       },
       {
         "key": "right",

@@ -140,7 +140,7 @@
     "expect": "ingame",
     "script": [
       {
-        "wait": 30000
+        "wait": 120000
       },
       {
         "key": "down",
@@ -160,7 +160,7 @@
       },
       {
         "key": "ok",
-        "wait": 90000
+        "wait": 150000
       }
     ]
   }

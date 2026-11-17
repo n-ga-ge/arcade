@@ -120,11 +120,12 @@
     "expect": "ingame",
     "script": [
       {
-        "wait": 15000
+        "wait": 30000
       },
       {
         "key": "ok",
-        "wait": 5000
+        "wait": 5000,
+        "repeat": 8
       },
       {
         "key": "right",

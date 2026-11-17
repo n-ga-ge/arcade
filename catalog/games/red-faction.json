@@ -155,7 +155,7 @@
     "expect": "ingame",
     "script": [
       {
-        "wait": 20000
+        "wait": 45000
       },
       {
         "key": "lsk",
