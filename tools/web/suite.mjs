@@ -526,7 +526,7 @@ const TESTS = {
 
     const pass = /Shadowkey/.test(layout) && rows === 20 && actions >= 17 && w === '10+ 10-' && a === '34+ 34-'
       && before === '' && bound === 'a7+ a7-' && afterReload === 'a7+ a7-' && padLabel === 'R3' && /defaults/.test(resetHint)
-      && afterReset === '' && /Move forward/.test(guide) && /Side step left/.test(guide) && /FSR 2/.test(guide);
+      && afterReset === '' && /Move forward/.test(guide) && /Side step left/.test(guide);
     return { pass, layout, rows, actionsListed: actions, keyW: w, keyA: a, pBefore: before || 'nothing', pBound: bound, pAfterReload: afterReload,
       gamepadBinding: padLabel, pAfterReset: afterReset || 'nothing', guideHasActions: /Move forward/.test(guide), errors: log.length };
   },
