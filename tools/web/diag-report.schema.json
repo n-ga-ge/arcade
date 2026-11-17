@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A diagnostics report of the player",
+  "description": "The envelope of what the player's Diagnostics dialog downloads (docs/diagnostics.md, \"The report\"). What a section keeps in its data is the section's own and is not described here. tools/web/diagreport.mjs checks a report against this file, and understands only the keywords used in it.",
+  "type": "object",
+  "required": ["kind", "v", "generated", "page", "game", "session", "findings", "sections", "series"],
+  "properties": {
+    "kind": { "const": "eka2l1-web-diagnostics" },
+    "v": { "const": 1 },
+    "generated": {
+      "description": "When the report was made, as an ISO date in UTC.",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "page": {
+      "type": "object",
+      "required": ["address", "hidden"],
+      "properties": {
+        "address": { "description": "The page's address without its query.", "type": "string", "pattern": "^[^?#]*$" },
+        "hidden": { "type": "boolean" }
+      }
+    },
+    "game": {
+      "description": "The running game, or null.",
+      "type": ["object", "null"],
+      "required": ["uid", "name", "slug"],
+      "properties": {
+        "uid": { "type": ["string", "integer"] },
+        "name": { "type": "string" },
+        "slug": { "type": ["string", "null"] }
+      }
+    },
+    "session": {
+      "type": "object",
+      "required": ["upS", "running", "paused", "emulatorAnswers", "samples", "measuredS"],
+      "properties": {
+        "upS": { "type": ["integer", "null"], "minimum": 0 },
+        "running": { "type": "boolean" },
+        "paused": { "type": "boolean" },
+        "emulatorAnswers": { "type": "boolean" },
+        "samples": { "type": "integer", "minimum": 0 },
+        "measuredS": { "type": "number", "minimum": 0 }
+      }
+    },
+    "findings": {
+      "description": "Every finding, worst first.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "sections": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z]+$" },
+      "additionalProperties": { "$ref": "#/$defs/section" }
+    },
+    "series": {
+      "description": "What the page saw each second, oldest first. The four lists are equally long.",
+      "type": "object",
+      "required": ["t", "fps", "running", "hidden"],
+      "properties": {
+        "t": { "type": "array", "items": { "type": "number" } },
+        "fps": { "type": "array", "items": { "type": ["number", "null"] } },
+        "running": { "type": "array", "items": { "enum": [0, 1] } },
+        "hidden": { "type": "array", "items": { "enum": [0, 1] } }
+      }
+    },
+    "redacted": {
+      "description": "What was taken out before the report left the browser (shell/diag/report.js), as counts. A report without it did not pass through redaction.",
+      "type": "object",
+      "properties": {
+        "roomCodes": { "type": "integer", "minimum": 0 },
+        "names": { "type": "integer", "minimum": 0 },
+        "bluetoothAddresses": { "type": "integer", "minimum": 0 },
+        "addressQueries": { "type": "integer", "minimum": 0 },
+        "homeFolders": { "type": "integer", "minimum": 0 },
+        "failed": { "description": "Redaction failed with this message, and the report is the envelope alone.", "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "code": { "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$" },
+    "finding": {
+      "type": "object",
+      "required": ["code", "level", "title", "section"],
+      "properties": {
+        "code": { "$ref": "#/$defs/code" },
+        "level": { "enum": ["bad", "warn", "info"] },
+        "title": { "type": "string" },
+        "detail": { "type": ["string", "null"] },
+        "advice": { "type": ["string", "null"] },
+        "section": { "type": "string", "pattern": "^[a-z]+$" }
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": ["title", "data", "findings"],
+      "properties": {
+        "title": { "type": "string" },
+        "data": { "description": "What the section's collect() returned: anything." },
+        "findings": { "description": "The codes of this section's findings.", "type": "array", "items": { "$ref": "#/$defs/code" } },
+        "error": { "description": "The section failed with this message.", "type": "string" }
+      }
+    }
+  }
+}
