@@ -1,0 +1,17 @@
+{
+  "name": "n-ga-ge-net-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker that relays multiplayer frames between players' browsers under n-ga.ge/net/*",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --port 8103",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.3",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.163.0"
+  }
+}

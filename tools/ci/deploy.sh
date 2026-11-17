@@ -1,5 +1,5 @@
 #!/bin/bash
-# Publish the built site (dist/) to Cloudflare Pages and deploy the assets Worker.
+# Publish the built site (dist/) to Cloudflare Pages and deploy the two Workers.
 #   tools/ci/deploy.sh [--dry-run] [--branch <name>]
 #
 # Build first: python3 -I tools/site/build.py. One-time Cloudflare setup, the
@@ -9,26 +9,30 @@
 #   CLOUDFLARE_API_TOKEN_PAGES    API token for the deployment (secret). The plain
 #                                 CLOUDFLARE_API_TOKEN, wrangler's own name, is
 #                                 used when this one is not set.
-#   CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token for the Worker, when
+#   CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token for the Workers, when
 #                                 the Pages token has no Workers permissions
-#   CLOUDFLARE_ACCOUNT_ID         account the Pages project and the Worker live in (secret)
-#   CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's route. With it the
-#                                 route names its zone by ID, so wrangler does not
+#   CLOUDFLARE_ACCOUNT_ID         account the Pages project and the Workers live in (secret)
+#   CLOUDFLARE_ZONE_ID            optional: the zone of the Workers' routes. With it the
+#                                 routes name their zone by ID, so wrangler does not
 #                                 have to look the zone up by name.
 #   ASSETS_TOKEN                  optional: the token CI downloads game files with.
-#                                 When set, a production deployment stores it on the
+#                                 When set, a production deployment stores it on the assets
 #                                 Worker, so the Worker and CI always hold the same value.
 #   CF_PAGES_PROJECT              Pages project name (variable; default n-ga-ge)
 #   CF_PAGES_DEV_BRANCH           Pages branch that dev deployments go to (default dev)
 #
 # The branch decides what is deployed. "main" is production: the site goes
-# live and the assets Worker is deployed after it. Anything else is a dev
-# deployment: it goes to the Pages branch "dev" and leaves the Worker alone.
+# live and the Workers are deployed after it. Anything else is a dev
+# deployment: it goes to the Pages branch "dev" and leaves the Workers alone.
 #
 # (--help prints this comment up to here.) In full: on "main" the Worker in
 # cloudflare/assets-worker/ (when that folder exists) is deployed after the
 # site, with CLOUDFLARE_API_TOKEN_WORKERS when that is set, and ASSETS_TOKEN
-# is then stored on it. Anything else (another branch, a pull request, a tag)
+# is then stored on it; after that the relay Worker in cloudflare/net-worker/
+# (when that folder exists) is deployed with the same token. A Worker that
+# cannot be deployed fails the run, and the message names it; the relay is
+# last, so it cannot keep the site or the game files from being deployed.
+# Anything else (another branch, a pull request, a tag)
 # is uploaded as the Pages branch "dev" (CF_PAGES_DEV_BRANCH), so it appears
 # at https://dev.<project>.pages.dev and at the host name pointed there
 # (dev.n-ga.ge), replacing the dev deployment before it. The branch and the
@@ -36,7 +40,7 @@
 # checkout.
 #
 # --dry-run does everything that needs no credentials: it resolves the branch
-# and the commit, checks dist/ again, fetches the pinned wrangler, bundles the
+# and the commit, checks dist/ again, fetches the pinned wrangler, bundles each
 # Worker without uploading it (installing its packages if they are missing),
 # and prints what a real run would execute.
 #
@@ -52,6 +56,7 @@ PRODUCTION_BRANCH=main
 PROJECT=${CF_PAGES_PROJECT:-n-ga-ge}
 DIST=$ARCADE_ROOT/dist
 WORKER_DIR=$ARCADE_ROOT/cloudflare/assets-worker
+NET_WORKER_DIR=$ARCADE_ROOT/cloudflare/net-worker
 API=${CLOUDFLARE_API_BASE_URL:-https://api.cloudflare.com/client/v4}
 
 die() { echo "deploy.sh: $1" >&2; shift; for line in "$@"; do echo "  $line" >&2; done; exit 1; }
@@ -129,7 +134,7 @@ compgen -G "$DIST/play/b/*/eka2l1_web.wasm" >/dev/null || [ -f "$DIST/play/eka2l
 python3 -I "$ARCADE_ROOT/tools/site/steps/90-cloudflare.py" "$DIST" --check
 command -v npx >/dev/null || die "npx is not on PATH: wrangler needs Node.js 22 or later"
 
-# Tokens are stored per job (..._PAGES here, ..._WORKERS for the Worker below,
+# Tokens are stored per job (..._PAGES here, ..._WORKERS for the Workers below,
 # ..._R2 for the upload); wrangler only reads CLOUDFLARE_API_TOKEN, so the
 # deployment's token is handed to it under that name.
 if [ -n "${CLOUDFLARE_API_TOKEN_PAGES:-}" ]; then
@@ -150,30 +155,32 @@ fi
 # no functions/ folder and no git checkout to guess from, so the flags below
 # are all it goes by, and its cache does not land in the checkout.
 WORK=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/deploy.XXXXXX")
-GENERATED_CONFIG=
-trap 'rm -rf "$WORK"; [ -z "$GENERATED_CONFIG" ] || rm -f "$GENERATED_CONFIG"' EXIT
+GENERATED_CONFIGS=()
+trap 'rm -rf "$WORK"; [ ${#GENERATED_CONFIGS[@]} -eq 0 ] || rm -f "${GENERATED_CONFIGS[@]}"' EXIT
 export WRANGLER_SEND_METRICS=false
 wrangler() { npx --yes "wrangler@$WRANGLER_VERSION" "$@"; }
 
-# The Worker's configuration names its route's zone by name. When CI supplies
+# A Worker's configuration names its routes' zone by name. When CI supplies
 # the zone ID, deploy from a copy that names it by ID instead: wrangler then
 # skips the lookup by name, which a token limited to Workers may not be allowed.
 # The copy sits beside the original because the paths in it are relative, and
-# is removed on exit.
+# is removed on exit. worker_config <folder> sets WORKER_ARGS for that Worker.
 WORKER_ARGS=()
 worker_config() {
+  local dir=$1 name source= generated
+  WORKER_ARGS=()
   [ -n "${CLOUDFLARE_ZONE_ID:-}" ] || return 0
   [[ "$CLOUDFLARE_ZONE_ID" =~ ^[0-9a-f]{32}$ ]] || die "CLOUDFLARE_ZONE_ID is not a zone ID (32 hexadecimal digits)."
-  local name source=
   for name in wrangler.jsonc wrangler.json wrangler.toml; do
-    if [ -f "$WORKER_DIR/$name" ]; then source=$name; break; fi
+    if [ -f "$dir/$name" ]; then source=$name; break; fi
   done
-  [ -n "$source" ] || die "no wrangler configuration in cloudflare/assets-worker/."
-  GENERATED_CONFIG=$WORKER_DIR/wrangler.deploy.${source#wrangler.}
-  sed -E "s/(\"?)zone_name(\"?)([[:space:]]*[:=][[:space:]]*)\"[^\"]*\"/\1zone_id\2\3\"$CLOUDFLARE_ZONE_ID\"/g" "$WORKER_DIR/$source" >"$GENERATED_CONFIG"
-  grep -q "zone_id" "$GENERATED_CONFIG" ||
-    die "CLOUDFLARE_ZONE_ID is set, but $source has no route with a zone_name to apply it to."
-  WORKER_ARGS=(--config "$(basename "$GENERATED_CONFIG")")
+  [ -n "$source" ] || die "no wrangler configuration in cloudflare/$(basename "$dir")/."
+  generated=$dir/wrangler.deploy.${source#wrangler.}
+  GENERATED_CONFIGS+=("$generated")
+  sed -E "s/(\"?)zone_name(\"?)([[:space:]]*[:=][[:space:]]*)\"[^\"]*\"/\1zone_id\2\3\"$CLOUDFLARE_ZONE_ID\"/g" "$dir/$source" >"$generated"
+  grep -q "zone_id" "$generated" ||
+    die "CLOUDFLARE_ZONE_ID is set, but cloudflare/$(basename "$dir")/$source has no route with a zone_name to apply it to."
+  WORKER_ARGS=(--config "$(basename "$generated")")
 }
 
 PAGES_COMMAND=(pages deploy "$DIST" --project-name "$PROJECT" --branch "$BRANCH" --commit-message "$MESSAGE")
@@ -200,8 +207,24 @@ if [ -n "$DRY_RUN" ]; then
     if [ -f "$WORKER_DIR/package-lock.json" ] && [ ! -d "$WORKER_DIR/node_modules" ]; then
       (cd "$WORKER_DIR" && npm ci --no-audit --no-fund)
     fi
-    worker_config
+    worker_config "$WORKER_DIR"
     (cd "$WORKER_DIR" && wrangler deploy "${WORKER_ARGS[@]}" --dry-run --outdir "$WORK/worker" </dev/null)
+  fi
+  if [ ! -d "$NET_WORKER_DIR" ]; then
+    echo "No cloudflare/net-worker/ in this checkout: no relay Worker to deploy."
+  else
+    if [ "$ENVIRONMENT" = production ]; then
+      echo "and then, in cloudflare/net-worker/${CLOUDFLARE_ZONE_ID:+ (route zone by ID)}:"
+      show deploy
+    else
+      echo "The relay Worker is only deployed from $PRODUCTION_BRANCH."
+    fi
+    echo "Checking that the relay Worker builds:"
+    if [ -f "$NET_WORKER_DIR/package-lock.json" ] && [ ! -d "$NET_WORKER_DIR/node_modules" ]; then
+      (cd "$NET_WORKER_DIR" && npm ci --no-audit --no-fund)
+    fi
+    worker_config "$NET_WORKER_DIR"
+    (cd "$NET_WORKER_DIR" && wrangler deploy "${WORKER_ARGS[@]}" --dry-run --outdir "$WORK/net-worker" </dev/null)
   fi
   echo "Deployment URL: none (dry run, nothing was deployed)"
   exit 0
@@ -286,9 +309,9 @@ elif [ "$ENVIRONMENT" != production ]; then
 else
   echo "Deploying the assets Worker..."
   [ ! -f "$WORKER_DIR/package-lock.json" ] || (cd "$WORKER_DIR" && npm ci --no-audit --no-fund)
-  worker_config
+  worker_config "$WORKER_DIR"
   (cd "$WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||
-    die "the Worker deployment failed. The site itself was deployed: $URL" \
+    die "the deployment of the assets Worker (cloudflare/assets-worker/) failed. The site itself was deployed: $URL" \
         "If the token only covers Pages, add the Workers permissions to it or set CLOUDFLARE_API_TOKEN_WORKERS (cloudflare/pages/README.md)."
   # The Worker lets CI download the game files when a request carries this
   # token. It is kept in one place, the forge's ASSETS_TOKEN secret, and handed
@@ -297,11 +320,31 @@ else
     echo "Storing ASSETS_TOKEN on the Worker..."
     (cd "$WORKER_DIR" && printf '%s' "$ASSETS_TOKEN" |
       CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler secret put ASSETS_TOKEN "${WORKER_ARGS[@]}" >/dev/null) ||
-      die "could not store ASSETS_TOKEN on the Worker. The site and the Worker were deployed: $URL" \
+      die "could not store ASSETS_TOKEN on the assets Worker. The site and the Worker were deployed: $URL" \
           "Until it is stored, CI's game downloads are refused with 403."
   else
     echo "ASSETS_TOKEN is not set: the Worker keeps whatever token it has."
   fi
+fi
+
+# --- the relay Worker (production only) --------------------------------------------
+
+# Last, so that a relay that cannot be deployed (its Durable Objects need more
+# of the account and the token than the assets Worker does) leaves the site
+# and the game files deployed. It still fails the run.
+if [ ! -d "$NET_WORKER_DIR" ]; then
+  echo "No cloudflare/net-worker/ in this checkout: no relay Worker to deploy."
+elif [ "$ENVIRONMENT" != production ]; then
+  echo "Preview deployment: the relay Worker is only deployed from $PRODUCTION_BRANCH."
+else
+  echo "Deploying the relay Worker..."
+  [ ! -f "$NET_WORKER_DIR/package-lock.json" ] || (cd "$NET_WORKER_DIR" && npm ci --no-audit --no-fund)
+  worker_config "$NET_WORKER_DIR"
+  (cd "$NET_WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||
+    die "the deployment of the relay Worker (cloudflare/net-worker/) failed. The site and the assets Worker were deployed: $URL" \
+        "Multiplayer stays as it was before this run (not available, if this was the relay's first deployment)." \
+        "wrangler's message above says why. The relay has two Durable Object classes: the token needs Workers Scripts > Edit" \
+        "on the account, and the first deployment creates the classes (docs/deployment.md, \"The relay Worker\")."
 fi
 
 echo "Deployment URL: $URL"
