@@ -11,7 +11,7 @@
   "notes": [
     "Start Game asks for a ball first: pick an empty slot, choose a skin and confirm; the ball keeps your progress up the tower.",
     "The left soft key or key 7 opens the pause menu, which has a hint for the current board.",
-    "N-Gage Arena is greyed out in the main menu. The Bluetooth menu has the two-player game: Start Server sets the board, duration and goal and then waits for an opponent, Join Server searches for a host. The search finds no host here yet, so a two-player game cannot be started."
+    "N-Gage Arena is greyed out in the main menu. The Bluetooth menu has the two-player game: the host chooses Start Server, sets the board, duration and goal, presses Next and waits; the other chooses Join Server and picks the host in the Select Host list (Refresh searches again); the host answers Yes and presses Start Game. Each then plays a ball of their own on the same board, with the other's height shown at the top."
   ],
   "multiplayer": {
     "modes": [
@@ -20,8 +20,8 @@
     ],
     "players": 2,
     "menu": "Bluetooth > Start Server / Join Server",
-    "status": "broken",
-    "statusNote": "Two players in one room: one chose Start Server, set the board and saw \"Waiting for Opponent\" with its own name as Player 1; the other chose Join Server, saw \"Searching...\" for two seconds and then an empty Select Host list, also after Refresh. The joiner's phone is told of the host's device, but the game does not list it and never connects, so no game could be started."
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Start Server and waits, the other Join Server and the host in the list; the host answers Yes and presses Start Game. A game ran on both screens with the clocks in step and each player's height shown to the other, and ended with \"You won!\" and \"You lost!\"; Play Again started another, a pause is shown to the other, and when one exits the other is told."
   },
   "controls": {
     "source": "The game's defaults, read from its Options > Key Configuration screen (flippers, power-ups, pause) and its welcome message. The soft keys and OK were observed in menus and in play. Publisher and year are from general knowledge of the game; its own logo screen names the developer, Bonus.com.",

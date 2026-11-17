@@ -13,7 +13,7 @@
     "A new game opens with story pages and a cutscene that run on their own for a minute or two before the first level starts; OK turns the story pages sooner.",
     "Either soft key pauses (Continue, Restart, Options, Quit). 0 shows the current objectives; press 0 again to close them.",
     "The game can remap its keys under Options > Controls > Controller Type > User Defined. That changes which N-Gage key an action uses, on top of the bindings here.",
-    "A Bluetooth deathmatch: both choose Start > Multiplayer. The host chooses Host Game, then Continue, and waits; the other chooses Join Game, then Join once the host's name is listed; the host then chooses Launch. If the list stays empty, swap who hosts: the game marks the phone's Bluetooth name when it starts, and a host that entered the room after that is not recognised. N-Gage Arena is no longer online."
+    "A Bluetooth deathmatch: both choose Start > Multiplayer. The host chooses Host Game, then Continue, and waits; the other chooses Join Game, then Join once the host's name is listed; the host then chooses Launch. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
@@ -22,7 +22,7 @@
     ],
     "menu": "Start > Multiplayer > Host Game / Join Game",
     "status": "plays",
-    "statusNote": "Two players in one room: one hosts, the other joins and picks Join, the host launches; a deathmatch ran on both screens with the clocks in step, a pause by one pauses both, and when one quits both are told. Only with a host whose game started after it was in the room: the game marks the phone's name at its start, the room's name replaces that, and the other player's list then stays empty."
+    "statusNote": "Two players in one room: one hosts, the other joins and picks Join once the host is listed, the host launches; a deathmatch ran on both screens with the clocks in step, each player's keys moved their own view, a pause by one pauses both, and when one quits both are told. The two did not come into each other's view in the time tried. More than two players were not tried."
   },
   "controls": {
     "source": "The game's defaults, read from Options > Controls > Controller Type > User Defined and each confirmed in play, except Ghost Vision and the two weapon keys, which showed no effect at the very start of Chapter 1. Pause and objectives (soft keys, 0) observed in play.",
