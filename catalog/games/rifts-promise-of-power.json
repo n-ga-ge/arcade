@@ -13,15 +13,17 @@
     "The OK key (pad press) does nothing in this game: 5 is the action and select key and 7 cancels. The layout here puts 5 on Enter and Space and 7 on Backspace and Escape.",
     "Start Game leads through choosing a character class, Preset or Custom, and a name (the digits type letters; move down to Accept and press 5). The story slideshow that follows takes about two minutes and cannot be skipped.",
     "The keys can be changed in the game under Options > Controller.",
-    "Bluetooth and N-Gage Arena in the main menu are multiplayer and online features that cannot work here."
+    "Bluetooth in the main menu is the multiplayer game, between two players in one room of the site (Menu > Multiplayer). The host chooses Host Game, a save slot, a game type and its settings. The other chooses Join Game, a save slot and the host in the list (it may be listed as EKA2L1). The host then ticks the player with right and presses 5. Both tick their characters the same way (as many as the Characters setting says) and press 5; the host confirms teams, handicaps and the map.",
+    "N-Gage Arena in the main menu is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "menu": "Main menu > Bluetooth",
-    "status": "untested"
+    "menu": "Bluetooth > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Host Game, a save slot, Melee and its settings; the other Join Game, a save slot and the host in the list. The host ticks the player, both pick their characters, the host sets teams and map. A turn-based fight ran on both screens: each player's move showed on the other screen and the turn passed between them. When the joiner quit, the host's game was cancelled."
   },
   "controls": {
     "source": "The game's Options > Controller screen (its defaults) for the digit keys. Moving, 5 selecting in menus and conversations, 2 and 3 turning the view, 9 opening the map, 7 closing it, the soft keys and OK doing nothing were observed in play.",
