@@ -79,6 +79,24 @@
       "6": [
         "b5"
       ],
+      "9": [
+        "b6"
+      ],
+      "hash": [
+        "b7"
+      ],
+      "1": [
+        "a2-"
+      ],
+      "3": [
+        "a2+"
+      ],
+      "2": [
+        "a3-"
+      ],
+      "8": [
+        "a3+"
+      ],
       "lsk": [
         "b8"
       ],
@@ -90,7 +108,7 @@
       ]
     },
     "notes": [
-      "Keyboard: arrows steer, Space or Z jumps (7), Enter or X boosts and selects (5), A and D punch (4 and 6), Escape pauses; the grabs stay on the digit row. Gamepad: A or X is 5, B or Y is 7, the shoulder buttons punch, Start pauses, Back is the left soft key and pressing the left stick is 0 (respawn)."
+      "Keyboard: arrows steer, Space or Z jumps (7), Enter or X boosts and selects (5), A and D punch (4 and 6), Escape pauses; the grabs stay on the digit row. Gamepad: A or X is 5, B or Y is 7, the shoulder buttons punch (4 and 6), the triggers are grabs 9 and 10, the right stick gives grabs 1 (left), 3 (right), 2 (up) and 8 (down), Start pauses, Back is the left soft key and pressing the left stick is 0 (respawn)."
     ]
   },
   "test": {

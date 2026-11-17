@@ -1,11 +1,56 @@
 {
   "slug": "snakes",
   "title": "Snakes",
-  "uid": "0x101FD3DB",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Arcade",
+  "uid": "0x101FD3F7",
   "variantOf": null,
   "dump": "Snakes",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Logos, main menu, options and instructions work; a single-player game starts on level 1 in 3D, the snake turns, the camera view changes, the level restarts when its time runs out and the pause menu opens.",
+  "notes": [
+    "Start Game > Single Player > Start New Game begins level 1. Empty the blue bar at the top by collecting pick-ups before the time runs out; the snake cannot stop or go backwards.",
+    "The instructions are under Start Game > Instructions and in the pause menu.",
+    "Send Game, Multiplayer and N-Gage Arena need Bluetooth or the N-Gage Arena service and cannot work here."
+  ],
+  "controls": {
+    "source": "Observed in play: turning with left and right and with 4 and 6, the camera view on 3, the pause menu on both soft keys, OK and the direction keys in menus. The game's Instructions describe turning and a boost that speeds the snake up or slows it down, but name no keys; no key tried here used the boost.",
+    "actions": {
+      "left": "Turn left",
+      "right": "Turn right",
+      "4": "Turn left",
+      "6": "Turn right",
+      "3": "Change the camera view",
+      "up": "Move up in menus",
+      "down": "Move down in menus",
+      "ok": "Select in menus",
+      "lsk": "Pause menu",
+      "rsk": "Pause menu"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 55000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 6
+      },
+      {
+        "wait": 3000
+      },
+      {
+        "key": "left",
+        "wait": 1500
+      },
+      {
+        "key": "right",
+        "wait": 1500
+      }
+    ]
+  }
 }

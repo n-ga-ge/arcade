@@ -37,15 +37,12 @@
     },
     "gamepad": {
       "5": [
-        "b0"
+        "b2"
       ],
       "4": [
         "b1"
       ],
       "6": [
-        "b2"
-      ],
-      "7": [
         "b3"
       ],
       "1": [
@@ -69,12 +66,18 @@
       "hash": [
         "b10"
       ],
-      "star": [
+      "lsk": [
         "b11"
+      ],
+      "star": [
+        "a3-"
+      ],
+      "7": [
+        "a3+"
       ]
     },
     "notes": [
-      "The keyboard uses the standard layout (arrows and the digit row). On a gamepad A attacks (5), B defends (4), X is the combo strike (6), Y is 7; the shoulder buttons and the left trigger are the three magic attacks, the right trigger throws an item; Back opens the inventory, Start the pause menu, pressing the left stick shows the map and pressing the right stick is the star key."
+      "The keyboard uses the standard layout (arrows and the digit row). On a gamepad A is OK (menus), X attacks (5), B defends (4), Y is the combo strike (6); the shoulder buttons and the left trigger are the three magic attacks, the right trigger throws an item; Back opens the inventory, Start the pause menu and pressing the left stick shows the map. Right stick up is the star key (confirm the name), right stick down is 7 (skip a movie)."
     ]
   },
   "test": {
@@ -87,7 +90,7 @@
         "key": "7",
         "hold": 2000,
         "wait": 4000,
-        "repeat": 5
+        "repeat": 10
       },
       {
         "key": "ok",
@@ -97,16 +100,52 @@
         "key": "7",
         "hold": 2000,
         "wait": 5000,
-        "repeat": 3
+        "repeat": 6
       },
       {
         "key": "right",
-        "wait": 3000
+        "wait": 2000
       },
       {
         "key": "5",
         "hold": 150,
         "wait": 1000,
+        "repeat": 10
+      },
+      {
+        "key": "right",
+        "wait": 2000
+      },
+      {
+        "key": "5",
+        "hold": 150,
+        "wait": 1000,
+        "repeat": 10
+      },
+      {
+        "key": "right",
+        "wait": 2000
+      },
+      {
+        "key": "5",
+        "hold": 150,
+        "wait": 1000,
+        "repeat": 10
+      },
+      {
+        "key": "right",
+        "wait": 2000
+      },
+      {
+        "key": "5",
+        "hold": 150,
+        "wait": 1000,
+        "repeat": 10
+      },
+      {
+        "key": "5",
+        "hold": 150,
+        "wait": 600,
         "repeat": 40
       },
       {
@@ -118,7 +157,29 @@
         "key": "5",
         "hold": 150,
         "wait": 600,
-        "repeat": 200
+        "repeat": 40
+      },
+      {
+        "key": "star",
+        "hold": 200,
+        "wait": 4000
+      },
+      {
+        "key": "5",
+        "hold": 150,
+        "wait": 600,
+        "repeat": 40
+      },
+      {
+        "key": "star",
+        "hold": 200,
+        "wait": 4000
+      },
+      {
+        "key": "5",
+        "hold": 150,
+        "wait": 600,
+        "repeat": 160
       },
       {
         "wait": 2000
