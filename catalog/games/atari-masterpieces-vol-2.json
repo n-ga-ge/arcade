@@ -24,9 +24,9 @@
       "lsk": "Select (menus); pause menu (in a game)",
       "rsk": "Back (menus); pause menu (in a game), resume (pause menu)",
       "1": "Start a one-player game (every game)",
-      "2": "Two-player start (Asteroids Deluxe, Centipede, Crystal Castles, Liberator, Tempest)",
-      "5": "Fire (Asteroids Deluxe, Centipede, Liberator, Space Duel, Tempest); jump (Crystal Castles); catch (Warlords)",
-      "7": "Shields (Asteroids Deluxe, Liberator, Space Duel); Super Zapper (Tempest)"
+      "2": "Two-player start (not in Pong, Space Duel or Warlords)",
+      "5": "Fire; Crystal Castles: jump; Warlords: catch",
+      "7": "Shields; Tempest: Super Zapper"
     },
     "keyboard": {
       "up": [
@@ -114,7 +114,8 @@
       ]
     },
     "notes": [
-      "Arcade layout: arrows move, Space is the fire key (5), S is shields or the Super Zapper (7), 1 starts a game, Escape pauses. On a gamepad Start begins a game, X or the right trigger fires and Y or the left trigger is shields."
+      "Arcade layout: arrows move, Space is the fire key (5), S is shields or the Super Zapper (7), 1 starts a game, Escape pauses. On a gamepad Start begins a game, X or the right trigger fires and Y or the left trigger is shields.",
+      "Keys per game, besides the direction pad and 1 to start: Asteroids Deluxe 5 fire, 7 shields. Centipede 5 fire. Crystal Castles 5 jump. Liberator 5 fire, 7 shields. Pong uses the direction pad only. Space Duel 5 fire, 7 shields. Tempest 5 fire, 7 Super Zapper. Warlords 5 catch."
     ]
   },
   "test": {

@@ -16,7 +16,7 @@
     "Multiplayer needs Bluetooth, which is not available here."
   ],
   "controls": {
-    "source": "Options > Key Config (construction window on 2, card data window on 3, both can be changed there); confirm and cancel from the game's own prompts (\"OK=key 5, Cancel=key 7\"); cursor movement and the soft keys observed in a match. The two windows did not open during the opening settlement phase, so they are as Key Config names them.",
+    "source": "Options > Key Config (2 construction window, 3 card data window; neither opened during the opening settlement phase), the game's own prompts (\"OK=key 5, Cancel=key 7\"), and the cursor and soft keys as seen in a match.",
     "actions": {
       "up": "Move the cursor up",
       "down": "Move the cursor down",
