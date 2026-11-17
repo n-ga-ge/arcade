@@ -1,11 +1,213 @@
 {
   "slug": "call-of-duty",
   "title": "Call of Duty",
+  "publisher": "Activision",
+  "year": 2004,
+  "genre": "First-person shooter",
   "uid": "0x101FD3F5",
   "variantOf": null,
   "dump": "Call Of Duty",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Logos, the intro slideshow, the main menu and the options work. A new game shows the briefing, loads the first mission and plays: walking, turning, looking and shooting work, and the in-game menu opens.",
+  "notes": [
+    "Either soft key opens the game menu (Return To Game, Load / Save, Options, Quit To Menu).",
+    "The game can remap its keys under Options > Customize Controls. That changes which N-Gage key an action uses, on top of the bindings here.",
+    "Multiplayer needs Bluetooth, and N-Gage Arena is no longer online; neither is available here."
+  ],
+  "controls": {
+    "source": "The game's defaults, read action by action from Options > Customize Controls; moving, turning, pitching up, shooting, zoom, the map and the menu keys were confirmed in play.",
+    "actions": {
+      "up": "Move forward",
+      "down": "Move backward",
+      "left": "Turn left",
+      "right": "Turn right",
+      "ok": "Select (menus)",
+      "lsk": "Game menu",
+      "rsk": "Game menu",
+      "1": "Bash",
+      "2": "Pitch up",
+      "3": "Jump / use",
+      "4": "Strafe left",
+      "5": "Shoot",
+      "6": "Strafe right",
+      "7": "Toggle zoom",
+      "8": "Pitch down",
+      "9": "Reload",
+      "star": "Next weapon",
+      "0": "Stand / crouch / prone",
+      "hash": "Toggle map and mission objectives"
+    },
+    "keyboard": {
+      "up": [
+        "KeyW",
+        "ArrowUp"
+      ],
+      "down": [
+        "KeyS",
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft",
+        "KeyQ"
+      ],
+      "right": [
+        "ArrowRight",
+        "KeyE"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyD",
+        "Digit6",
+        "Numpad6"
+      ],
+      "2": [
+        "PageUp",
+        "KeyT",
+        "Digit2",
+        "Numpad2"
+      ],
+      "8": [
+        "PageDown",
+        "KeyG",
+        "Digit8",
+        "Numpad8"
+      ],
+      "5": [
+        "KeyF",
+        "Digit5",
+        "Numpad5"
+      ],
+      "3": [
+        "Space",
+        "Digit3",
+        "Numpad3"
+      ],
+      "9": [
+        "KeyR",
+        "Digit9",
+        "Numpad9"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "1": [
+        "KeyV",
+        "Digit1",
+        "Numpad1"
+      ],
+      "0": [
+        "KeyC",
+        "Digit0",
+        "Numpad0"
+      ],
+      "star": [
+        "BracketRight",
+        "Minus",
+        "NumpadMultiply"
+      ],
+      "hash": [
+        "Tab",
+        "KeyM",
+        "Equal"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "rsk": [
+        "Escape",
+        "Backspace"
+      ],
+      "lsk": [
+        "Backquote"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "4": [
+        "a2-"
+      ],
+      "6": [
+        "a2+"
+      ],
+      "2": [
+        "a3-"
+      ],
+      "8": [
+        "a3+"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "3": [
+        "b1"
+      ],
+      "9": [
+        "b2"
+      ],
+      "star": [
+        "b3"
+      ],
+      "1": [
+        "b4"
+      ],
+      "0": [
+        "b5"
+      ],
+      "7": [
+        "b6"
+      ],
+      "5": [
+        "b7"
+      ],
+      "hash": [
+        "b8"
+      ],
+      "rsk": [
+        "b9"
+      ],
+      "lsk": [
+        "b10"
+      ]
+    },
+    "notes": [
+      "First-person layout: move and strafe on WASD, turn on the arrows or Q/E, look up and down on Page Up/Page Down or T/G. F shoots, Space jumps or uses, R reloads, Z zooms, V bashes, C changes stance, ] is the next weapon, Tab or M the map. On a gamepad the left stick moves and turns, the right stick strafes and looks, the right trigger shoots and the left trigger zooms."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "ok",
+        "wait": 6000,
+        "repeat": 5
+      },
+      {
+        "wait": 35000
+      }
+    ]
+  }
 }

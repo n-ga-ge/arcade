@@ -1,11 +1,160 @@
 {
   "slug": "catan",
   "title": "Catan",
+  "publisher": "Capcom",
+  "year": 2005,
+  "genre": "Board game",
   "uid": "0x101FD3FB",
   "variantOf": null,
   "dump": "Catan",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Logos, title, menus, options and the tutorial list work. A single-player Free Game against three computer players loads and plays: the turn order is rolled, the opponents place their settlements, and the player moves the cursor over the board and builds a settlement.",
+  "notes": [
+    "5 confirms everywhere (the title asks for it) and 7 cancels; the OK key is not the confirm key in this game.",
+    "When choosing opponents, the \"?\" tiles are characters that are still locked and cannot be picked; choose three different unlocked ones, then confirm with 5.",
+    "Either soft key opens the System menu in a match (Help, Options, Quit).",
+    "Multiplayer needs Bluetooth, which is not available here."
+  ],
+  "controls": {
+    "source": "Options > Key Config (2 construction window, 3 card data window; neither opened during the opening settlement phase), the game's own prompts (\"OK=key 5, Cancel=key 7\"), and the cursor and soft keys as seen in a match.",
+    "actions": {
+      "up": "Move the cursor up",
+      "down": "Move the cursor down",
+      "left": "Move the cursor left",
+      "right": "Move the cursor right; next page (help)",
+      "5": "Confirm: select, roll the dice, build, next message",
+      "7": "Cancel",
+      "2": "Construction window",
+      "3": "Card data window",
+      "lsk": "System menu (in a match); select (menus)",
+      "rsk": "System menu (in a match); back (menus)"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "Enter",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "Backspace",
+        "Digit7",
+        "Numpad7"
+      ],
+      "2": [
+        "Digit2",
+        "Numpad2"
+      ],
+      "3": [
+        "Digit3",
+        "Numpad3"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Escape"
+      ],
+      "rsk": [
+        "KeyW"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b1"
+      ],
+      "2": [
+        "b2"
+      ],
+      "3": [
+        "b3"
+      ],
+      "lsk": [
+        "b4",
+        "b9"
+      ],
+      "rsk": [
+        "b5",
+        "b8"
+      ]
+    },
+    "notes": [
+      "Arrows move the cursor; Enter or Space is the 5 key (confirm) and Backspace is 7 (cancel). 2 and 3 open the construction and card windows; Q or Escape opens the System menu."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 14
+      },
+      {
+        "key": "right",
+        "wait": 2000
+      },
+      {
+        "key": "5",
+        "wait": 3000
+      },
+      {
+        "key": "left",
+        "wait": 2000
+      },
+      {
+        "key": "down",
+        "wait": 2000
+      },
+      {
+        "key": "left",
+        "wait": 2000
+      },
+      {
+        "key": "5",
+        "wait": 4000
+      },
+      {
+        "key": "5",
+        "wait": 25000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 6
+      }
+    ]
+  }
 }
