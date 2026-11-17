@@ -81,6 +81,15 @@ def main():
                 all(shown[at:at + 3] == screen[at:at + 3] for at in plain))
     ok &= check('and shows no key colour', not any(layertest.is_key(*shown[at:at + 3]) for at in range(0, len(shown), 4)))
 
+    # Subtracting takes the colour from what is there and stops at black.
+    grey = vertex(0, 0, 0xFF808080) + vertex(8, 0, 0xFF808080) + vertex(0, 8, 0xFF808080)
+    shade = vertex(0, 0, 0xFF40C000) + vertex(8, 0, 0xFF40C000) + vertex(0, 8, 0xFF40C000)
+    frame = {'width': 8, 'height': 8, 'textures': [], 'vertices': grey + shade,
+             'draws': [{'first': 0, 'count': 3, 'texture': -1, 'blend': 'none', 'depth': 'none'},
+                       {'first': 3, 'count': 3, 'texture': -1, 'blend': 'subtract', 'depth': 'none'}]}
+    _, _, rgba, _ = render.render(frame, {}, 1)
+    ok &= check('subtract darkens and does not go below black', rgba[0:3] == bytes((0x40, 0, 0x80)))
+
     sys.exit(0 if ok else 1)
 
 

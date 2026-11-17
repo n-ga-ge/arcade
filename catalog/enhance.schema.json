@@ -29,7 +29,9 @@
         "argb8888",
         "xrgb8888",
         "a8",
-        "l8"
+        "l8",
+        "p4",
+        "bgr555k"
       ]
     }
   },
@@ -268,7 +270,8 @@
                     "alpha",
                     "add",
                     "multiply",
-                    "key"
+                    "key",
+                    "subtract"
                   ]
                 },
                 "depth": {
