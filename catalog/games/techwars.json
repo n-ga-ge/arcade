@@ -1,6 +1,9 @@
 {
   "slug": "techwars",
-  "title": "TechWars",
+  "title": "Tech Wars",
+  "publisher": "Technobubble Entertainment",
+  "year": 2005,
+  "genre": "Action",
   "uid": "0x101FF855",
   "variantOf": null,
   "dump": "TechWars",
@@ -13,8 +16,46 @@
       ]
     ]
   },
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays. The card installer accepts this plain Series 60 application once the pack tool has renamed System/App to System/Apps (the zip in testdata already has that). It shows its controls screen, title and main menu, then a duel in a 3D arena: the bot runs, turns, leaves its light bar, rounds are won and lost, and the pause box and the help pages work. Only Arena #0 in Duel mode was played.",
+  "notes": [
+    "The game starts in Spanish. For English choose Opciones on the main menu, then press right on Idioma.",
+    "5 continues and selects everywhere; the pad moves through menus and left and right change a value.",
+    "A duel is lost when the bot runs into a light bar or the arena edge, so it has to be steered from the first second. After the last round the game waits for 7 to go back to the menu; a quick tap was sometimes missed there, so press it again if nothing happens.",
+    "Multiplayer needs a Bluetooth link to a second phone and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's own controls screen at start-up and its help pages (Options > Help): left and right move the bot, 7 is turbo. The soft keys and the menu keys were observed. The help also lists \"R. Hand: Change Sight\"; which key that is was not found.",
+    "actions": {
+      "left": "Turn the bot left; change a menu value",
+      "right": "Turn the bot right; change a menu value",
+      "up": "Menu up",
+      "down": "Menu down",
+      "5": "Select and continue",
+      "7": "Turbo (hold to charge it); leave a paused or finished battle",
+      "lsk": "Pause the battle (then 5 continues, 7 leaves)",
+      "rsk": "Pause the battle (then 5 continues, 7 leaves)"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 45000
+      },
+      {
+        "key": "5",
+        "wait": 1000,
+        "repeat": 4
+      },
+      {
+        "wait": 25000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 2
+      }
+    ]
+  }
 }

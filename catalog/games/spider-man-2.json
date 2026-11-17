@@ -1,11 +1,155 @@
 {
   "slug": "spider-man-2",
   "title": "Spider-Man 2",
+  "publisher": "Activision",
+  "year": 2004,
+  "genre": "Action",
   "uid": "0x101FD3E6",
   "variantOf": null,
   "dump": "Spider-Man 2",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: logos and legal text, main menu, a new save, the story and briefing pages, then the card's separate 3D app loads and the first level (swinging through the city to Dr. Octavius' lab) runs with steering, the countdown and the pause menu. Only this first 3D level was played; the 2D levels were not reached. Once in twelve runs the 3D app froze as it started: the log had \"Access violation reading address 0x0 in thread XFcSound\" and no frame was drawn after that. Choosing N-Gage Arena on the main menu left the menu unresponsive with a still picture for over a minute.",
+  "notes": [
+    "The game starts by itself after about half a minute of logos. In the menus the left soft key selects and the right one goes back; on the main menu the right soft key quits.",
+    "A new game asks for a three-letter save name: confirm each letter with the left soft key, 5 or OK.",
+    "The first level is a 3D swinging level run by a second app on the card. After its loading screen shows a hint and Continue, press 5 or the left soft key (OK does nothing there), then 5 to start swinging.",
+    "The level has a 30 second countdown that passing a marker refills. Running out of time more than once sends you back to the save screen.",
+    "If the picture freezes just as the first level starts, restart the game: the level's own app occasionally crashes while it starts.",
+    "Do not choose N-Gage Arena on the main menu: the online service does not exist here and the menu stopped responding after it."
+  ],
+  "controls": {
+    "source": "The game's defaults from Options > Config Keys (its 2D Controls and 3D Controls lists) and the first level's briefing pages, which describe the 7 combinations. The soft keys, OK and 5 in menus and the 3D level were observed. The 2D keys were read from the list, not tried in a 2D level.",
+    "actions": {
+      "up": "Move up; 3D: climb higher",
+      "down": "Move down; 3D: drop lower",
+      "left": "Move left; 3D: turn left",
+      "right": "Move right; 3D: turn right",
+      "ok": "Select in menus",
+      "lsk": "Select or continue in menus; pause menu in play",
+      "rsk": "Back in menus (Quit on the main menu); pause menu in play",
+      "1": "2D: web attack",
+      "3": "2D: grab web",
+      "5": "2D: jump. 3D: websling, and again at the end of a swing to go faster. Select in menus",
+      "6": "2D: photo",
+      "7": "2D: punch. 3D: combo key (left or right then 7 turns 90 degrees; up, down, 7 reverses; down, down, 7 dives)"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW",
+        "Escape"
+      ],
+      "5": [
+        "KeyX",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "1": [
+        "KeyA",
+        "Digit1",
+        "Numpad1"
+      ],
+      "3": [
+        "KeyS",
+        "Digit3",
+        "Numpad3"
+      ],
+      "6": [
+        "KeyD",
+        "Digit6",
+        "Numpad6"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "1": [
+        "b1"
+      ],
+      "7": [
+        "b2"
+      ],
+      "3": [
+        "b3"
+      ],
+      "lsk": [
+        "b4",
+        "b9"
+      ],
+      "6": [
+        "b5"
+      ],
+      "rsk": [
+        "b8"
+      ],
+      "ok": [
+        "b10"
+      ]
+    },
+    "notes": [
+      "Action layout: move on the arrows, jump or websling on X or Space, punch or combo on Z, and web attack, grab web and photo on A, S and D. On a gamepad the four face buttons are jump (A), web attack (B), punch (X) and grab web (Y), the right bumper takes a photo, and the left bumper or Start is the left soft key. 5 also selects in every menu, so the A button works there too."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 45
+      },
+      {
+        "key": "5",
+        "wait": 8000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 2
+      }
+    ]
+  }
 }

@@ -1,11 +1,132 @@
 {
   "slug": "splinter-cell-team-stealth-action",
   "title": "Tom Clancy's Splinter Cell: Team Stealth Action",
+  "year": 2003,
+  "genre": "Stealth action",
   "uid": "0x101FE1CB",
   "variantOf": null,
   "dump": "Splinter Cell - Team Stealth Action",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: loading screen, intro, title with the language flags, main menu, a new profile, mission select and briefing, then the first mission (T'bilisi), a 2D side-scroller in which Sam runs, jumps, crouches and draws and fires his pistol. Only the start of that mission was played.",
+  "notes": [
+    "The title screen asks for a language with flags; 5 takes the highlighted one, and the first is English.",
+    "In the menus 5 selects and 7 goes back. A new profile asks for a three-letter name: confirm each letter with 5.",
+    "9 opens the inventory menu in play: vision mode, weapon, volume, Help (a drawing of the keys), Abort Mission and Exit. 9 closes it again.",
+    "The mission starts with a radio message that holds the controls until it has finished or you press 5.",
+    "2 Players needs a Bluetooth link to a second N-Gage and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's Help screen (inventory menu, 9): move and run, activate device / hide in shadows / climb, crouch / rappel, jump on 5, sticky camera on 4, menu on 9. The pistol on 7 and the soft keys are not on that screen and were observed in the first mission; the menus name 5 and 7 themselves.",
+    "actions": {
+      "left": "Move, run left",
+      "right": "Move, run right",
+      "up": "Activate device, hide in shadows, climb",
+      "down": "Crouch, rappel",
+      "5": "Jump; select in menus",
+      "7": "Draw the pistol, then fire; back in menus",
+      "4": "Sticky camera",
+      "9": "Inventory menu (vision, weapon, help), and back to the game",
+      "lsk": "Closed the inventory menu",
+      "rsk": "Opened the inventory menu"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "KeyX",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "4": [
+        "KeyC",
+        "Digit4",
+        "Numpad4"
+      ],
+      "9": [
+        "Tab",
+        "Digit9",
+        "Numpad9"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW"
+      ],
+      "ok": [
+        "Enter"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b2"
+      ],
+      "4": [
+        "b3"
+      ],
+      "9": [
+        "b9"
+      ],
+      "lsk": [
+        "b4"
+      ],
+      "rsk": [
+        "b5"
+      ],
+      "ok": [
+        "b10"
+      ]
+    },
+    "notes": [
+      "Side-scroller layout: move on the arrows, jump on X or Space, pistol on Z, sticky camera on C, menu on Tab. On a gamepad A jumps and selects, X is the pistol and goes back in menus, Y is the sticky camera and Start opens the menu."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 25000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 16
+      }
+    ]
+  }
 }

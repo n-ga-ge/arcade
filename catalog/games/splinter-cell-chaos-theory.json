@@ -1,11 +1,190 @@
 {
   "slug": "splinter-cell-chaos-theory",
   "title": "Tom Clancy's Splinter Cell: Chaos Theory",
+  "year": 2005,
+  "genre": "Stealth action",
   "uid": "0x101FD411",
   "variantOf": null,
   "dump": "Splinter Cell - Chaos Theory",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: Gameloft logo, title, main menu, a new single-player game and into the 3D training mission, where Sam moves, jumps, crouches, draws his weapon and switches vision modes. Only the start of the training mission was played.",
+  "notes": [
+    "5 confirms on the title screen and in every menu; the left soft key selects and the right one goes back.",
+    "A new game starts with a training mission in which Redding explains the keys as you go.",
+    "In play the left soft key opens the menu (Objectives, Notes, E-mail, Config with Load Game and Quit); the right soft key resumes.",
+    "Multiplayer and N-Gage Arena need Bluetooth or the online service and cannot work here."
+  ],
+  "controls": {
+    "source": "The training mission's own instructions (controller keys move, 2, 4, 6 and 8 position the camera) and its on-screen prompt \"7: Interact\"; the other keys were observed in the training room. The game has no controls screen. Firing was not tried (the training starts without ammunition).",
+    "actions": {
+      "up": "Move away from the camera",
+      "down": "Move towards the camera",
+      "left": "Move left",
+      "right": "Move right",
+      "2": "Tilt the camera",
+      "8": "Tilt the camera the other way",
+      "4": "Turn the camera left",
+      "6": "Turn the camera right",
+      "5": "Jump; confirm in menus",
+      "7": "Interact (the prompt names what with)",
+      "1": "Draw or put away the weapon (aiming view)",
+      "3": "Vision mode: normal, night vision, thermal",
+      "9": "Crouch or stand",
+      "0": "Binoculars on or off",
+      "lsk": "Game menu in play; select in menus",
+      "rsk": "Resume; back in menus (Exit on the main menu)"
+    },
+    "keyboard": {
+      "up": [
+        "KeyW",
+        "ArrowUp"
+      ],
+      "down": [
+        "KeyS",
+        "ArrowDown"
+      ],
+      "left": [
+        "KeyA",
+        "ArrowLeft"
+      ],
+      "right": [
+        "KeyD",
+        "ArrowRight"
+      ],
+      "2": [
+        "KeyI",
+        "Digit2",
+        "Numpad2"
+      ],
+      "8": [
+        "KeyK",
+        "Digit8",
+        "Numpad8"
+      ],
+      "4": [
+        "KeyJ",
+        "Digit4",
+        "Numpad4"
+      ],
+      "6": [
+        "KeyL",
+        "Digit6",
+        "Numpad6"
+      ],
+      "5": [
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyE",
+        "Digit7",
+        "Numpad7"
+      ],
+      "1": [
+        "KeyF",
+        "Digit1",
+        "Numpad1"
+      ],
+      "3": [
+        "KeyV",
+        "Digit3",
+        "Numpad3"
+      ],
+      "9": [
+        "KeyC",
+        "Digit9",
+        "Numpad9"
+      ],
+      "0": [
+        "KeyB",
+        "Digit0",
+        "Numpad0"
+      ],
+      "lsk": [
+        "KeyQ",
+        "Tab"
+      ],
+      "rsk": [
+        "Escape",
+        "Backspace"
+      ],
+      "ok": [
+        "Enter"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "4": [
+        "a2-"
+      ],
+      "6": [
+        "a2+"
+      ],
+      "2": [
+        "a3-"
+      ],
+      "8": [
+        "a3+"
+      ],
+      "5": [
+        "b0"
+      ],
+      "9": [
+        "b1"
+      ],
+      "7": [
+        "b2"
+      ],
+      "1": [
+        "b3"
+      ],
+      "3": [
+        "b4"
+      ],
+      "0": [
+        "b5"
+      ],
+      "rsk": [
+        "b8"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "ok": [
+        "b10"
+      ]
+    },
+    "notes": [
+      "Third-person layout: move on WASD or the arrows, camera on I, J, K and L, jump on Space, interact on E, weapon on F, crouch on C, vision on V, binoculars on B. On a gamepad the left stick moves, the right stick moves the camera, A jumps, B crouches, X interacts, Y draws the weapon, the bumpers are vision and binoculars, and Start opens the game menu."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 20000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 16
+      }
+    ]
+  }
 }

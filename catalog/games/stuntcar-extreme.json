@@ -1,11 +1,149 @@
 {
   "slug": "stuntcar-extreme",
   "title": "Stuntcar Extreme",
+  "genre": "Racing",
   "uid": "0x101F90A1",
   "variantOf": null,
   "dump": "Stuntcar Extreme",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays. The card installer accepts this plain Series 60 application as it is (system/apps/SCE with SCE.aif and SCE.app). It asks for a player name, then shows the main menu; a Quick Race (Ring of Fire) and a Championship race (Metropolitan) both load and run in 3D with steering, acceleration, the view change and pause.",
+  "notes": [
+    "The first start asks for a player name on a letter grid: pick letters with the left soft key, 5 or OK, then choose the return arrow in the bottom right corner to finish.",
+    "The Help lists race keys for three phones; the Nokia N-Gage ones are the ones that apply here.",
+    "Multiplayer is head-to-head over Bluetooth and cannot work here."
+  ],
+  "controls": {
+    "source": "The game's Help (General Controls and Race Controls for Nokia N-Gage). Steering, accelerate, view change and pause were also tried in a race; that 5 and OK select in menus was observed.",
+    "actions": {
+      "up": "Menu up",
+      "down": "Menu down",
+      "left": "Steer left; change a menu value",
+      "right": "Steer right; change a menu value",
+      "5": "Accelerate; select in menus",
+      "7": "Brake",
+      "2": "Nitro boost",
+      "lsk": "Pause; select in menus",
+      "rsk": "Change view; cancel or back in menus (Quit on the main menu)",
+      "ok": "Select in menus"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "KeyX",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "2": [
+        "KeyC",
+        "ShiftLeft",
+        "Digit2",
+        "Numpad2"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW"
+      ],
+      "ok": [
+        "Enter"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b0",
+        "b7"
+      ],
+      "7": [
+        "b2",
+        "b6"
+      ],
+      "2": [
+        "b1"
+      ],
+      "rsk": [
+        "b3",
+        "b8"
+      ],
+      "lsk": [
+        "b9",
+        "b4"
+      ],
+      "ok": [
+        "b10"
+      ]
+    },
+    "notes": [
+      "Racing layout: steer on the arrows, accelerate on X or Space, brake on Z, nitro on C or left Shift. On a gamepad A or the right trigger accelerates, X or the left trigger brakes, B is nitro, Y changes the view and Start pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "5",
+        "wait": 1500
+      },
+      {
+        "key": "left",
+        "wait": 1000
+      },
+      {
+        "key": "down",
+        "wait": 800,
+        "repeat": 4
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 15000
+      },
+      {
+        "key": "5",
+        "hold": 3000,
+        "wait": 500,
+        "repeat": 4
+      }
+    ]
+  }
 }

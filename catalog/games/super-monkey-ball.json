@@ -1,11 +1,43 @@
 {
   "slug": "super-monkey-ball",
   "title": "Super Monkey Ball",
+  "publisher": "Sega",
+  "year": 2003,
+  "genre": "Arcade",
   "uid": "0x101FB883",
   "variantOf": null,
   "dump": "Super Monkey Ball",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: logos, title, main menu, Main Game in Normal mode on Beginner with AiAi, and Floor 01 in 3D, where the ball rolls, collects a banana, falls out and restarts, and the pause menu works. Only Floor 01 was played; the Mini Games were not opened.",
+  "notes": [
+    "5 confirms on the title screen and in the menus (OK works too). The right soft key leaves the Options screen.",
+    "In play either soft key opens the pause menu: Continue game, Save and Quit, Quit (no save).",
+    "Each floor has a 60 second timer."
+  ],
+  "controls": {
+    "source": "Observed in the menus and on Floor 01; the title screen names the 5 key. The game has no controls screen.",
+    "actions": {
+      "up": "Tilt the floor away (roll forward); menu up",
+      "down": "Tilt the floor towards you (roll back); menu down",
+      "left": "Tilt left; previous choice",
+      "right": "Tilt right; next choice",
+      "5": "Confirm in menus",
+      "ok": "Confirm in menus",
+      "lsk": "Pause menu",
+      "rsk": "Pause menu; back out of Options"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "5",
+        "wait": 3500,
+        "repeat": 12
+      }
+    ]
+  }
 }

@@ -1,11 +1,91 @@
 {
   "slug": "sonicn",
   "title": "SonicN",
+  "publisher": "Sega",
+  "year": 2003,
+  "genre": "Platformer",
   "uid": "0x101FB882",
   "variantOf": null,
   "dump": "SonicN",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: character intro, title, main menu, chapter select and into Neo Green Hill Zone Act 1, where Sonic runs, jumps and attacks.",
+  "notes": [
+    "Menus are confirmed with 5, not with the pad press.",
+    "# switches between the letterboxed view and a taller full-screen view. 0 turns the sound on and off.",
+    "A soft key pauses; press it again to carry on."
+  ],
+  "controls": {
+    "source": "Observed in play and in the menus. The title screen and the pause box name the 5 key; the game has no controls screen, and Options > Button Config was left at Normal.",
+    "actions": {
+      "up": "Look up; menu up",
+      "down": "Crouch; menu down",
+      "left": "Run left; previous character",
+      "right": "Run right; next character",
+      "5": "Jump; confirm in menus",
+      "7": "Attack",
+      "lsk": "Pause and resume",
+      "rsk": "Pause and resume",
+      "0": "Sound on or off",
+      "hash": "Letterboxed or full-screen view"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "5": [
+        "KeyX",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW",
+        "Escape"
+      ],
+      "0": [
+        "Digit0",
+        "Numpad0"
+      ],
+      "hash": [
+        "Equal",
+        "NumpadDivide"
+      ],
+      "ok": [
+        "Enter"
+      ]
+    },
+    "notes": [
+      "Platformer layout: run on the arrows, jump on X or Space, attack on Z. On a gamepad the standard layout already has 5 and 7 on the face buttons."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "5",
+        "wait": 4000,
+        "repeat": 8
+      }
+    ]
+  }
 }
