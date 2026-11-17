@@ -8,13 +8,16 @@
   "notes": [
     "Open the game menu with the right soft key. It has Save Game, Load Game and Options.",
     "The left and right actions use whatever is readied in each hand; the queue keys cycle what is readied.",
-    "The game can also remap its own keys under Options > Customize Controls. That changes which N-Gage key an action uses, on top of the bindings here."
+    "The game can also remap its own keys under Options > Customize Controls. That changes which N-Gage key an action uses, on top of the bindings here.",
+    "Multiplayer Menu in the main menu can be chosen only once a game has been saved: a multiplayer game uses the character of a saved game. Between two players in one room of the site (Menu > Multiplayer), one chooses Host Multiplayer and a saved game, the other Join Multiplayer, a saved game and the host in the list (it may be listed as EKA2L1). The host then chooses Connect and Start Game. The main menu returns to the intro pictures when left alone for a while."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "status": "untested"
+    "menu": "Multiplayer Menu > Host Multiplayer / Join Multiplayer",
+    "status": "plays",
+    "statusNote": "Two players in one room, each with a saved game: one chooses Host Multiplayer, the other Join Multiplayer and the host in the list; the host chooses Connect, then Start Game. Both stood in the first room and the host saw the other's character walk. While one has the game menu open the other sees the title picture; after the joiner ended its game the host stayed on that picture and took no keys."
   },
   "controls": {
     "source": "The game's defaults, read from its Options > Customize Controls menu.",
