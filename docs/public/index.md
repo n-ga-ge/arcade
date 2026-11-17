@@ -6,6 +6,8 @@ pick a game on the front page and it starts in the page.
 
 - [Playing](playing.md): what you need, the controls, saves and display options.
 - [Legal](legal.md): licences, and who the games belong to.
+- [Made with AI](ai.md): the AI models that wrote the code, and the tokens it
+  took.
 
 ## How it works
 
