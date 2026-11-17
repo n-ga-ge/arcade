@@ -99,5 +99,5 @@
       }
     ]
   },
-  "statusNote": "Legal and title screens, the main menu, team selection and the coin toss work, and a Play Now game (Air Force at Army) runs at full speed: kickoff, play calling and several downs were played, and the pause menu works. On every start the game reports \"Save Error: unable to create save game space\" (the console shows it cannot open C:/System/Apps/6RAZ/options.dat), so options and season progress are not kept."
+  "statusNote": "Legal and title screens, the main menu, team selection and the coin toss work, and a Play Now game (Air Force at Army) runs at full speed: kickoff, play calling and several downs were played, and the pause menu works. On every start the game reports \"Save Error: unable to create save game space\" (the console shows it cannot open C:/System/Apps/6RAZ/options.dat), so options and season progress are not kept. Closed and started again in the same session, the game stayed on a white screen."
 }

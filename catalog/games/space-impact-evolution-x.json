@@ -7,13 +7,22 @@
   "variantOf": null,
   "dump": "Space Impact Evolution X",
   "status": "ingame",
-  "statusNote": "Plays: the Space Impact logo, the main menu about twelve seconds after the start, New game > Play, the craft selection, and the first level, where the ship steers, fires and scores. Played through the loss of all lives to the name entry for the high scores and back to the menu.",
+  "statusNote": "Plays: the Space Impact logo, the main menu about twelve seconds after the start, New game > Play, the craft selection, and the first level, where the ship steers, fires and scores. Played through the loss of all lives to the name entry for the high scores and back to the menu. Save game in the pause menu wrote savegame0.sav to C:\\System\\Apps\\Athena, and the name entry wrote highscores1.dat there; loading a save was not tried.",
   "notes": [
     "The game reaches its main menu by itself, a few seconds after the Space Impact logo.",
     "The right soft key pauses a game and opens Continue, Save game, Options and End game.",
-    "New game also offers 2-player as server or client. That is play over Bluetooth, which the emulator does not have.",
+    "Save game and the high scores ask for a three-letter name: type it with the number keys (2 gives A, 3 gives D, 4 gives G), then choose Ok.",
+    "New game also offers 2-player as server or client, a game over Bluetooth. Nobody has tried it between two players of the site yet.",
     "A plain Series 60 application rather than an N-Gage card title: it has no N-Gage start screens."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "players": 2,
+    "menu": "Play > New game > 2-player (server) / 2-player (client)",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Help screen and its Options > Control keys screen (Fire: 5, Fire Special: 7, the defaults); the soft keys and OK by pressing them in the menus and in play.",
     "actions": {
