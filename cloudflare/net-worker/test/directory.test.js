@@ -7,6 +7,14 @@ import { call, create, directoryStub, freshCode, freshSite, join, roomStub, room
 
 afterEach(() => vi.useRealTimers());
 
+// A sign of life that reaches the room: the tests move the clock by minutes,
+// and a member that sends nothing for that long is taken for gone. (The ping
+// a client really sends is answered by the runtime, which has its own clock.)
+const alive = async (client) => {
+  client.send('{ "t": "ping" }');
+  expect(await client.next()).toEqual({ t: 'pong' });
+};
+
 describe('GET /net/rooms', () => {
   it('answers an empty list', async () => {
     const response = await call('/net/rooms', { site: freshSite() });
@@ -161,9 +169,10 @@ describe('an entry that is not refreshed', () => {
     const site = freshSite();
     const code = freshCode();
     vi.useFakeTimers({ toFake: ['Date'], now: Date.now() });
-    await create(code, { site, isPublic: true });
+    const ann = await create(code, { site, isPublic: true });
     for (let i = 0; i < 5; i++) {
       vi.advanceTimersByTime(REFRESH_MS);
+      await alive(ann);
       expect(await runDurableObjectAlarm(roomStub(site, code))).toBe(true);
     }
     expect(REFRESH_MS * 5).toBeGreaterThan(EXPIRE_MS);
@@ -173,10 +182,12 @@ describe('an entry that is not refreshed', () => {
     const site = freshSite();
     const code = freshCode();
     vi.useFakeTimers({ toFake: ['Date'], now: Date.now() });
-    await create(code, { site, isPublic: true });
+    const ann = await create(code, { site, isPublic: true });
     for (let i = 0; i < 5; i++) {
       await evictDurableObject(roomStub(site, code));
       vi.advanceTimersByTime(REFRESH_MS);
+      await alive(ann);
+      await evictDurableObject(roomStub(site, code));
       expect(await runDurableObjectAlarm(roomStub(site, code))).toBe(true);
     }
     expect(await rooms(site)).toEqual([{ room: code, game: 'rayman-3', host: 'Ann', players: 1, max: 8 }]);
@@ -203,6 +214,83 @@ describe('an entry that is not refreshed', () => {
     expect(cy.hello.public).toBe(false);
     await settle();
     expect(await rooms(site)).toEqual([]);
+  });
+});
+
+describe('a member that went silent', () => {
+  it('is dropped by the alarm, and the room goes on without it', async () => {
+    const site = freshSite();
+    const code = freshCode();
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.now() });
+    const ann = await create(code, { site, isPublic: true });
+    vi.advanceTimersByTime(100 * 1000);
+    const bo = await join(code, { site });
+    await ann.next();
+    vi.advanceTimersByTime(100 * 1000);
+    // Ann was last heard of 200 seconds ago, Bo 100.
+    expect(await runDurableObjectAlarm(roomStub(site, code))).toBe(true);
+    expect(await ann.closed).toMatchObject({ code: 4408 });
+    expect(await bo.next()).toEqual({ t: 'leave', id: 1 });
+    expect(await rooms(site)).toEqual([{ room: code, game: 'rayman-3', host: 'Ann', players: 1, max: 8 }]);
+  });
+  it('ends the room when it was the last one, and the listing with it', async () => {
+    const site = freshSite();
+    const code = freshCode();
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.now() });
+    const ann = await create(code, { site, isPublic: true });
+    vi.advanceTimersByTime(REFRESH_MS);
+    expect(await runDurableObjectAlarm(roomStub(site, code))).toBe(true);
+    expect(await rooms(site)).toHaveLength(1);
+    vi.advanceTimersByTime(REFRESH_MS);
+    expect(await runDurableObjectAlarm(roomStub(site, code))).toBe(true);
+    expect(await ann.closed).toMatchObject({ code: 4408 });
+    expect(await rooms(site)).toEqual([]);
+    await runInDurableObject(roomStub(site, code), async (_, state) => {
+      expect(await state.storage.list()).toEqual(new Map());
+      expect(await state.storage.getAlarm()).toBeNull();
+    });
+  });
+  it('gives its seat to the next one who joins', async () => {
+    const site = freshSite();
+    const code = freshCode();
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.now() });
+    const ann = await create(code, { site });
+    const bo = await join(code, { site });
+    await ann.next();
+    vi.advanceTimersByTime(200 * 1000);
+    await alive(bo);
+    const cy = await join(code, { site, name: 'Cy' });
+    expect(cy.hello).toMatchObject({ id: 3, peers: [{ id: 2, name: 'Bo' }] });
+    expect(await ann.closed).toMatchObject({ code: 4408 });
+    expect(await bo.next()).toEqual({ t: 'leave', id: 1 });
+    expect(await bo.next()).toEqual({ t: 'join', id: 3, name: 'Cy' });
+  });
+  it('is not one whose pings the runtime answered', async () => {
+    const site = freshSite();
+    const code = freshCode();
+    const ann = await create(code, { site });
+    const stub = roomStub(site, code);
+    // As if Ann's last frame were long ago: only a ping can save her.
+    const forget = (instance) => {
+      for (const member of instance.members.values()) member.seen = 0;
+    };
+    expect(await runInDurableObject(stub, (instance) => (forget(instance), instance.silent(Date.now()).length))).toBe(1);
+    ann.send('{"t":"ping"}');
+    expect(await ann.next()).toEqual({ t: 'pong' });
+    expect(await runInDurableObject(stub, (instance) => (forget(instance), instance.silent(Date.now()).length))).toBe(0);
+  });
+  it('is not one that keeps sending, across hibernation', async () => {
+    const site = freshSite();
+    const code = freshCode();
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.now() });
+    const ann = await create(code, { site });
+    for (let i = 0; i < 4; i++) {
+      vi.advanceTimersByTime(100 * 1000);
+      await alive(ann);
+      await evictDurableObject(roomStub(site, code));
+      expect(await runDurableObjectAlarm(roomStub(site, code))).toBe(true);
+    }
+    expect((await join(code, { site })).hello.peers).toEqual([{ id: 1, name: 'Ann' }]);
   });
 });
 

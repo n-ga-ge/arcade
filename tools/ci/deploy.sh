@@ -168,23 +168,33 @@ wrangler() { npx --yes "wrangler@$WRANGLER_VERSION" "$@"; }
 # skips the lookup by name, which a token limited to Workers may not be allowed.
 # The copy sits beside the original because the paths in it are relative, and
 # is removed on exit. worker_config <folder> sets WORKER_ARGS for that Worker.
-# What the relay Worker is built from, as one ID: the Git tree of its folder
-# at the commit being deployed. Empty when that cannot be told (no Git, or
-# the folder has changes that are not committed); the relay is then deployed
-# without asking what is live.
+# What the relay Worker is built from, as one ID: a hash over the Git tree of
+# its src/ folder and its wrangler.jsonc at the commit being deployed, which
+# is everything a deployment uploads (its README and tests are not). Empty
+# when that cannot be told (no Git, or those files have changes that are not
+# committed); the relay is then deployed without asking what is live.
 relay_build() {
+  local folder=cloudflare/net-worker src config
   git -C "$ARCADE_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
-  [ -z "$(git -C "$ARCADE_ROOT" status --porcelain -- cloudflare/net-worker 2>/dev/null)" ] || return 0
-  git -C "$ARCADE_ROOT" rev-parse -q --verify "HEAD:cloudflare/net-worker" 2>/dev/null || true
+  [ -z "$(git -C "$ARCADE_ROOT" status --porcelain -- "$folder/src" "$folder/wrangler.jsonc" 2>/dev/null)" ] || return 0
+  src=$(git -C "$ARCADE_ROOT" rev-parse -q --verify "HEAD:$folder/src" 2>/dev/null) || return 0
+  config=$(git -C "$ARCADE_ROOT" rev-parse -q --verify "HEAD:$folder/wrangler.jsonc" 2>/dev/null) || return 0
+  printf '%s %s\n' "$src" "$config" | git hash-object --stdin 2>/dev/null || true
 }
-# The build the live relay reports (the X-Relay-Build header of /net/health on
-# the first route of its configuration), or nothing.
+# The build the live relay reports: the X-Relay-Build header of /net/health,
+# asked on every route of its configuration. Nothing unless all of them
+# answer with the same build, so a route that a deployment did not manage to
+# set up counts as not deployed.
 relay_live_build() {
-  local route
-  route=$(sed -nE 's/.*"pattern"[[:space:]]*:[[:space:]]*"([a-z0-9.-]+\/net\/)\*".*/\1/p' "$NET_WORKER_DIR/wrangler.jsonc" 2>/dev/null | head -n 1)
-  [ -n "$route" ] || return 0
-  curl -sS -m 20 -o /dev/null -D - "https://${route}health" 2>/dev/null | tr -d '\r' |
-    grep -i '^x-relay-build:' | head -n 1 | sed 's/^[^:]*:[[:space:]]*//' || true
+  local route build live=
+  while read -r route; do
+    build=$(curl -sS -m 20 -o /dev/null -D - "https://${route}health" 2>/dev/null | tr -d '\r' |
+      grep -i '^x-relay-build:' | head -n 1 | sed 's/^[^:]*:[[:space:]]*//' || true)
+    [ -n "$build" ] || return 0
+    [ -z "$live" ] || [ "$live" = "$build" ] || return 0
+    live=$build
+  done < <(sed -nE 's/.*"pattern"[[:space:]]*:[[:space:]]*"([a-z0-9.-]+\/net\/)\*".*/\1/p' "$NET_WORKER_DIR/wrangler.jsonc" 2>/dev/null)
+  echo "$live"
 }
 
 WORKER_ARGS=()
@@ -243,9 +253,8 @@ if [ -n "$DRY_RUN" ]; then
       echo "The relay Worker is only deployed from $PRODUCTION_BRANCH."
     fi
     echo "Checking that the relay Worker builds:"
-    if [ -f "$NET_WORKER_DIR/package-lock.json" ] && [ ! -d "$NET_WORKER_DIR/node_modules" ]; then
-      (cd "$NET_WORKER_DIR" && npm ci --no-audit --no-fund)
-    fi
+    # No npm ci: the relay imports nothing but the runtime, and its packages
+    # are only for developing and testing it.
     worker_config "$NET_WORKER_DIR"
     (cd "$NET_WORKER_DIR" && wrangler deploy "${WORKER_ARGS[@]}" --dry-run --outdir "$WORK/net-worker" </dev/null)
   fi
@@ -363,15 +372,14 @@ else
   # A new version of the Worker restarts its Durable Objects, which closes
   # every player's connection. Most deployments do not touch the relay, so it
   # is only deployed when its files differ from what the live one was built
-  # from.
+  # from, or when one of its routes does not answer with that build.
   RELAY_BUILD=$(relay_build)
   RELAY_LIVE=
   [ -z "$RELAY_BUILD" ] || [ "${RELAY_DEPLOY:-}" = always ] || RELAY_LIVE=$(relay_live_build)
   if [ -n "$RELAY_BUILD" ] && [ "$RELAY_LIVE" = "$RELAY_BUILD" ]; then
     echo "The relay Worker is unchanged (build $RELAY_BUILD is live): not deployed again, so rooms in use stay open."
   else
-    echo "Deploying the relay Worker (build ${RELAY_BUILD:-unknown}; live: ${RELAY_LIVE:-none or unknown})..."
-    [ ! -f "$NET_WORKER_DIR/package-lock.json" ] || (cd "$NET_WORKER_DIR" && npm ci --no-audit --no-fund)
+    echo "Deploying the relay Worker (build ${RELAY_BUILD:-unknown}; live: ${RELAY_LIVE:-another, none, or not on every route})..."
     worker_config "$NET_WORKER_DIR"
     [ -z "$RELAY_BUILD" ] || WORKER_ARGS+=(--var "BUILD:$RELAY_BUILD")
     (cd "$NET_WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||

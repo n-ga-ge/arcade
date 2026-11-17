@@ -191,7 +191,7 @@ async function checkRelay() {
     status = `cannot be reached (${error.cause?.message || error.message})`;
   }
   if (health?.ok !== true || health?.v !== 1) {
-    fail(`the multiplayer relay is not deployed: /net/health ${status} (expected 200 {"ok":true,"v":1}). On Cloudflare it is the Worker in cloudflare/net-worker/, which a production deployment publishes; locally the dev server`);
+    fail(`the multiplayer relay is not deployed: /net/health ${status} (expected 200 {"ok":true,"v":1}). On Cloudflare the relay is the Worker in cloudflare/net-worker/, which a production deployment publishes; locally it is part of the dev server (tools/web/devserver.py)`);
     return;
   }
   const list = await fetch(`${base}/net/rooms`).then(async (response) => (response.status === 200 ? (await response.json()).rooms : null)).catch(() => null);

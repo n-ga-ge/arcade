@@ -12,8 +12,9 @@
 // site and the dev site do not see each other's rooms.
 //
 // /net/health also names the build that is deployed (X-Relay-Build, from the
-// variable BUILD): tools/ci/deploy.sh reads it to leave an unchanged relay
-// alone, because a new version of the Worker restarts every room.
+// variable BUILD, a hash tools/ci/deploy.sh makes of src/ and wrangler.jsonc):
+// the script reads it to leave an unchanged relay alone, because a new version
+// of the Worker restarts every room.
 
 import { checkOrigin } from './access.js';
 import { CLOSE, VERSION, isGame, parseJoin } from './protocol.js';

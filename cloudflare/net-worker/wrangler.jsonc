@@ -44,9 +44,9 @@
     // Origin header (command-line tools; only for local use). Empty: only
     // the site.
     "ALLOWED_ORIGINS": "",
-    // The Git tree of this folder that is deployed, set by tools/ci/deploy.sh
-    // (`--var BUILD:<id>`) and shown in the X-Relay-Build header of
-    // /net/health. Empty for a deployment made by hand.
+    // Which src/ and wrangler.jsonc are deployed, as one hash, set by
+    // tools/ci/deploy.sh (`--var BUILD:<id>`) and shown in the X-Relay-Build
+    // header of /net/health. Empty for a deployment made by hand.
     "BUILD": ""
   },
 

@@ -28,6 +28,9 @@ export const CLOSE = {
   'too-fast': 4429,
 };
 export const TOO_BIG = 1009;
+// Not part of the protocol's list: the close code for a member that the relay
+// gave up on because it had been silent for too long (room.js).
+export const SILENT = 4408;
 
 const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 const GAME = /^[a-z0-9-]{1,64}$/;

@@ -10,13 +10,21 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { REFRESH_MS } from './directory.js';
-import { CLOSE, FrameMeter, LAST_ID, MAX_FRAME, MAX_MEMBERS, MAX_TEXT, TOO_BIG, VERSION } from './protocol.js';
+import { CLOSE, FrameMeter, LAST_ID, MAX_FRAME, MAX_MEMBERS, MAX_TEXT, SILENT, TOO_BIG, VERSION } from './protocol.js';
 
 // How often a room that is not public checks that it still has members. A
 // room normally ends when its last member leaves; this clears the record of
 // one whose sockets were cut without that being seen (a new version of the
 // Worker disconnects every socket).
 const CHECK_MS = 60 * 60 * 1000;
+
+// A member that has sent nothing for this long, not even the ping due every
+// 30 seconds, is taken for gone: a connection can die without a close frame
+// (a lid shut, a network lost), and such a member would hold its seat, and
+// keep a public room in the list, for good.
+const SILENT_MS = 150 * 1000;
+// How often the time of a member's last frame is written to its attachment.
+const SEEN_EVERY_MS = 30 * 1000;
 
 const PING = JSON.stringify({ t: 'ping' });
 const PONG = JSON.stringify({ t: 'pong' });
@@ -33,7 +41,7 @@ export class Room extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.kv = ctx.storage.kv;
-    this.members = new Map(); // id -> { ws, id, name, creator }
+    this.members = new Map(); // id -> { ws, id, name, creator, seen }
     this.sockets = new Map(); // ws -> the same member
     this.meters = new WeakMap(); // ws -> FrameMeter; starting again after hibernation is fine
     this.told = Promise.resolve(); // the calls to the directory, one after another
@@ -50,10 +58,32 @@ export class Room extends DurableObject {
     this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair(PING, PONG));
   }
 
-  enrol(ws, { id, name, creator }) {
-    const member = { ws, id, name, creator };
+  enrol(ws, { id, name, creator, seen }) {
+    const member = { ws, id, name, creator, seen };
     this.members.set(id, member);
     this.sockets.set(ws, member);
+  }
+
+  // The members that have been silent for too long at time `now`. A ping
+  // the runtime answered itself never reaches the object; the runtime keeps
+  // the time of the last one.
+  silent(now) {
+    return [...this.members.values()].filter((member) => {
+      const answered = this.ctx.getWebSocketAutoResponseTimestamp(member.ws);
+      return now - Math.max(member.seen, answered ? answered.getTime() : 0) > SILENT_MS;
+    });
+  }
+
+  // Ends the connections of the silent members, as if they had left.
+  async sweep() {
+    for (const member of this.silent(Date.now())) {
+      try {
+        member.ws.close(SILENT, 'timeout');
+      } catch {
+        // Closed already.
+      }
+      await this.depart(member.ws);
+    }
   }
 
   // The room's record: { site, code, game, public, host, created, nextId },
@@ -76,6 +106,8 @@ export class Room extends DurableObject {
       game: query.get('game'),
       isPublic: query.get('public') === '1',
     };
+    // A seat held by a connection that died is free for this one.
+    await this.sweep();
     const { 0: client, 1: server } = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
     // admit() does not wait for anything, so two connections cannot both
@@ -109,7 +141,7 @@ export class Room extends DurableObject {
       if (this.members.size >= MAX_MEMBERS) return { code: 'room-full', message: `the room ${code} is full` };
       if (room.nextId > LAST_ID) return { code: 'room-full', message: `the room ${code} takes no more players` };
     }
-    const member = { id: room.nextId++, name, creator: create };
+    const member = { id: room.nextId++, name, creator: create, seen: Date.now() };
     this.kv.put('room', room);
     ws.serializeAttachment(member);
     // In join order, which the member table loses when it is rebuilt.
@@ -161,9 +193,14 @@ export class Room extends DurableObject {
   async webSocketMessage(ws, message) {
     const member = this.sockets.get(ws);
     if (!member) return; // refused, or closed by the relay and still sending
+    const now = Date.now();
+    if (now - member.seen >= SEEN_EVERY_MS) {
+      member.seen = now;
+      ws.serializeAttachment({ id: member.id, name: member.name, creator: member.creator, seen: now });
+    }
     let meter = this.meters.get(ws);
     if (!meter) this.meters.set(ws, (meter = new FrameMeter()));
-    if (meter.tooFast(Date.now())) {
+    if (meter.tooFast(now)) {
       send(ws, JSON.stringify({ t: 'error', code: 'too-fast', message: 'too many frames in one second' }));
       ws.close(CLOSE['too-fast'], 'too-fast');
       return this.depart(ws);
@@ -262,12 +299,18 @@ export class Room extends DurableObject {
   }
 
   // Runs every REFRESH_MS for a public room, to keep its entry in the
-  // directory alive, and every CHECK_MS for the others.
+  // directory alive, and every CHECK_MS for the others. Either way it ends
+  // the members that went silent and the room that has none left.
   async alarm() {
+    if (!this.room()) return;
+    await this.sweep();
+    // Read again: the sweep may have ended the room with its last member.
     const room = this.room();
     if (!room) return;
     if (this.members.size === 0) return this.dissolve(room);
-    if (room.public) await this.publish(room);
+    // The alarm first: once the directory is being waited for, the room can
+    // change or end, and this must not set an alarm for a room that is over.
     await this.ctx.storage.setAlarm(Date.now() + (room.public ? REFRESH_MS : CHECK_MS));
+    if (room.public) await this.publish(room);
   }
 }
