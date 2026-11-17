@@ -126,8 +126,9 @@ you hosts the game and the others join it.
 
 Good to know:
 
-- **Keep the tab in front**, both of you. A browser slows down a tab you
-  cannot see, and the game may then lose its connection to the other player.
+- **Keep the tab in view while you play.** Your game keeps running when you
+  switch to another tab or window, so the other player is not left waiting,
+  but you do not see what happens in it meanwhile.
 - **Play with two for now.** A room takes more people, but games are not
   expected to connect more than two players yet.
 - **N-Gage Arena does not work.** It was Nokia's online service, and it has

@@ -47,7 +47,10 @@
 //   --game SLUG        the game for tiers 0, 2 and 3 (default: rayman-3); tiers
 //                      2 and 3 need an entry in SESSIONS
 //   --browser NAME     chrome-software (default, Playwright's Chromium drawing
-//                      on the CPU) or chrome (the toolchain's Chrome on the GPU)
+//                      on the CPU), chrome (the toolchain's Chrome on the GPU)
+//                      or firefox (Playwright's Firefox)
+//   --joiner-browser NAME   page B in a browser of its own, e.g. firefox: two
+//                      players in different browsers
 //   --site URL         tier 3 against a deployed site instead of a dev server:
 //                      the pages are URL/play/?g=<game> and the relay is the
 //                      site's own, e.g. --site https://n-ga.ge --tier 3
@@ -76,6 +79,9 @@
 //   curl 'http://127.0.0.1:PORT/link'  /unlink              bring the link up or down on both
 //   curl 'http://127.0.0.1:PORT/leave?page=a'               tell page a that the other left
 //   curl 'http://127.0.0.1:PORT/restart?page=a'             the page's own Restart
+//   curl 'http://127.0.0.1:PORT/undrawn?page=a&mode=1'      act as a page the browser does not draw: 1 no
+//                                                           animation frames, 2 also without the timer that
+//                                                           stands in for them, 0 normal again
 //   curl 'http://127.0.0.1:PORT/console?page=a'             the last lines of its console
 //   curl 'http://127.0.0.1:PORT/api?page=a&method=GET&target=/v1/session'   a control API call
 //   curl 'http://127.0.0.1:PORT/quit'
@@ -83,7 +89,7 @@
 // Exit code 0 when every tier that ran passed, 1 when one failed, 2 when the
 // command line is wrong. A test run always ends: every wait has a limit, and
 // the browser and the dev server are stopped. A server run ends with /quit.
-import { chromium } from 'playwright';
+import { chromium, firefox } from 'playwright';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -92,7 +98,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const OPTIONS = { out: 'value', tier: 'value', game: 'value', browser: 'value', site: 'value', port: 'value', bin: 'value', assets: 'value',
+const OPTIONS = { out: 'value', tier: 'value', game: 'value', browser: 'value', 'joiner-browser': 'value', site: 'value', port: 'value', bin: 'value', assets: 'value',
   'time-limit': 'value', serve: 'value', pages: 'value', unlinked: 'flag', log: 'value', verbose: 'flag' };
 
 function usage(message) {
@@ -267,6 +273,7 @@ const SESSIONS = {
 const started = Date.now();
 const results = [];
 let browser = null;
+let joinerBrowser = null; // page B's own browser, with --joiner-browser
 let server = null;
 let serverPort = 0;
 let ended = false;
@@ -293,6 +300,7 @@ async function end(code) {
     code = code || 1;
   }
   // Closing can hang when the browser is stuck; exiting kills what is left.
+  if (joinerBrowser) await Promise.race([joinerBrowser.close().catch(() => {}), sleep(5000)]);
   if (browser) await Promise.race([browser.close().catch(() => {}), sleep(5000)]);
   if (server) server.kill('SIGKILL');
   process.exit(code);
@@ -353,6 +361,7 @@ const LAUNCH = { headless: true, handleSIGINT: false, handleSIGTERM: false, hand
 const BROWSERS = {
   'chrome-software': () => chromium.launch({ ...LAUNCH, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] }),
   chrome: async () => chromium.launch({ ...LAUNCH, executablePath: toolchainChrome(), args: ['--use-gl=angle', '--use-angle=gl-egl', '--enable-gpu', '--ignore-gpu-blocklist'] }),
+  firefox: () => firefox.launch({ ...LAUNCH, firefoxUserPrefs: { 'media.autoplay.default': 0, 'gfx.webrender.all': true } }),
 };
 
 // --- one page with one emulator ----------------------------------------------------
@@ -390,7 +399,7 @@ class Player {
   // from an earlier visit (the player's name in a room, for tier 3).
   async open(slug, query = '', settings = null) {
     this.slug = slug;
-    this.context = await browser.newContext({ viewport: { width: 900, height: 700 } });
+    this.context = await (this.label === 'b' && joinerBrowser ? joinerBrowser : browser).newContext({ viewport: { width: 900, height: 700 } });
     this.page = await this.context.newPage();
     this.page.on('console', (message) => this.record(`[${message.type()}] ${message.text()}`));
     this.page.on('pageerror', (error) => { this.record(`[pageerror] ${error.message}`); this.errors.push(firstLine(error)); });
@@ -502,6 +511,18 @@ class Player {
 
   frames() {
     return this.ask(() => window.eka2l1Page.emu.frames(), null, 'frames');
+  }
+
+  // Makes the emulator act as in a page the browser does not draw (a tab in
+  // the background, a covered window): see eka2l1_web_debug_animation_frames.
+  // False when the build has no such switch.
+  undrawn(mode) {
+    return this.ask((value) => {
+      const module = window.eka2l1.module;
+      if (typeof module._eka2l1_web_debug_animation_frames !== 'function') return false;
+      module._eka2l1_web_debug_animation_frames(value);
+      return true;
+    }, mode, 'undrawn');
   }
 
   // Frames presented within `ms`.
@@ -955,6 +976,8 @@ async function serve() {
       } else if (url.pathname === '/leave') {
         await player.peer(player.other.id, false);
         send({ ok: true });
+      } else if (url.pathname === '/undrawn') {
+        send({ ok: await player.undrawn(Number(q.mode || 0)) });
       } else if (url.pathname === '/restart') {
         await player.restart();
         send({ ok: true, frames: await player.frames() });
@@ -997,6 +1020,11 @@ async function main() {
   if (!site) serverPort = await startServer();
   browser = await withTimeout(BROWSERS[browserName](), 60000, 'browser launch');
   browser.on('disconnected', () => { if (!ended) { console.error('the browser went away'); end(1); } });
+  if (args['joiner-browser']) {
+    if (!BROWSERS[args['joiner-browser']]) usage(`unknown browser: ${args['joiner-browser']}`);
+    joinerBrowser = await withTimeout(BROWSERS[args['joiner-browser']](), 60000, 'browser launch');
+    joinerBrowser.on('disconnected', () => { if (!ended) { console.error("the joiner's browser went away"); end(1); } });
+  }
 
   if (args.serve) {
     await serve();
