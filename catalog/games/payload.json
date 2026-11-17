@@ -177,35 +177,35 @@
     "expect": "ingame",
     "script": [
       {
-        "wait": 15000
+        "wait": 10000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 16
+      },
+      {
+        "key": "up",
+        "wait": 2000
       },
       {
         "key": "ok",
         "wait": 4000,
-        "repeat": 8
+        "repeat": 4
       },
       {
-        "key": "down",
-        "wait": 800,
-        "repeat": 5
-      },
-      {
-        "key": "ok",
+        "key": "5",
+        "hold": 8000,
         "wait": 4000,
-        "repeat": 3
+        "repeat": 2
       },
       {
         "key": "5",
-        "hold": 4000,
-        "wait": 4000
+        "wait": 3000,
+        "repeat": 40
       },
       {
-        "key": "5",
-        "wait": 2500,
-        "repeat": 26
-      },
-      {
-        "wait": 5000
+        "wait": 3000
       }
     ]
   },

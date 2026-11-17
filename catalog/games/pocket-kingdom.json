@@ -39,76 +39,54 @@
       },
       {
         "key": "ok",
-        "wait": 4000,
+        "wait": 6000,
         "repeat": 4
       },
       {
         "key": "7",
-        "wait": 1500,
-        "repeat": 5
-      },
-      {
-        "key": "ok",
-        "wait": 3000
-      },
-      {
-        "key": "7",
-        "wait": 1500,
-        "repeat": 5
+        "wait": 3500,
+        "repeat": 4
       },
       {
         "key": "down",
-        "wait": 1500
+        "wait": 2500
       },
       {
         "key": "ok",
-        "wait": 2500,
+        "wait": 6000,
         "repeat": 2
       },
       {
         "key": "down",
-        "wait": 1500
+        "wait": 2500
       },
       {
         "key": "ok",
-        "wait": 2500,
+        "wait": 6000,
         "repeat": 3
       },
       {
         "key": "7",
-        "wait": 1500,
-        "repeat": 5
-      },
-      {
-        "key": "ok",
-        "wait": 2500,
+        "wait": 3500,
         "repeat": 6
       },
       {
-        "key": "7",
-        "wait": 1500,
-        "repeat": 5
-      },
-      {
-        "key": "right",
-        "wait": 1500
-      },
-      {
         "key": "ok",
-        "wait": 3000
+        "wait": 6000,
+        "repeat": 8
       },
       {
         "key": "7",
-        "wait": 1500,
-        "repeat": 5
-      },
-      {
-        "key": "right",
-        "wait": 1500
-      },
-      {
-        "key": "ok",
         "wait": 3500,
+        "repeat": 6
+      },
+      {
+        "key": "right",
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "wait": 6000,
         "repeat": 10
       },
       {
