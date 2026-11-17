@@ -152,6 +152,13 @@ picture's shape and fills the space beside it with a soft, blurred copy of
 what is on screen. Neither makes the game show more of its world: a game
 always draws the same picture.
 
+For a few games the dialog will also offer **3D resolution (beta)**: the
+game's 3D drawn again by your graphics card at two, three or four times the
+phone's resolution, with **3D textures** sharp or smooth, while menus and text
+stay as they are. This is being built. The two settings show only for a game
+it has been prepared for, and where the dialog says it is not available, your
+choice is kept and changes nothing yet.
+
 ## Playing your own copy
 
 The player can also run a game from files of your own. Open **Menu → Load a

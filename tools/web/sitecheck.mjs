@@ -19,7 +19,10 @@
 // canvas is compared with the emulator's own screenshot); an entry that is
 // broken is expected not to, and the result says when it did better. The key
 // script of the entry is not replayed here: the per-game CI job does that.
-// This is the check that the deployed pieces fit together.
+// This is the check that the deployed pieces fit together. For a game whose
+// entry names an enhancement profile (docs/enhancements.md) that includes the
+// profile: the site must publish it, and the page must have handed it to the
+// emulator.
 //
 // The relay (/net/, docs/deployment.md) is checked without a browser: its
 // health address must answer, and two connections must meet in a room made
@@ -298,6 +301,7 @@ async function checkGame(browser, entry) {
     result.note = `${String(error.message).split('\n')[0]}${status ? ` (page says: ${status})` : ''}`;
   }
   if (errors.length && !result.note) result.note = errors.slice(0, 2).join('; ');
+  await checkEnhancement(result.started ? page : null, entry.slug).catch((error) => fail(`${entry.slug}: its enhancement profile could not be checked: ${String(error.message).split('\n')[0]}`));
   await context.close();
 
   const works = result.started && result.drawn && result.likeness !== null && result.likeness >= SHOWN_AT;
@@ -312,6 +316,36 @@ async function checkGame(browser, entry) {
     }
   }
   return result;
+}
+
+// A game whose entry names an enhancement profile: /catalog/enhance/ must
+// have it, and the page must have loaded it into the emulator. `page` is the
+// game's page when it started, else null. Whether the picture is right is not
+// looked at here.
+async function checkEnhancement(page, slug) {
+  const entry = await fetch(`${base}/catalog/games/${slug}.json`).then((response) => (response.ok ? response.json() : null)).catch(() => null);
+  const engine = entry?.enhance?.engine;
+  if (!engine) return null;
+  const address = `/catalog/enhance/${engine}.json`;
+  const response = await fetch(base + address).catch(() => null);
+  const profile = response?.status === 200 ? await response.json().catch(() => null) : null;
+  if (!profile) return fail(`${slug} names the enhancement profile ${engine}, but ${address} ${response ? `answers ${response.status}${response.status === 200 ? ' with something that is not JSON' : ''}` : 'cannot be reached'}`);
+  if (profile.engine !== engine || !Array.isArray(profile.images)) return fail(`${address} is not a profile of the engine ${engine}`);
+  if (!page) return ok(`${slug}: its enhancement profile ${engine} is published (the game did not start, so the page was not asked about it)`);
+
+  const state = await page.waitForFunction(() => window.eka2l1Page.enhance && window.eka2l1Page.enhance.state !== 'loading' && window.eka2l1Page.enhance.state, null, { timeout: 20000 })
+    .then((handle) => handle.jsonValue()).catch(() => null);
+  const emulator = await page.evaluate(async () => {
+    const answer = await window.eka2l1.request('GET', '/v1/enhance');
+    return answer.ok ? answer.json() : { http: answer.status };
+  }).catch((error) => ({ http: String(error.message).split('\n')[0] }));
+  if (!state) return fail(`${slug}: the page did not take up the enhancement profile ${engine} its entry names`);
+  if (emulator.available !== true || emulator.engine !== engine) {
+    return fail(`${slug}: the emulator does not hold the enhancement profile ${engine} (the page says "${state}", GET /v1/enhance ${emulator.http ? `answers ${emulator.http}` : `says ${JSON.stringify({ available: emulator.available, engine: emulator.engine })}`})`);
+  }
+  // `scale` is in the answer once the emulator can draw a game's 3D itself.
+  return ok(`${slug}: its enhancement profile ${engine} is published and loaded${emulator.active ? ', and matches the game\'s code' : ''}`
+    + (emulator.scale === undefined ? '; this emulator only captures, so the 3D resolution setting says it is not available' : ''));
 }
 
 // --- 5. a second visit ----------------------------------------------------------------
