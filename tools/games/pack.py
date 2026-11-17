@@ -15,6 +15,11 @@ A dump is whatever came off the card or the net, so the card is normalised:
   - "pack.move" renames misplaced folders ([from, to], relative to the root)
   - junk is left out: Thumbs.db, .nfo/.diz, and loose .sis files beside System
   - "pack.exclude" adds glob patterns to leave out
+  - "pack.borrow" takes files from another game's dump ([dump folder, path in
+    it, path in this card]): for a dump that came without a library every
+    card of its time carried
+  - "pack.folders" lists folders the card must have even though they are
+    empty (a dump kept in git loses its empty folders)
 
 The zips are reproducible (sorted entries, fixed timestamps), so the same dump
 always gives the same hash and an upload can skip what has not changed.
@@ -125,12 +130,30 @@ def pack(game, games_dir, out_dir):
     else:
         root = find_card_root(dump)
     files = collect(root, options.get("move", []), options.get("exclude", []))
+    for other, source, inside in options.get("borrow", []):
+        found = resolve(os.path.join(games_dir, other), source)
+        if found is None or not os.path.isfile(found):
+            raise ValueError(f"pack.borrow source not found: {other}/{source}")
+        inside = inside.strip("/")
+        if inside.lower() in (existing.lower() for existing in files):
+            raise ValueError(f"pack.borrow would replace {inside}, which the dump has")
+        files[inside] = found
     lowered = {name.lower() for name in files}
+    folders = []
+    for folder in options.get("folders", []):
+        folder = folder.strip("/")
+        # Only folders nothing is in: the others exist through their files.
+        if not any(name.startswith(folder.lower() + "/") for name in lowered):
+            folders.append(folder + "/")
     if not any(name.startswith("system/apps/") for name in lowered):
         raise ValueError("the packed card has no System/Apps")
     target = os.path.join(out_dir, game["slug"] + ".zip")
     partial = target + ".part"
     with zipfile.ZipFile(partial, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for folder in sorted(folders, key=str.lower):
+            info = zipfile.ZipInfo(folder, date_time=(1980, 1, 1, 0, 0, 0))
+            info.external_attr = (0o40755 << 16) | 0x10
+            archive.writestr(info, b"")
         for inside in sorted(files, key=str.lower):
             info = zipfile.ZipInfo(inside, date_time=(1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
