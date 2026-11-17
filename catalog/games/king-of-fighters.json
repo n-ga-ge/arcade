@@ -1,11 +1,182 @@
 {
   "slug": "king-of-fighters",
   "title": "The King of Fighters Extreme",
+  "year": 2004,
+  "genre": "Fighting",
   "uid": "0x101FD3F9",
   "variantOf": null,
   "dump": "King Of Fighters",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "Teams are three fighters: pick three on the Player Selection screen, then choose their order.",
+    "Either soft key pauses a fight. The pause menu has the Command List with each fighter's special moves.",
+    "Options > Controls in the game can reassign the keypad actions; that changes which N-Gage key an action uses, on top of the bindings here.",
+    "Versus play over Bluetooth is not available in the browser."
+  ],
+  "controls": {
+    "source": "The game's defaults, read from its Options > Controls screen (keys 0 to 9, star and hash). Directions, OK and the soft keys were observed in menus and in a fight.",
+    "actions": {
+      "up": "Jump",
+      "down": "Crouch",
+      "left": "Move left (back away from an opponent on the right to guard)",
+      "right": "Move right",
+      "ok": "Select (menus)",
+      "lsk": "Pause menu",
+      "rsk": "Pause menu; back (menus)",
+      "0": "Taunt",
+      "2": "Striker attack",
+      "3": "Master mode",
+      "4": "Weak punch (A)",
+      "5": "Strong punch (C)",
+      "6": "Body toss attack",
+      "7": "Weak kick (B)",
+      "8": "Strong kick (D)",
+      "9": "MAX special move"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "ok": [
+        "Enter",
+        "Space"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW",
+        "Escape"
+      ],
+      "4": [
+        "KeyA",
+        "Digit4",
+        "Numpad4"
+      ],
+      "5": [
+        "KeyS",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "8": [
+        "KeyX",
+        "Digit8",
+        "Numpad8"
+      ],
+      "6": [
+        "KeyD",
+        "Digit6",
+        "Numpad6"
+      ],
+      "9": [
+        "KeyC",
+        "Digit9",
+        "Numpad9"
+      ],
+      "2": [
+        "KeyF",
+        "Digit2",
+        "Numpad2"
+      ],
+      "3": [
+        "KeyV",
+        "Digit3",
+        "Numpad3"
+      ],
+      "0": [
+        "KeyT",
+        "Digit0",
+        "Numpad0"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "7": [
+        "b0"
+      ],
+      "8": [
+        "b1"
+      ],
+      "4": [
+        "b2"
+      ],
+      "5": [
+        "b3"
+      ],
+      "2": [
+        "b4"
+      ],
+      "6": [
+        "b5"
+      ],
+      "3": [
+        "b6"
+      ],
+      "9": [
+        "b7"
+      ],
+      "rsk": [
+        "b8"
+      ],
+      "ok": [
+        "b9"
+      ],
+      "0": [
+        "b10"
+      ],
+      "lsk": [
+        "b11"
+      ]
+    },
+    "notes": [
+      "Fighting layout: move on the arrows with the right hand; the left hand has the punches on A and S above the kicks on Z and X, with body toss on D, MAX special on C, striker on F, master mode on V and taunt on T.",
+      "On a gamepad the four face buttons are the two kicks (A, B) and the two punches (X, Y), the shoulders are striker and body toss, the triggers master mode and MAX special. Start selects in menus and Back pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 20000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 14
+      },
+      {
+        "wait": 8000
+      }
+    ]
+  },
+  "statusNote": "Title, menus, team and order selection all work, and a Story mode fight plays at full speed: moving, jumping, punches, kicks and the pause menu were tried."
 }

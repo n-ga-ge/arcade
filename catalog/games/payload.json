@@ -1,11 +1,213 @@
 {
   "slug": "payload",
   "title": "Payload",
+  "publisher": "Nokia",
+  "year": 2006,
+  "genre": "Racing (vehicle combat)",
   "uid": "0x101FD451",
   "variantOf": null,
   "dump": "Payload",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "The game first asks for a profile: choose New Profile, pick letters on the on-screen keyboard with the pad and key 5 (or OK), then move down to DONE.",
+    "In menus and briefings key 5 selects or continues and key 7 goes back; hold 5 to skip the Story intro.",
+    "The right soft key pauses a race.",
+    "Double-tap left or right to shunt and double-tap down for a 180 degree turn.",
+    "Multiplayer and N-Gage Arena are not available in the browser."
+  ],
+  "controls": {
+    "source": "The game's own Default Key Controls screen, shown while a mission loads, and the Select 5 / Back 7 labels in its menus. Accelerating (up and 5), steering, the map (#), race info (9) and the right soft key's pause menu were also observed in the first race. Publisher and year are from the game's copyright screen.",
+    "actions": {
+      "up": "Accelerate",
+      "down": "Brake / reverse (double-tap: 180 degree turn)",
+      "left": "Steer left (double-tap: shunt)",
+      "right": "Steer right (double-tap: shunt)",
+      "ok": "Select (menus)",
+      "lsk": "Select (pause menu)",
+      "rsk": "Pause",
+      "1": "Camera",
+      "2": "Next weapon",
+      "3": "Previous weapon",
+      "4": "Look behind",
+      "5": "Accelerate; select / continue (menus)",
+      "6": "Use weapon",
+      "7": "Brake / reverse; back (menus)",
+      "8": "Shield",
+      "9": "Race info",
+      "hash": "Map"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp",
+        "KeyW"
+      ],
+      "down": [
+        "ArrowDown",
+        "KeyS"
+      ],
+      "left": [
+        "ArrowLeft",
+        "KeyA"
+      ],
+      "right": [
+        "ArrowRight",
+        "KeyD"
+      ],
+      "6": [
+        "Space",
+        "Digit6",
+        "Numpad6"
+      ],
+      "8": [
+        "KeyF",
+        "Digit8",
+        "Numpad8"
+      ],
+      "2": [
+        "KeyE",
+        "Digit2",
+        "Numpad2"
+      ],
+      "3": [
+        "KeyR",
+        "Digit3",
+        "Numpad3"
+      ],
+      "4": [
+        "KeyB",
+        "Digit4",
+        "Numpad4"
+      ],
+      "1": [
+        "KeyC",
+        "Digit1",
+        "Numpad1"
+      ],
+      "9": [
+        "Tab",
+        "Digit9",
+        "Numpad9"
+      ],
+      "hash": [
+        "KeyM",
+        "Equal"
+      ],
+      "5": [
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "Backspace",
+        "Digit7",
+        "Numpad7"
+      ],
+      "ok": [
+        "Enter"
+      ],
+      "lsk": [
+        "Backquote"
+      ],
+      "rsk": [
+        "Escape"
+      ],
+      "clear": [
+        "Delete"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b7"
+      ],
+      "7": [
+        "b6"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "8": [
+        "b1"
+      ],
+      "6": [
+        "b2"
+      ],
+      "4": [
+        "b3"
+      ],
+      "3": [
+        "b4"
+      ],
+      "2": [
+        "b5"
+      ],
+      "9": [
+        "b8"
+      ],
+      "rsk": [
+        "b9"
+      ],
+      "1": [
+        "b10"
+      ],
+      "hash": [
+        "b11"
+      ]
+    },
+    "notes": [
+      "Racing layout: W or the up arrow accelerates, S or down brakes, A and D or the arrows steer. Space uses the weapon, F raises the shield, E and R change weapon, B looks behind, C changes the camera, M shows the map and Tab the race info. Enter or 5 selects in menus, Backspace or 7 goes back, Esc pauses.",
+      "On a gamepad the left stick or pad steers (up and down also accelerate and brake), RT accelerates and LT brakes; in menus RT or A selects and LT goes back. X uses the weapon, B the shield, Y looks behind, LB and RB change weapon, Start pauses, Back shows race info, and the stick clicks change the camera and show the map."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 10000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 16
+      },
+      {
+        "key": "up",
+        "wait": 2000
+      },
+      {
+        "key": "ok",
+        "wait": 4000,
+        "repeat": 4
+      },
+      {
+        "key": "5",
+        "hold": 8000,
+        "wait": 4000,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 3000,
+        "repeat": 40
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  },
+  "statusNote": "Logos, profile creation, the main menu, the Story intro and the mission briefing work, and the first Story mission (a pit qualifier on Tenant Salt Flats) plays in 3D: accelerating, steering, the map, race info and the pause menu were tried."
 }
