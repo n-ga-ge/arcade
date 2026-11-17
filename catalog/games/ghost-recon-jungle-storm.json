@@ -20,7 +20,7 @@
   "notes": [
     "Menus are chosen with 5 or the left soft key; the right soft key goes back. Yes/No questions start on No.",
     "The first mission teaches the keys with messages; 5 closes each message.",
-    "Multiplayer needs Bluetooth or N-Gage Arena and cannot work here.",
+    "Multiplayer over Bluetooth works between two players in one room: the host chooses Host Game and waits, the other chooses Join Game and the host in the list, then the host presses Start Session and, in the lobby, moves to Start. N-Gage Arena is no longer online.",
     "The title screen starts a demo when left idle; 5 returns to the title."
   ],
   "multiplayer": {
@@ -28,7 +28,10 @@
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "players": 8,
+    "menu": "Multiplayer > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins and picks the host from the list, the host presses Start Session and then Start in the lobby; a deathmatch ran on both screens, one player's pause is shown to the other, and the host is told when the other quits and plays on. The list shows the host under the phone's name (EKA2L1), not the name in the room. More than two players were not tried."
   },
   "controls": {
     "source": "The game's defaults from Options > Map Keys (preset Default; the game can remap them there) and its tutorial messages. Moving, looking, firing and the soft keys were confirmed in the first mission.",
