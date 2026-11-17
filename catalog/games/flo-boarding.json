@@ -12,6 +12,9 @@
         "System/Apps/Nokia_Game/0.5.65.txt",
         "System/Apps/Nokia_Game/options/0.5.65.txt"
       ]
+    ],
+    "folders": [
+      "System/Apps/Nokia_Game/Flogame/Ghosts"
     ]
   },
   "status": "ingame",

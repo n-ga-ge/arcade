@@ -30,7 +30,9 @@
       "properties": {
         "root": { "type": "string", "description": "Card root inside the dump, when it cannot be found by looking for System/Apps." },
         "move": { "type": "array", "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }, "description": "[from, to] pairs relative to the card root, applied in order." },
-        "exclude": { "type": "array", "items": { "type": "string" }, "description": "Extra glob patterns (matched against the path inside the card) to leave out." }
+        "exclude": { "type": "array", "items": { "type": "string" }, "description": "Extra glob patterns (matched against the path inside the card) to leave out." },
+        "borrow": { "type": "array", "items": { "type": "array", "items": { "type": "string" }, "minItems": 3, "maxItems": 3 }, "description": "[dump folder, path in that dump, path in this card]: files taken from another game's dump, for a dump that came without a library the cards of its time all carried." },
+        "folders": { "type": "array", "items": { "type": "string" }, "description": "Folders the card must have although nothing is in them (a dump kept in git loses its empty folders)." }
       }
     },
     "status": { "enum": ["untested", "broken", "boots", "menu", "ingame"], "description": "How far the game gets in the web build: broken (does not start or crashes), boots (shows its own screens), menu (main menu works), ingame (playable)." },
