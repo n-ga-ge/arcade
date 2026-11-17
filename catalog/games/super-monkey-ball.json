@@ -14,6 +14,7 @@
     "In play either soft key opens the pause menu: Continue game, Save and Quit, Quit (no save).",
     "Each floor has a 60 second timer."
   ],
+  "multiplayer": null,
   "controls": {
     "source": "Observed in the menus and on Floor 01; the title screen names the 5 key. The game has no controls screen.",
     "actions": {
