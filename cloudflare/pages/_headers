@@ -71,6 +71,13 @@
   ! Content-Security-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 
+/s/*
+  # The front page's style sheet and scripts, in a folder named after a hash
+  # of them (tools/site/build.py), for the same reason as the player's files
+  # below.
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
 /play/b/*
   # The player's own files: everything of the web build but the page and
   # config.json. tools/site/build.py puts each build in a folder named after

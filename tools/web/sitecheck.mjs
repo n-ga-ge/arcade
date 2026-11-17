@@ -96,11 +96,29 @@ async function checkPages() {
   }
   if (problems.length === before) ok(`the player's files (${files.size} checked${build ? `, build ${build.split('/')[1]}` : ''}) cannot go stale against each other`);
 
-  const refused = await head(`${base}/assets/NGAGE.ROM`);
-  if (refused.status !== 403) fail(`/assets/NGAGE.ROM answers ${refused.status} to a request that is not from the site (expected 403)`);
+  // The same for the front page: its own scripts and style sheet.
+  const front = await (await fetch(`${base}/`)).text();
+  const own = [...new Set([...front.matchAll(/\b(?:src|href)="(\/[^"#?]+\.(?:js|css))"/g)].map((m) => m[1]))];
+  const frontBefore = problems.length;
+  for (const file of own) {
+    const response = await head(base + file);
+    const cache = response.headers.get('cache-control') || '';
+    if (response.status !== 200) { fail(`${file} answers ${response.status}`); continue; }
+    const seconds = Number((cache.match(/max-age=(\d+)/) || [])[1] || 0);
+    if (seconds > 0 && !(/^\/s\/[0-9a-f]+\//.test(file) && /immutable/.test(cache))) {
+      fail(`${file} is kept by browsers for ${seconds} s ("${cache}") under a name that changes content with every deployment: a returning visitor can run an old front-page script against a new catalogue`);
+    }
+  }
+  if (problems.length === frontBefore) ok(`the front page's own files (${own.length} checked) cannot go stale against the page`);
+
+  // The dev server hands the game files to anyone; only a deployed site has
+  // the Worker and its access rule in front of them.
+  const local = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(new URL(base).hostname);
   const served = await head(`${base}/assets/NGAGE.ROM`, { 'Sec-Fetch-Site': 'same-origin' });
+  const refused = local ? null : await head(`${base}/assets/NGAGE.ROM`);
   if (served.status !== 200) fail(`/assets/NGAGE.ROM answers ${served.status} to the site itself`);
-  else ok('game files: served to the site, refused to others');
+  if (refused && refused.status !== 403) fail(`/assets/NGAGE.ROM answers ${refused.status} to a request that is not from the site (expected 403)`);
+  if (served.status === 200 && (!refused || refused.status === 403)) ok(local ? 'game files: served (a dev server has no access rule to check)' : 'game files: served to the site, refused to others');
 }
 
 // --- 2. the front page ------------------------------------------------------------

@@ -3,7 +3,9 @@
 
   python3 -I tools/site/build.py [--out dist] [--bin DIR] [--shell DIR] [--status DIR]
 
-  /                    site/ (the front page), copied as is
+  /                    site/ (the front page); its style sheet and scripts go
+                       into /s/<id>/, named after a hash of them like the
+                       player's files below, and the pages are pointed there
   /play/               the player's page and a config.json that points it at the
                        catalogue and the assets
   /play/b/<id>/        every other file of the web build (eka2l1/build/web/bin).
@@ -106,6 +108,42 @@ def version_player(play):
     return build
 
 
+def version_site(out):
+    """Move the front page's style sheet and scripts into s/<id>/ and point the
+    pages at the top of the site (index.html, 404.html) at them.
+
+    The reason is the same as for the player: the zone keeps scripts and
+    styles in browsers for hours, so a page must never name one by an address
+    whose content changes. The scripts import each other by relative address,
+    so only the pages need rewriting."""
+    names = [name for name in ("style.css", "js") if os.path.exists(os.path.join(out, name))]
+    if not names:
+        return None
+    digest = hashlib.sha256()
+    for name in names:
+        top = os.path.join(out, name)
+        for path in sorted([top] if os.path.isfile(top) else [os.path.join(folder, leaf) for folder, _, leaves in os.walk(top) for leaf in leaves]):
+            digest.update(os.path.relpath(path, out).replace(os.sep, "/").encode() + b"\0")
+            with open(path, "rb") as fh:
+                digest.update(hashlib.sha256(fh.read()).digest())
+    build = digest.hexdigest()[:12]
+    target = os.path.join(out, "s", build)
+    os.makedirs(target)
+    for name in names:
+        shutil.move(os.path.join(out, name), os.path.join(target, name))
+    pattern = re.compile(r'\b(src|href)="/(' + "|".join(re.escape(name) for name in names) + r')(?=["/?#])')
+    for page in sorted(os.listdir(out)):
+        if not page.endswith(".html"):
+            continue
+        path = os.path.join(out, page)
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        text = pattern.sub(lambda match: f'{match.group(1)}="/s/{build}/{match.group(2)}', text)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+    return build
+
+
 def write_json(path, value):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as fh:
@@ -161,6 +199,7 @@ def main():
     site = os.path.join(ROOT, "site")
     if os.path.isdir(site):
         copy_tree(site, out)
+        version_site(out)
 
     play = os.path.join(out, "play")
     copy_tree(args.bin, play, skip=(".a", ".map"))
