@@ -189,7 +189,7 @@ def check_file(path, relative, known, problems):
     if extension in FORBIDDEN_EXTENSIONS:
         problems.append(f"{relative}: {extension} files are firmware or game material and must not be published")
     elif extension == ".dll" and not own_dll:
-        problems.append(f"{relative}: a .dll that is not directly in {OWN_DLL_FOLDER}/ is game or firmware code and must not be published")
+        problems.append(f"{relative}: a .dll outside the player's own patch folder ({OWN_DLL_FOLDER}/, or play/b/<id>/patch/) is game or firmware code and must not be published")
     elif kind and not (own_dll and kind == "a Symbian executable"):
         problems.append(f"{relative}: this is {kind}, whatever its name; firmware and game material must not be published")
     elif size in known:

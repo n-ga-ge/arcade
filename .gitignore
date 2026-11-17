@@ -10,6 +10,7 @@
 
 # Generated output and screenshots of the game.
 /dist/
+.wrangler/
 /.scratch/
 tools/**/out/
 tools/**/shots/

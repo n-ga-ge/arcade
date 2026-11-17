@@ -102,6 +102,10 @@ if __name__ == "__main__":
     parser.add_argument("--assets", default=os.path.join(main, "testdata"), help="folder with NGAGE.ROM and games/<slug>.zip")
     parser.add_argument("--shell", help="page sources that take precedence over the player's files")
     args = parser.parse_args()
+    if args.site and args.shell:
+        # The site's player page is rewritten to its per-build folder and has
+        # the site's config.json; the sources' own would replace both.
+        parser.error("--shell is for the bare player; for the site, build it with tools/site/build.py --shell DIR")
 
     Handler.site = os.path.abspath(args.site or args.bin)
     Handler.assets = os.path.abspath(args.assets)

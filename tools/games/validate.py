@@ -86,6 +86,15 @@ def main():
             order = ["broken", "boots", "menu", "ingame"]
             if status in order and order.index(test["expect"]) > order.index(status):
                 mine.append(f"{slug}: test expects {test['expect']} but status is {status}")
+        # The player cuts longer texts (LIMITS in the fork's shell/games.js).
+        controls = game.get("controls") or {}
+        texts = [("title", game.get("title"), 80), ("statusNote", game.get("statusNote"), 600), ("controls.source", controls.get("source"), 500)]
+        texts += [(f"notes[{i}]", note, 600) for i, note in enumerate(game.get("notes") or [])]
+        texts += [(f"controls.notes[{i}]", note, 600) for i, note in enumerate(controls.get("notes") or [])]
+        texts += [(f"controls.actions.{key}", action, 120) for key, action in (controls.get("actions") or {}).items()]
+        for name, value, limit in texts:
+            if isinstance(value, str) and len(value) > limit:
+                mine.append(f"{slug}.{name}: {len(value)} characters, the player shows {limit}")
         if test:
             for i, step in enumerate(test.get("script", [])):
                 if isinstance(step, dict) and "key" not in step and "wait" not in step:
