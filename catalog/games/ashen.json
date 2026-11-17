@@ -15,6 +15,13 @@
     "The game can remap its keys under Options > Controls > Controller Type > User Defined. That changes which N-Gage key an action uses, on top of the bindings here.",
     "Multiplayer needs Bluetooth, and N-Gage Arena is no longer online; neither is available here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from Options > Controls > Controller Type > User Defined and each confirmed in play, except Ghost Vision and the two weapon keys, which showed no effect at the very start of Chapter 1. Pause and objectives (soft keys, 0) observed in play.",
     "actions": {

@@ -15,6 +15,12 @@
     "Quick taps are sometimes missed by this game; hold a key a little longer if nothing happens.",
     "Multiplayer needs Bluetooth and a second N-Gage and is not available in the browser."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game has no controls screen. Select (5) and Back (7) are from the labels at the bottom of its menus, and 1, 5 and 3 from the labels on the play-call screen; the soft keys, OK and the direction pad were observed in menus, play calling and the pause menu. The keys used during a down (snap, pass, tackle) could not be told apart by watching and are not listed; the pass-play diagrams label receivers 7, 4, 5 and 3.",
     "actions": {

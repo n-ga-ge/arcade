@@ -24,6 +24,14 @@
     "Chat, Ranking, registration and the Bluetooth Duel need the Nokia Game online service or Bluetooth and cannot work here. Flo opens but her animations do not show.",
     "Some letters are missing from the launcher's text in this build; the game's own screens are fine."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "players": 2,
+    "menu": "Bluetooth Duel",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own help text for Flo Boarding (the Help page of the Nokia Game menu, read from the card). Speeding up, turning, jumping, the pause menu and the launcher's soft keys were confirmed in play; rails and air tricks were not tried.",
     "actions": {

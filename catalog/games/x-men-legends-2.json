@@ -15,6 +15,13 @@
     "The left soft key opens the pause menu (Resume, Load, Save, Options, Stats, Quit). The right soft key closes the map, the objectives and the stats screen.",
     "Multiplayer needs Bluetooth and N-Gage Arena no longer exists; neither can work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Options > Controller screen (its default keys for the ten actions). Moving, attacking, the map, objectives, the stats menu, both soft keys and 5 for dialogue and the video were also tried in play.",
     "actions": {

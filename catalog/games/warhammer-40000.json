@@ -15,6 +15,12 @@
     "Either soft key pauses a battle (resume, save, audio settings, quit). In the pause menu the left soft key selects; OK does not.",
     "The main menu also has a Tutorial. Multiplayer needs a second phone and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "Seen by pressing keys in the menus and in the deployment phase of a skirmish battle; the title screen itself says to press key 5. The game's Tutorial and the later phases of a turn (moving, shooting, ending the turn) were not gone through, so keys used only there are missing.",
     "actions": {

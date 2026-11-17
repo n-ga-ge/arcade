@@ -40,7 +40,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOCAL_ONLY = ("dump", "pack")
-SUMMARY = ("slug", "title", "publisher", "year", "genre", "uid", "variantOf", "status", "statusNote")
+SUMMARY = ("slug", "title", "publisher", "year", "genre", "uid", "variantOf", "status", "statusNote", "multiplayer")
 PLAYER_CONFIG = {"catalog": "/catalog/", "assets": "/assets/", "fw": "/assets/NGAGE.ROM"}
 
 
@@ -170,7 +170,8 @@ def build_catalog(out, status_dir):
             game = json.load(fh)
         public = {key: value for key, value in game.items() if key not in LOCAL_ONLY}
         write_json(os.path.join(out, "catalog", "games", name), public)
-        summary = {key: game[key] for key in SUMMARY if game.get(key) is not None}
+        # "multiplayer": null (the game has none) is kept; a missing field means nobody knows.
+        summary = {key: game[key] for key in SUMMARY if game.get(key) is not None or (key == "multiplayer" and key in game)}
         summary["hasControls"] = bool(game.get("controls"))
         if game["slug"] in results:
             summary["ci"] = results[game["slug"]]

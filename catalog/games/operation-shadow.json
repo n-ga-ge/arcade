@@ -15,6 +15,13 @@
     "The right soft key pauses the game.",
     "N-Gage Arena and the Bluetooth multiplayer are not available in the browser."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's four diagrams under Options > Controls (Infantry, Humvee, Tank, Chopper). The keypad drawing is small, so the positions were checked in play as infantry: forward, turning, grenade (7), mission status (9), fire (5) and both soft keys were seen working; strafing (4, 6), change weapon (3), enter or exit vehicle (2) and the vehicle rows are as read from the diagrams. The year is from general knowledge of the game.",
     "actions": {

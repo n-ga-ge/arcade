@@ -14,6 +14,13 @@
     "Menus show their own key hints: 5 selects (OK works too), 7 goes back.",
     "Multiplayer Mode needs Bluetooth and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Multiplayer Mode",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Game Controls diagram, shown before kick-off (controls preset \"FIFA 2004\"). Moving, pass, shoot, instant replay and the pause menu were confirmed in a match.",
     "actions": {

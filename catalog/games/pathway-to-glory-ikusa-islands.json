@@ -15,6 +15,13 @@
     "Cooperative and multiplayer games need Bluetooth or N-Gage Arena and are not available in the browser.",
     "The card is the largest in the catalogue (54 MB), so the first start takes longer than other games."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's rookie help at the start of the first mission (point with the controller key, confirm the move with key 5, 'the main battlefield action key'; key 7 then End Turn finishes the turn), the shortcuts shown in its Commands menu (shoot 6, stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus. The cursor, OK, key 7 and the 1, 3, 9 and 0 shortcuts were also observed in the first mission. The year is from general knowledge of the game.",
     "actions": {

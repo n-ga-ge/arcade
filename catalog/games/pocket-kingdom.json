@@ -13,6 +13,12 @@
     "Key 5 or OK selects and key 7 goes back. Either soft key opens the system menu with Resume, Volume, Save and Title.",
     "To keep your progress, use Save in the system menu (going to Title also offers to save)."
   ],
+  "multiplayer": {
+    "modes": [
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "Observed in the game's menus during Offline Play: the pad, OK, 5 (select), 7 (back) and both soft keys (system menu). No controls screen was found in the game; publisher and year are from general knowledge of the game.",
     "actions": {

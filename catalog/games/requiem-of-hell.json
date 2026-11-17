@@ -14,6 +14,13 @@
     "The keys can be changed in the game under Options > Control Options.",
     "Multiplayer and Bluetooth Options need Bluetooth and a second N-Gage, which cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Multiplayer; Bluetooth Options",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Options > Control Options screen (its defaults; the text there is damaged, so the tenth function, on 7, could not be read). Moving, attacking, the inventory, the map, the pause menu and the keys used in the story screens were observed in play.",
     "actions": {

@@ -14,6 +14,13 @@
     "Story scenes show Continue and Skip on the soft keys. On the grid, press 5 to start the race.",
     "N-Gage Arena and the multiplayer race (Bluetooth) cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults from Options > Control Settings (the game can change them there). Accelerating, steering, the map, the soft keys and the pause menu were confirmed in a race.",
     "actions": {

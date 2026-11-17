@@ -15,6 +15,7 @@
     "Title menu, changed with left and right: 新游戏 new game, 读取进度 load, 设置 settings, 武将排行榜 ranking of generals, 退出 exit. In the settings the left soft key confirms (确定) and the right one cancels (取消).",
     "Pause menu (right soft key): 返回游戏 return to the game, 保存游戏 save, 选项 options, 帮助 help, 退出游戏 quit."
   ],
+  "multiplayer": null,
   "controls": {
     "source": "Observed in play: moving, OK in menus, the mini-map on 0, the quick panel on the left soft key and 7, the pause menu on the right soft key. From the game's help (帮助, in Chinese and partly unreadable because of the damaged text): 5 confirming, the star key, the hash key and the keys 1 to 4.",
     "actions": {

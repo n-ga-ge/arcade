@@ -38,6 +38,19 @@
     "status": { "enum": ["untested", "broken", "boots", "menu", "ingame"], "description": "How far the game gets in the web build: broken (does not start or crashes), boots (shows its own screens), menu (main menu works), ingame (playable)." },
     "statusNote": { "type": "string", "description": "What was seen, in a sentence or two. Required when status is broken, boots or menu." },
     "notes": { "type": "array", "items": { "type": "string" }, "description": "Things a player should know (shown in the guide)." },
+    "multiplayer": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["modes", "status"],
+      "description": "The game's multiplayer. null: the game's own menus were seen to have none. Left out: not known.",
+      "properties": {
+        "modes": { "type": "array", "items": { "enum": ["bluetooth", "arena", "hotseat"] }, "minItems": 1, "uniqueItems": true, "description": "bluetooth (hosting and joining over Bluetooth), arena (N-Gage Arena, Nokia's online service, which is gone), hotseat (several players on one device)." },
+        "players": { "type": "integer", "minimum": 2, "maximum": 8, "description": "Most players over Bluetooth. Only where it is known." },
+        "menu": { "type": "string", "maxLength": 120, "description": "Where the game's own menu has it." },
+        "status": { "enum": ["untested", "broken", "connects", "plays"], "description": "Bluetooth play on this site: untested, broken, connects (two players reach each other), plays." },
+        "statusNote": { "type": "string", "maxLength": 400, "description": "What was seen. Required when status is broken." }
+      }
+    },
     "controls": {
       "type": ["object", "null"],
       "additionalProperties": false,

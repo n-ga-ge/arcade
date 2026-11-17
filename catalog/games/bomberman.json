@@ -17,6 +17,13 @@
     "Either soft key pauses a stage; the pause menu can save and return to the title screen.",
     "VS game needs Bluetooth, which is not available here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Title screen > VS game",
+    "status": "untested"
+  },
   "controls": {
     "source": "Observed in the menus and in play (the game has no controls screen): moving, laying a bomb with 5, the pause menu on the soft keys, 5 and 7 as confirm and back in menus.",
     "actions": {

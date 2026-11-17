@@ -60,16 +60,20 @@
   #   'unsafe-inline'     inline scripts and styles in the front page and the docs
   #   blob:, data:        images and downloads the pages build in memory
   #   connect-src https:  the player's loader can fetch a firmware or a game from a URL the visitor types in
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+  #   connect-src wss:    the multiplayer relay under /net/ on the site's own two host names. Current
+  #                       Chrome and Firefox take 'self' to cover a WebSocket to the page's own host;
+  #                       older Safari does not, so the hosts are named
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: wss://n-ga.ge wss://dev.n-ga.ge data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 
 /play/*
   # The player holds the visitor's saves and takes URLs from the address bar,
   # so it gets the stricter policy: scripts only from files of this site, no
   # inline script. Its page has none; tools/site/steps/90-cloudflare.py fails
   # the build if one appears. Workers (the emulator's threads) and the audio
-  # worklet are files of the site as well and need nothing more.
+  # worklet are files of the site as well and need nothing more. connect-src
+  # is the same as above: this is the page that opens the relay's WebSocket.
   ! Content-Security-Policy
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: wss://n-ga.ge wss://dev.n-ga.ge data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 
 /s/*
   # The front page's style sheet and scripts, in a folder named after a hash

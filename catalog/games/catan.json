@@ -15,6 +15,12 @@
     "Either soft key opens the System menu in a match (Help, Options, Quit).",
     "Multiplayer needs Bluetooth, which is not available here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "Options > Key Config (2 construction window, 3 card data window; neither opened during the opening settlement phase), the game's own prompts (\"OK=key 5, Cancel=key 7\"), and the cursor and soft keys as seen in a match.",
     "actions": {

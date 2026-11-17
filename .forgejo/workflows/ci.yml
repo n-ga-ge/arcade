@@ -35,8 +35,9 @@
 #     CLOUDFLARE_API_TOKEN_PAGES    Cloudflare token that uploads the site
 #     CLOUDFLARE_ACCOUNT_ID         the Cloudflare account the site lives in
 #     CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token that deploys the
-#                                   assets Worker, when the Pages one may not
-#     CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's routes,
+#                                   assets Worker and the relay Worker
+#                                   (multiplayer), when the Pages one may not
+#     CLOUDFLARE_ZONE_ID            optional: the zone of the Workers' routes,
 #                                   which then name it by ID instead of by name
 #     FORGE_TOKEN                   an access token of this forge with repository
 #                                   read access, for the checkout and for the
@@ -50,7 +51,7 @@
 # CLOUDFLARE_API_TOKEN_PAGES and CLOUDFLARE_ACCOUNT_ID. Pull requests from
 # forks get no secrets, so there the game tests and the deployment are skipped
 # and only build runs. tools/ci/deploy.sh decides what a deployment is: main
-# goes live and deploys the Worker, anything else (a pull request above all)
+# goes live and deploys the two Workers, anything else (a pull request above all)
 # becomes the dev deployment at https://dev.<project>.pages.dev (dev.n-ga.ge),
 # which the plan step and the Pages project call a preview.
 #

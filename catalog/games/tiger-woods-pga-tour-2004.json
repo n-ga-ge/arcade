@@ -15,6 +15,12 @@
     "Arena on the main menu is N-Gage Arena, Nokia's online service, which no longer exists. One golfer is unlocked only through it.",
     "The game can remap its own keys under Options > Control Options, on top of the bindings here."
   ],
+  "multiplayer": {
+    "modes": [
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from its Options > Control Options screens (Swing, Plan and Flight controls). The swing, the plan view toggle, aiming, the pause menu and menu keys were also tried in play.",
     "actions": {

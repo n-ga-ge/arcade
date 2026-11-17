@@ -1,10 +1,12 @@
 // The front page: loads the catalogue, shows a card per game, and keeps the
-// search, status filter, order and open detail view in the address so a view
-// can be shared.
+// search, status filter, multiplayer filter, order and open detail view in the
+// address so a view can be shared. It also shows the rooms visitors have
+// opened for others to join (rooms.js).
 //
-//   ?q=<text>  &status=<ingame|menu|boots|broken>  &sort=title  &game=<slug>
+//   ?q=<text>  &status=<ingame|menu|boots|broken>  &mp=1  &sort=title  &game=<slug>
 import { isOrder, isStatus, loadCatalog, select, statusOf } from './model.js';
-import { buildLine, card, chips, detail, el, setCounts } from './view.js';
+import { watchRooms } from './rooms.js';
+import { buildLine, card, cardRooms, chips, detail, detailRooms, el, multiplayerChip, roomSection, setCounts } from './view.js';
 
 const $ = (id) => document.getElementById(id);
 const notice = $('notice');
@@ -15,6 +17,8 @@ const summary = $('summary');
 const search = $('q');
 const order = $('sort');
 const chipBox = $('chips');
+const multiplayerBox = $('mp-chips');
+const roomBox = $('rooms');
 const dialog = $('detail');
 const dialogBody = $('detail-body');
 
@@ -23,12 +27,19 @@ let catalog = null;
 // that opened it, which has the focus again by then.
 let closing = null;
 const cards = new Map();
-const state = { q: '', status: '', sort: '', game: '' };
+const state = { q: '', status: '', mp: '', sort: '', game: '' };
+// The open rooms by game, for the games on the page; `roomsSeen` is the list
+// as it last arrived, to tell a new answer from the same one again.
+let rooms = new Map();
+let roomsSeen = '[]';
+const roomsOf = (game) => rooms.get(game.slug) || [];
 
 function readAddress() {
   const params = new URLSearchParams(location.search);
   state.q = params.get('q') || '';
   state.status = isStatus(params.get('status')) ? params.get('status') : '';
+  // A catalogue without multiplayer games has no such filter to switch off again.
+  state.mp = params.get('mp') === '1' && (!catalog || catalog.multiplayer) ? '1' : '';
   state.sort = params.get('sort') && isOrder(params.get('sort')) ? params.get('sort') : '';
   state.game = params.get('game') || '';
 }
@@ -63,8 +74,9 @@ function showNotice(title, ...lines) {
 }
 
 function render() {
-  const { shown, counts, found } = select(catalog.games, state);
+  const { shown, counts, found, multiplayer } = select(catalog.games, state);
   setCounts(chipBox, counts, found);
+  setCounts(multiplayerBox, { multiplayer }, found);
   // Only the matching cards stay in the document, in order, so the tab order
   // and what a screen reader lists are what is on screen.
   const wanted = shown.map((game) => cards.get(game.slug));
@@ -72,8 +84,8 @@ function render() {
   empty.hidden = shown.length > 0;
   const total = catalog.games.length;
   const query = state.q.trim();
-  // "62 games", or "3 of 62 games: playable, matching "rally"".
-  const limits = [state.status && statusOf(state.status).label.toLowerCase(), query && `matching "${query}"`].filter(Boolean);
+  // "62 games", or "3 of 62 games: playable, multiplayer, matching "rally"".
+  const limits = [state.status && statusOf(state.status).label.toLowerCase(), state.mp && 'multiplayer', query && `matching "${query}"`].filter(Boolean);
   summary.textContent = limits.length
     ? `${shown.length} of ${total} games: ${limits.join(', ')}`
     : `${total} ${total === 1 ? 'game' : 'games'}`;
@@ -83,6 +95,7 @@ function syncControls() {
   search.value = state.q;
   order.value = state.sort;
   for (const radio of chipBox.querySelectorAll('input')) radio.checked = radio.value === state.status;
+  for (const box of multiplayerBox.querySelectorAll('input')) box.checked = Boolean(state.mp);
 }
 
 function update() {
@@ -90,8 +103,23 @@ function update() {
   writeAddress();
 }
 
+// A new answer from the relay. Rooms for games this page does not list are
+// left out: there is no card to count them on and no player page to join in.
+function showRooms(list) {
+  const listed = list.filter((room) => catalog.bySlug.has(room.game));
+  const seen = JSON.stringify(listed);
+  if (seen === roomsSeen) return;
+  roomsSeen = seen;
+  rooms = new Map();
+  for (const room of listed) rooms.set(room.game, [...(rooms.get(room.game) || []), room]);
+  for (const [slug, node] of cards) cardRooms(node, (rooms.get(slug) || []).length);
+  roomSection(roomBox, listed, catalog.bySlug, openDetail);
+  const open = dialog.open && catalog.bySlug.get(state.game);
+  if (open) detailRooms(dialogBody, open, roomsOf(open));
+}
+
 function showDetail(game) {
-  detail(dialogBody, game, openDetail);
+  detail(dialogBody, game, openDetail, roomsOf(game));
   if (!dialog.open) dialog.showModal();
   dialogBody.scrollTop = 0;
   // Start reading at the title rather than at the first link inside.
@@ -136,9 +164,11 @@ function wire() {
   $('controls').addEventListener('submit', (event) => { event.preventDefault(); search.blur(); });
   order.addEventListener('change', () => { state.sort = order.value; update(); });
   chipBox.addEventListener('change', (event) => { state.status = event.target.value; update(); });
+  multiplayerBox.addEventListener('change', (event) => { state.mp = event.target.checked ? '1' : ''; update(); });
   $('reset').addEventListener('click', () => {
     state.q = '';
     state.status = '';
+    state.mp = '';
     syncControls();
     update();
     search.focus();
@@ -208,6 +238,14 @@ async function start() {
     return;
   }
   chips(chipBox);
+  if (catalog.multiplayer) {
+    multiplayerChip(multiplayerBox);
+    $('mp-filter').hidden = false;
+  }
+  // An address that asks for the multiplayer games of a catalogue that has
+  // none shows every game, and says so.
+  const stale = state.mp && !catalog.multiplayer;
+  if (stale) state.mp = '';
   for (const game of catalog.games) cards.set(game.slug, card(game, openDetail));
   wire();
   syncControls();
@@ -216,6 +254,10 @@ async function start() {
   const game = catalog.bySlug.get(state.game);
   if (game) showDetail(game);
   else if (state.game) { state.game = ''; writeAddress(); }
+  else if (stale) writeAddress();
+  // Rooms are opened from a game's Bluetooth menu, so a catalogue that knows of
+  // no such game has none to show, and nothing is asked on its behalf.
+  if (catalog.multiplayer) watchRooms(showRooms);
 }
 
 start();

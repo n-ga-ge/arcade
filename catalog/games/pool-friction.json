@@ -12,6 +12,13 @@
     "A shot has three steps: place or aim with the direction keys, press 5 to accept, then hold 5 until the power indicator shows the strength you want and let go.",
     "Juego en red (network game) needs a second phone and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Iniciar juego > Juego en red",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Ayuda (help) screens for aiming and power; the direction keys when placing the cue ball, OK acting like 5, and the soft keys were observed in play.",
     "actions": {

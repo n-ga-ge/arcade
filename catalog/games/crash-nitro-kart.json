@@ -14,6 +14,14 @@
     "Multiplayer (Bluetooth) and N-Gage Arena cannot work here.",
     "The main menu starts a demo race when left idle for about 25 seconds; a soft key returns to the menu."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "menu": "Main menu > Multiplayer (second from the top, below Single Player)",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults from its Options > Controls screen (Hop 2, Brake 8, Fire 4, Accel 5; the game can change them there), read from scrambled lettering. Accelerate, hop, the soft keys and the pause menu were confirmed in a race; steering, brake and fire were not checked there.",
     "actions": {

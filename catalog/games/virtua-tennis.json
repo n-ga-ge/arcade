@@ -14,6 +14,12 @@
     "Options shows the sound volume at 0 on a first start. Raise it there to hear the game.",
     "The left soft key pauses a match (continue, end game)."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "Seen by pressing keys in the menus and in a match; the game has no controls screen. 5 and 7 both serve and hit. That the two are different strokes (a normal shot and a lob, as in other versions of Virtua Tennis) is general knowledge of the game and was not checked here.",
     "actions": {

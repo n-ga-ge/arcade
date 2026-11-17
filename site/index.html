@@ -15,13 +15,15 @@
 <link rel="preload" href="/catalog/index.json" as="fetch" crossorigin>
 <link rel="modulepreload" href="/js/model.js">
 <link rel="modulepreload" href="/js/view.js">
+<link rel="modulepreload" href="/js/rooms.js">
 <link rel="modulepreload" href="/js/sprite.js">
 <script type="module" src="/js/main.js"></script>
 </head>
 <body>
 <a class="skip" href="#games">Skip to the games</a>
 
-<!-- Status glyphs: signal bars, one more lit for each step a game gets further. -->
+<!-- Status glyphs: signal bars, one more lit for each step a game gets further.
+     Then the marks of the automated test, and two players for multiplayer. -->
 <svg class="defs" aria-hidden="true" focusable="false" width="0" height="0">
   <symbol id="sig-ingame" viewBox="0 0 14 12"><path d="M0 8h3v4H0zM5.5 4h3v8h-3zM11 0h3v12h-3z"/></symbol>
   <symbol id="sig-menu" viewBox="0 0 14 12"><path d="M0 8h3v4H0zM5.5 4h3v8h-3z"/><path d="M11.5.5h2v11h-2z" fill="none" stroke="currentColor"/></symbol>
@@ -31,6 +33,7 @@
   <symbol id="ci-pass" viewBox="0 0 10 10"><path d="M1.5 5.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
   <symbol id="ci-fail" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
   <symbol id="ci-none" viewBox="0 0 10 10"><path d="M2 5h6" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="mp-players" viewBox="0 0 14 12"><path d="M1.5 0h3v3h-3zM0 4.5h6V12H0zM9.5 0h3v3h-3zM8 4.5h6V12H8z"/></symbol>
 </svg>
 
 <header class="masthead">
@@ -56,6 +59,14 @@
 </header>
 
 <main id="games" class="wrap" tabindex="-1">
+  <!-- Rooms other visitors are hosting; shown only while there are any. -->
+  <section id="rooms" class="rooms" aria-labelledby="rooms-title" hidden>
+    <h2 id="rooms-title" class="rooms-title">Open rooms <b class="rooms-count chip-count"></b></h2>
+    <p class="rooms-sub">Games someone is hosting right now. Join one to play with them.</p>
+    <ul class="room-list"></ul>
+    <button type="button" class="more rooms-more" hidden></button>
+  </section>
+
   <h2 class="visually-hidden">Games</h2>
 
   <noscript>
@@ -80,10 +91,16 @@
           <option value="title">Title, A to Z</option>
         </select>
       </label>
-      <fieldset id="filters" class="filters">
-        <legend class="field-label">Status</legend>
-        <div id="chips" class="chips"></div>
-      </fieldset>
+      <div class="filter-row">
+        <fieldset id="filters" class="filters">
+          <legend class="field-label">Status</legend>
+          <div id="chips" class="chips"></div>
+        </fieldset>
+        <fieldset id="mp-filter" class="filters" hidden>
+          <legend class="field-label">Players</legend>
+          <div id="mp-chips" class="chips"></div>
+        </fieldset>
+      </div>
     </form>
     <p id="summary" class="summary" role="status" aria-live="polite"></p>
   </section>

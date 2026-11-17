@@ -1,0 +1,54 @@
+// The relay Worker: serves /net/* on n-ga.ge and dev.n-ga.ge, the rooms that
+// players' browsers meet in for multiplayer. README.md explains every setting.
+// tools/ci/deploy.sh publishes it with every production deployment (by hand:
+// `npx wrangler deploy`); when CLOUDFLARE_ZONE_ID is set it deploys from a
+// copy of this file in which each "zone_name" is replaced by "zone_id".
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "n-ga-ge-net",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+
+  // The site's host names, here and nowhere else. The Pages site owns the
+  // rest of each host name, so a route covers /net/ only. The Worker takes
+  // the site's origin from the request it receives, and keeps the rooms of
+  // each host name apart.
+  "routes": [
+    { "pattern": "n-ga.ge/net/*", "zone_name": "n-ga.ge" },
+    { "pattern": "dev.n-ga.ge/net/*", "zone_name": "n-ga.ge" }
+  ],
+
+  // No workers.dev address: a page can only use the relay on its own host
+  // name, so nothing would use it.
+  "workers_dev": false,
+  "preview_urls": false,
+
+  // One Room object per room code and one Directory object per host name
+  // (the public rooms). Both keep their state in SQLite-backed storage, which
+  // is the kind of Durable Object the Workers Free plan allows; the class
+  // list of a migration cannot be changed once it is deployed, so a new class
+  // is a new migration with the next tag.
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOMS", "class_name": "Room" },
+      { "name": "DIRECTORY", "class_name": "Directory" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room", "Directory"] }],
+
+  "vars": {
+    // Origins besides the site itself whose pages may open rooms, separated
+    // by spaces or commas. "*." stands for any subdomain
+    // ("https://*.n-ga-ge.pages.dev"), ":*" at the end for any port
+    // ("http://localhost:*"), and the word "none" for a request without an
+    // Origin header (command-line tools; only for local use). Empty: only
+    // the site.
+    "ALLOWED_ORIGINS": "",
+    // Which src/ and wrangler.jsonc are deployed, as one hash, set by
+    // tools/ci/deploy.sh (`--var BUILD:<id>`) and shown in the X-Relay-Build
+    // header of /net/health. Empty for a deployment made by hand.
+    "BUILD": ""
+  },
+
+  "observability": { "enabled": true }
+}

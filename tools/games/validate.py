@@ -6,7 +6,8 @@ schema cannot express.
 
 Uses only the standard library, so it implements the part of JSON Schema the
 catalogue schema uses (type, enum, pattern, required, properties,
-additionalProperties, propertyNames, items, min/maxItems, minimum, $ref).
+additionalProperties, propertyNames, items, min/maxItems, uniqueItems, minimum,
+maximum, maxLength, $ref).
 """
 import json
 import os
@@ -32,8 +33,12 @@ def check(value, schema, root, where, errors):
         errors.append(f"{where}: {value!r} is not one of {', '.join(map(str, schema['enum']))}")
     if isinstance(value, str) and "pattern" in schema and not re.search(schema["pattern"], value):
         errors.append(f"{where}: {value!r} does not match {schema['pattern']}")
+    if isinstance(value, str) and "maxLength" in schema and len(value) > schema["maxLength"]:
+        errors.append(f"{where}: {len(value)} characters, at most {schema['maxLength']} are allowed")
     if isinstance(value, int) and not isinstance(value, bool) and "minimum" in schema and value < schema["minimum"]:
         errors.append(f"{where}: {value} is below {schema['minimum']}")
+    if isinstance(value, int) and not isinstance(value, bool) and "maximum" in schema and value > schema["maximum"]:
+        errors.append(f"{where}: {value} is above {schema['maximum']}")
     if isinstance(value, dict):
         for name in schema.get("required", []):
             if name not in value:
@@ -54,6 +59,10 @@ def check(value, schema, root, where, errors):
             errors.append(f"{where}: fewer than {schema['minItems']} items")
         if "maxItems" in schema and len(value) > schema["maxItems"]:
             errors.append(f"{where}: more than {schema['maxItems']} items")
+        if schema.get("uniqueItems"):
+            for i, item in enumerate(value):
+                if item in value[:i]:
+                    errors.append(f"{where}[{i}]: {item!r} is listed more than once")
         if "items" in schema:
             for i, item in enumerate(value):
                 check(item, schema["items"], root, f"{where}[{i}]", errors)
@@ -81,10 +90,22 @@ def main():
         status = game.get("status")
         if status in ("broken", "boots", "menu") and not game.get("statusNote"):
             mine.append(f"{slug}: status {status} needs a statusNote saying what happens")
-        test = game.get("test")
+        multiplayer = game.get("multiplayer")
+        if isinstance(multiplayer, dict):
+            played = multiplayer.get("status")
+            if played == "broken" and not multiplayer.get("statusNote"):
+                mine.append(f"{slug}.multiplayer: status broken needs a statusNote saying what happens")
+            # status and players are about Bluetooth play, so only a game with that mode has them.
+            modes = multiplayer.get("modes")
+            if isinstance(modes, list) and "bluetooth" not in modes:
+                if played in ("broken", "connects", "plays"):
+                    mine.append(f"{slug}.multiplayer: status {played} is about Bluetooth play, but modes has no bluetooth")
+                if "players" in multiplayer:
+                    mine.append(f"{slug}.multiplayer: players is the most over Bluetooth, but modes has no bluetooth")
+        test = game.get("test") if isinstance(game.get("test"), dict) else None
         if test and status != "untested":
             order = ["broken", "boots", "menu", "ingame"]
-            if status in order and order.index(test["expect"]) > order.index(status):
+            if status in order and test.get("expect") in order and order.index(test["expect"]) > order.index(status):
                 mine.append(f"{slug}: test expects {test['expect']} but status is {status}")
         # The player cuts longer texts (LIMITS in the fork's shell/games.js).
         controls = game.get("controls") or {}
@@ -102,8 +123,23 @@ def main():
         errors += mine
     all_slugs = {name[:-5] for name in os.listdir(folder) if name.endswith(".json")}
     for slug, game in games.items():
-        if game.get("variantOf") and game["variantOf"] not in all_slugs:
-            errors.append(f"{slug}: variantOf names an unknown game {game['variantOf']}")
+        base = game.get("variantOf")
+        if not isinstance(base, str) or not base:
+            continue
+        if base not in all_slugs:
+            errors.append(f"{slug}: variantOf names an unknown game {base}")
+            continue
+        # A variant is the same program, so what is known of its multiplayer is the base game's.
+        other = games.get(base)
+        if other is None:
+            try:
+                with open(os.path.join(folder, base + ".json")) as fh:
+                    other = json.load(fh)
+            except (OSError, ValueError):
+                continue  # reported when that entry is checked
+        missing = object()
+        if isinstance(other, dict) and game.get("multiplayer", missing) != other.get("multiplayer", missing):
+            errors.append(f"{slug}: multiplayer differs from that of {base}, the game it is a variant of")
     for error in errors:
         print(error, file=sys.stderr)
     print(f"{len(games)} entries checked, {len(errors)} problems")
