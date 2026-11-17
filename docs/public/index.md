@@ -5,6 +5,8 @@ from 2003, that you can play in a web browser. There is nothing to install:
 pick a game on the front page and it starts in the page.
 
 - [Playing](playing.md): what you need, the controls, saves and display options.
+- [Troubleshooting](troubleshooting.md): when a game is slow, silent or
+  stops: what the player's diagnostics found, and what you can do about it.
 - [Legal](legal.md): licences, and who the games belong to.
 - [Made with AI](ai.md): the AI models that wrote the code, and the tokens it
   took.
