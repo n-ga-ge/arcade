@@ -16,6 +16,14 @@
     "The keys can be changed in the game under Options > Key Mapping.",
     "Multiplayer and N-Gage Arena in the main menu need Bluetooth or the N-Gage Arena service and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "menu": "Main menu > Multiplayer",
+    "status": "untested"
+  },
   "controls": {
     "source": "Same as SSX Out of Bounds; the translated key mapping screen (Opcje > Sterowanie) lists the same keys. This variant was checked up to its menus by hand and into a race with the same key script.",
     "actions": {

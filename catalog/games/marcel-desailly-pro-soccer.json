@@ -14,6 +14,14 @@
     "Either soft key pauses a match. In menus the right soft key selects and the left one goes back.",
     "The 2 Players mode needs a second N-Gage over Bluetooth and is not available in the browser."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "players": 2,
+    "menu": "2 Players",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from the diagram on its Options > Controls screen. The soft keys, OK and key 5 selecting in menus were observed.",
     "actions": {

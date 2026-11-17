@@ -13,6 +13,13 @@
     "In play either soft key opens the menu (sound, music, quit to menu).",
     "VS (multiplayer) needs Bluetooth, which is not available here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "VS",
+    "status": "untested"
+  },
   "controls": {
     "source": "Same as Red Faction (its Help, page 4, and keys confirmed in play there); in this mod the menu keys and the walk into the first level were checked again.",
     "actions": {

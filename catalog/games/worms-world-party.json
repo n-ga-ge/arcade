@@ -14,6 +14,14 @@
     "Single Game Deck has Quick Game, Missions, Custom Game and Training. Game Options > Misc. Options > Key Layout shows what every key does.",
     "Multiplayer over Bluetooth and N-Gage Arena cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena",
+      "hotseat"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Game Options > Misc. Options > Key Layout screen, which describes every key; moving, aiming, the weapons menu, firing, jumping and both soft keys were also tried in a Quick Game.",
     "actions": {

@@ -12,6 +12,14 @@
     "After a game over, the left soft key (Done) leaves the statistics, and the high-score question is answered with the soft keys (Yes / No), not with OK.",
     "Options > Languages offers English, German, French, Spanish and Italian. Multi Player and sending scores were not tried and need a second phone or N-Gage Arena."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "menu": "Multi Player",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Start Game > Instructions text (arrow keys, 5, 7). OK firing and the soft keys were seen by pressing them in play and in the menus.",
     "actions": {

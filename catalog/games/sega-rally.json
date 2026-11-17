@@ -12,6 +12,7 @@
     "Press 5 at the title. The main menu has Championship, Time Attack, Free Run, Records, Options and Exit; 5 selects, and Exit asks Yes or No.",
     "Before a race you choose a course, a car and an automatic or manual gearbox. Only the automatic gearbox was tried here."
   ],
+  "multiplayer": null,
   "controls": {
     "source": "Observed in play: 5 accelerating, left and right steering, 7 slowing the car faster than coasting, the pause menu on the right soft key, and 5 and the direction keys in the menus. The game has no key help in its menus.",
     "actions": {

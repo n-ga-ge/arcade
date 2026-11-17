@@ -19,6 +19,13 @@
     "Multiplayer (Bluetooth) and N-Gage Arena cannot work here.",
     "The main menu starts a demo run when left idle for about 45 seconds; any key returns to the menu."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from its Options > Controls screen (the game can reassign them there). The soft keys and OK were observed in menus and in a stage.",
     "actions": {

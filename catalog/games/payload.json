@@ -15,6 +15,13 @@
     "Double-tap left or right to shunt and double-tap down for a 180 degree turn.",
     "Multiplayer and N-Gage Arena are not available in the browser."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Default Key Controls screen, shown while a mission loads, and the Select 5 / Back 7 labels in its menus. Accelerating (up and 5), steering, the map (#), race info (9) and the right soft key's pause menu were also observed in the first race. Publisher and year are from the game's copyright screen.",
     "actions": {

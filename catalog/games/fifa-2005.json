@@ -15,6 +15,13 @@
     "Left idle on the first screens, the game starts a demo match; a soft key leaves it for the main menu.",
     "Multiplayer (Bluetooth) and N-Gage Arena cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Game Controls diagrams (Defending and Attacking), shown before kick-off. Moving, pass, instant replay and the pause menu were confirmed in a match.",
     "actions": {

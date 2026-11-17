@@ -13,6 +13,12 @@
     "Options > Controls in the game can reassign the keypad actions; that changes which N-Gage key an action uses, on top of the bindings here.",
     "Versus play over Bluetooth is not available in the browser."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read from its Options > Controls screen (keys 0 to 9, star and hash). Directions, OK and the soft keys were observed in menus and in a fight.",
     "actions": {

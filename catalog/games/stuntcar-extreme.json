@@ -12,6 +12,13 @@
     "The Help lists race keys for three phones; the Nokia N-Gage ones are the ones that apply here.",
     "Multiplayer is head-to-head over Bluetooth and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "players": 2,
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Help (General Controls and Race Controls for Nokia N-Gage). Steering, accelerate, view change and pause were also tried in a race; that 5 and OK select in menus was observed.",
     "actions": {

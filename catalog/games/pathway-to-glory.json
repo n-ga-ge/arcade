@@ -22,6 +22,13 @@
     "The game is turn-based: move the cursor over the map and press OK to send the selected soldier there (the green line shows the path and what it costs). Key 7 opens the mission menu with End turn, Mission data, Use (weapons and gear), Commands and End mission.",
     "Cooperative and multiplayer games need Bluetooth or N-Gage Arena and are not available in the browser."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The shortcuts shown in the game's own Commands menu (stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus; the cursor, OK, key 5 (the soldier moved and his action points dropped) and key 7 were observed in the first mission. Publisher and year are from the game's logo screens and general knowledge.",
     "actions": {

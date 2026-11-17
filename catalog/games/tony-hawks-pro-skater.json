@@ -12,6 +12,15 @@
     "A run lasts two minutes. The left soft key pauses it (continue, sound levels, retry, end run).",
     "N-Gage Arena on the main menu is Nokia's online service, which no longer exists. The 2 Player mode was not tried."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "players": 2,
+    "menu": "2 Player",
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Start Game > Instructions demonstration (movement, 5, 4, 6, 7). The soft keys, menu keys and that 5 also selects in menus were seen by pressing them.",
     "actions": {

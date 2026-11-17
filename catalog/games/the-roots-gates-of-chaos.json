@@ -16,6 +16,13 @@
     "In play either soft key opens the game menu (Return, Options, Help, Save and Quit). Help has a long manual.",
     "Multiplayer (cooperative and competitive) needs Bluetooth or N-Gage Arena and cannot work here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Help > Controls pages. Moving, attacking, 5 on messages and the soft keys were also tried in the tutorial; the skill, potion, map and menu keys are from the Help only.",
     "actions": {

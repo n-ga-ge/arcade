@@ -13,6 +13,13 @@
     "Battles are turn based: put the cursor on one of your ships, press 5 to select it, move the cursor inside the highlighted range and press 5 again, then pick an order.",
     "N-Gage Arena cannot work here. The multiplayer game was not tried."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's own Help pages (Battle view help and Travel view help, default key configuration). The cursor, 5, 3, the soft keys and the pause menu were confirmed in the first battle.",
     "actions": {

@@ -14,6 +14,13 @@
     "The game can remap its keys under Options > Customize Controls. That changes which N-Gage key an action uses, on top of the bindings here.",
     "Multiplayer needs Bluetooth, and N-Gage Arena is no longer online; neither is available here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's defaults, read action by action from Options > Customize Controls; moving, turning, pitching up, shooting, zoom, the map and the menu keys were confirmed in play.",
     "actions": {

@@ -12,6 +12,13 @@
     "Either soft key pauses a mission and shows the field report; from there the right soft key opens the menu with Save Game, Options and Exit Game.",
     "Multiplayer needs Bluetooth or N-Gage Arena, which are not available here."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth",
+      "arena"
+    ],
+    "status": "untested"
+  },
   "controls": {
     "source": "The game's Options > Controls screen (movement on the direction pad, 4 to 7); soft keys and the unused OK key observed in the menus and in play.",
     "actions": {
