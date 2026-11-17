@@ -69,6 +69,18 @@ def main():
     cover, diff = render.compare(small, once, covered)
     ok &= check('four times the size, scaled back, is the same picture', (sw, sh) == (8, 8) and diff < 1 and cover > 0.7)
 
+    # The layer test's reference: away from the key colour the picture stays
+    # as the game drew it, and on it the triangles show.
+    import layertest
+    frame, textures = layertest.scene()
+    screen = layertest.picture(frame)
+    shown = layertest.composite(frame, textures, screen, 1)
+    keyed = [layertest.is_key(*screen[at:at + 3]) for at in range(0, len(screen), 4)]
+    plain = [at * 4 for at, k in enumerate(keyed) if not k and layertest.key_share(*screen[at * 4:at * 4 + 3]) < 0.2]
+    ok &= check('the layer\'s reference keeps the picture away from the key colour',
+                all(shown[at:at + 3] == screen[at:at + 3] for at in plain))
+    ok &= check('and shows no key colour', not any(layertest.is_key(*shown[at:at + 3]) for at in range(0, len(shown), 4)))
+
     sys.exit(0 if ok else 1)
 
 

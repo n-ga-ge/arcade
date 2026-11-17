@@ -36,14 +36,15 @@ import dbg  # noqa: E402
 STRIDE = 7
 
 
-def render(frame, textures, scale, background=(0, 0, 0)):
+def render(frame, textures, scale, background=(0, 0, 0), canvas=None):
     """(width, height, RGBA bytearray, coverage bytearray) of a frame drawn at a whole scale.
 
     `textures` maps a texture index to (width, height, RGBA bytes). Coverage is
-    1 where any triangle drew.
+    1 where any triangle drew. The triangles are drawn over `canvas` (RGBA of
+    the scaled size) when one is given, over the background colour otherwise.
     """
     width, height = frame['width'] * scale, frame['height'] * scale
-    out = bytearray(bytes((*background, 255)) * (width * height))
+    out = bytearray(canvas) if canvas is not None else bytearray(bytes((*background, 255)) * (width * height))
     coverage = bytearray(width * height)
     depth_buffer = None
     vertices = frame['vertices']
