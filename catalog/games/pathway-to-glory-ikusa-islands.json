@@ -1,11 +1,68 @@
 {
   "slug": "pathway-to-glory-ikusa-islands",
   "title": "Pathway to Glory: Ikusa Islands",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Turn-based tactics",
   "uid": "0x101FD41D",
   "variantOf": null,
   "dump": "Pathway To Glory Ikusa Islands",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "Start game > Soloplayer > New creates a campaign (name, insignia, difficulty); the first mission is 1942 First Blood.",
+    "The game is turn-based: move the cursor over the map and press 5 (or OK) to send the selected soldier there (the green line shows the path and what it costs). Key 7 opens the mission menu with End turn, Mission data / Audio, Use (weapons and gear), Commands and End mission.",
+    "The first mission opens with rookie help text: the left soft key (OK) closes it, the right soft key (Disable) turns the help off.",
+    "Cooperative and multiplayer games need Bluetooth or N-Gage Arena and are not available in the browser.",
+    "The card is the largest in the catalogue (54 MB), so the first start takes longer than other games."
+  ],
+  "controls": {
+    "source": "The game's rookie help at the start of the first mission (point with the controller key, confirm the move with key 5, 'the main battlefield action key'; key 7 then End Turn finishes the turn), the shortcuts shown in its Commands menu (shoot 6, stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus. The cursor, OK, key 7 and the 1, 3, 9 and 0 shortcuts were also observed in the first mission. The year is from general knowledge of the game.",
+    "actions": {
+      "up": "Move the cursor / scroll the map",
+      "down": "Move the cursor / scroll the map",
+      "left": "Move the cursor / scroll the map",
+      "right": "Move the cursor / scroll the map",
+      "ok": "Select (menus); send the selected soldier to the cursor",
+      "lsk": "Select / next / OK (menus and help)",
+      "rsk": "Back / cancel (menus); Disable (rookie help)",
+      "1": "Previous soldier",
+      "3": "Next soldier",
+      "5": "Battlefield action key: confirm the move to the cursor; select (mission menu)",
+      "6": "Shoot",
+      "7": "Mission menu (end turn, use gear, commands)",
+      "8": "Stance up",
+      "9": "Look at the cursor",
+      "0": "Stance down"
+    },
+    "notes": [
+      "The standard layout suits this game: arrows move the cursor, Enter is OK, Q and W are the soft keys, and the digit row gives 1, 3, 5, 6, 7, 8, 9 and 0.",
+      "On a gamepad A is OK, Y opens the mission menu (its Commands list has every action, so the number shortcuts are not needed), LB selects and RB goes back."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 14000
+      },
+      {
+        "key": "ok",
+        "wait": 6000,
+        "repeat": 17
+      },
+      {
+        "wait": 90000
+      },
+      {
+        "key": "ok",
+        "wait": 5000,
+        "repeat": 2
+      },
+      {
+        "wait": 3000
+      }
+    ],
+    "timeoutMs": 180000
+  },
+  "statusNote": "Logos, title, menus, campaign creation, briefing, team and gear selection work, and the first mission (1942 First Blood) plays on the battle map: moving a soldier, switching soldiers, stance, look-at and the mission menu were tried."
 }

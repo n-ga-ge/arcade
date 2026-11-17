@@ -1,11 +1,135 @@
 {
   "slug": "mile-high-pinball",
   "title": "Mile High Pinball",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Pinball",
   "uid": "0x101FD41A",
   "variantOf": null,
   "dump": "Mile High Pinball",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "notes": [
+    "Start Game asks for a ball first: pick an empty slot, choose a skin and confirm; the ball keeps your progress up the tower.",
+    "The left soft key or key 7 opens the pause menu, which has a hint for the current board.",
+    "N-Gage Arena is greyed out in the main menu, and the Bluetooth multiplayer needs a second N-Gage, so neither is available in the browser."
+  ],
+  "controls": {
+    "source": "The game's defaults, read from its Options > Key Configuration screen (flippers, power-ups, pause) and its welcome message. The soft keys and OK were observed in menus and in play. Publisher and year are from general knowledge of the game; its own logo screen names the developer, Bonus.com.",
+    "actions": {
+      "up": "Move up (menus)",
+      "down": "Move down (menus)",
+      "left": "Left flipper",
+      "right": "Change a setting (menus)",
+      "ok": "Select (menus)",
+      "lsk": "Select (menus); pause menu (in play)",
+      "rsk": "Back (menus)",
+      "5": "Right flipper",
+      "7": "Pause",
+      "9": "Power-ups"
+    },
+    "keyboard": {
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft",
+        "KeyZ",
+        "ShiftLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "ok": [
+        "Enter",
+        "Space"
+      ],
+      "lsk": [
+        "KeyQ"
+      ],
+      "rsk": [
+        "KeyW"
+      ],
+      "5": [
+        "KeyX",
+        "Slash",
+        "ShiftRight",
+        "Digit5",
+        "Numpad5"
+      ],
+      "9": [
+        "KeyC",
+        "Digit9",
+        "Numpad9"
+      ],
+      "7": [
+        "KeyP",
+        "Digit7",
+        "Numpad7"
+      ]
+    },
+    "gamepad": {
+      "up": [
+        "b12",
+        "a1-"
+      ],
+      "down": [
+        "b13",
+        "a1+"
+      ],
+      "left": [
+        "b14",
+        "a0-",
+        "b4",
+        "b6"
+      ],
+      "right": [
+        "b15",
+        "a0+"
+      ],
+      "5": [
+        "b5",
+        "b7",
+        "b2"
+      ],
+      "ok": [
+        "b0"
+      ],
+      "rsk": [
+        "b1"
+      ],
+      "9": [
+        "b3"
+      ],
+      "lsk": [
+        "b8"
+      ],
+      "7": [
+        "b9"
+      ]
+    },
+    "notes": [
+      "Pinball layout: the left flipper is the left arrow, Z or left Shift; the right flipper is X, / or right Shift (key 5). C uses a power-up and P pauses.",
+      "On a gamepad the left shoulder or trigger (or pad left) is the left flipper and the right shoulder or trigger is the right flipper; Y uses a power-up, Start pauses, A selects and B goes back."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 10000
+      },
+      {
+        "key": "ok",
+        "wait": 3500,
+        "repeat": 14
+      },
+      {
+        "wait": 5000
+      }
+    ]
+  },
+  "statusNote": "Logos, title, main menu, options and ball creation work, and the first board (Castle Ruins) plays at full speed: both flippers, scoring and the pause menu were tried."
 }
