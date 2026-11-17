@@ -19,12 +19,17 @@ your browser, and keeps its saves in your browser. Nothing you do in a game is
 sent anywhere.
 
 Emulation is demanding. A recent computer runs most games at their original
-speed; older computers and phones may be slow.
+speed; older computers may be slow. The site has been tried in Chrome and
+Firefox on a computer. It has not been tried on real phones and tablets, or in
+Safari.
+
+What needed a second N-Gage or an online service does not work: multiplayer
+over Bluetooth and N-Gage Arena.
 
 ## What the labels on the games mean
 
-Not every game works yet. Each game on the front page carries a label that
-says how far it gets. A game appears there once it has been tried:
+Not every game works. Each game on the front page carries a label that says
+how far it gets. A game appears there once it has been tried:
 
 | Label | Meaning |
 |---|---|
@@ -33,9 +38,15 @@ says how far it gets. A game appears there once it has been tried:
 | Boots | The game shows its opening screens and goes no further. |
 | Not working | The game does not start. |
 
+The label records what was seen when the game was tried by hand. **Details**
+on a game's card says what that was.
+
 The games are also started automatically by a test every time the site
-changes, and the card shows whether that test passed. A game can be listed as
-playable and still have faults in places the test does not reach.
+changes. The card shows the outcome as "CI passing", "CI failing" or "CI not
+run", and the picture on the card is the game's screen at the end of that
+test. The test only checks that the game starts, draws and keeps moving. A
+game can be listed as playable and still have faults, most of all in places
+nobody has played through.
 
 ## Source code
 
