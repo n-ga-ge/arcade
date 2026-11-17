@@ -10,14 +10,16 @@
   "notes": [
     "Menus are driven with the soft keys: left selects, right goes back. The OK key does nothing in this game.",
     "Either soft key pauses a mission and shows the field report; from there the right soft key opens the menu with Save Game, Options and Exit Game.",
-    "Multiplayer needs Bluetooth or N-Gage Arena, which are not available here."
+    "A Bluetooth game: both choose Multiplayer on the Game Select screen. The host chooses Host Game, sets the game and the two vehicles and selects Start (it then says CONNECTING). The other chooses Join Game, selects Game Server until the host's name appears under it, then Start. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts and selects Start, the other joins, selects Game Server until the host's name shows, then Start; a 5 Kills match in Sum City ran on both screens, tank against spider. A pause by either player pauses both, and when the joiner exits both get the Game Stats screen. The two vehicles did not meet in the short test, so no shot at the other player was seen."
   },
   "controls": {
     "source": "The game's Options > Controls screen (movement on the direction pad, 4 to 7); soft keys and the unused OK key observed in the menus and in play.",
