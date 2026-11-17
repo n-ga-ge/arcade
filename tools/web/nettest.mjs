@@ -48,6 +48,9 @@
 //                      2 and 3 need an entry in SESSIONS
 //   --browser NAME     chrome-software (default, Playwright's Chromium drawing
 //                      on the CPU) or chrome (the toolchain's Chrome on the GPU)
+//   --site URL         tier 3 against a deployed site instead of a dev server:
+//                      the pages are URL/play/?g=<game> and the relay is the
+//                      site's own, e.g. --site https://n-ga.ge --tier 3
 //   --port N           port for the dev server this tool starts (default: a free one)
 //   --bin DIR          web build to test (default: eka2l1/build/web/bin of this
 //                      checkout, else of $ARCADE_MAIN)
@@ -89,11 +92,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const OPTIONS = { out: 'value', tier: 'value', game: 'value', browser: 'value', port: 'value', bin: 'value', assets: 'value',
+const OPTIONS = { out: 'value', tier: 'value', game: 'value', browser: 'value', site: 'value', port: 'value', bin: 'value', assets: 'value',
   'time-limit': 'value', serve: 'value', pages: 'value', unlinked: 'flag', log: 'value', verbose: 'flag' };
 
 function usage(message) {
-  console.error(`${message}\nusage: node tools/web/nettest.mjs --out <dir> [--tier 0,1,2,3] [--game SLUG] [--browser chrome-software|chrome] [--port N] [--bin DIR] [--assets DIR] [--time-limit SEC] [--log FILTER] [--verbose] [--serve PORT [--pages 1] [--unlinked]]`);
+  console.error(`${message}\nusage: node tools/web/nettest.mjs --out <dir> [--tier 0,1,2,3] [--game SLUG] [--browser chrome-software|chrome] [--site URL] [--port N] [--bin DIR] [--assets DIR] [--time-limit SEC] [--log FILTER] [--verbose] [--serve PORT [--pages 1] [--unlinked]]`);
   process.exit(2);
 }
 
@@ -113,6 +116,9 @@ for (const name of ['port', 'time-limit', 'serve']) {
 if (args.pages !== undefined && !['1', '2'].includes(args.pages)) usage('--pages must be 1 or 2');
 const tiers = String(args.tier === undefined ? '0,1,2,3' : args.tier).split(',').map((text) => text.trim());
 if (!tiers.length || tiers.some((tier) => !['0', '1', '2', '3'].includes(tier))) usage(`--tier takes 0, 1, 2 and 3: ${args.tier}`);
+const site = args.site ? args.site.replace(/\/+$/, '') : null;
+if (site && !/^https?:\/\//.test(site)) usage(`--site takes the address of a site: ${args.site}`);
+if (site && (args.serve || tiers.some((tier) => tier !== '3'))) usage('--site runs tier 3 only: add --tier 3');
 const game = args.game || 'rayman-3';
 // The name becomes part of file names and of a URL.
 if (!/^[a-z0-9-]+$/.test(game)) usage(`not a game name: ${game}`);
@@ -229,7 +235,7 @@ async function end(code) {
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(path.join(outDir, 'nettest.json'), JSON.stringify({
       pass: code === 0, seconds: Math.round((Date.now() - started) / 1000), browser: browserName,
-      browserVersion: browser ? browser.version() : null, bin: binDir, tiers: results,
+      browserVersion: browser ? browser.version() : null, bin: site ? null : binDir, site, tiers: results,
     }, null, 2) + '\n');
   } catch (error) {
     console.error(`could not write the result to ${outDir}: ${error.message}`);
@@ -356,7 +362,9 @@ class Player {
         try { localStorage.setItem('eka2l1.settings.v1', JSON.stringify(saved)); } catch { /* the page then uses its defaults */ }
       }, settings);
     }
-    const url = `http://127.0.0.1:${serverPort}/?fw=/local/NGAGE.ROM&game=/local/games/${slug}.zip&persist=0${args.log ? `&log=${encodeURIComponent(args.log)}` : ''}${query}`;
+    const log = args.log ? `&log=${encodeURIComponent(args.log)}` : '';
+    const url = site ? `${site}/play/?g=${slug}&persist=0${log}${query}`
+      : `http://127.0.0.1:${serverPort}/?fw=/local/NGAGE.ROM&game=/local/games/${slug}.zip&persist=0${log}${query}`;
     const response = await this.page.goto(url, { timeout: 60000 });
     if (!response || !response.ok()) throw new Error(`page ${this.label} did not load (HTTP ${response ? response.status() : 'no response'})`);
   }
@@ -380,7 +388,12 @@ class Player {
       if (Date.now() - opened > timeoutMs) throw new Error(`${this.slug} did not start on page ${this.label} within ${Math.round(timeoutMs / 1000)} s (status: "${state.status}")`);
       await sleep(250);
     }
-    this.codes = await this.ask(async () => (await import('./eka2l1-client.js')).KEYS, null, 'key table');
+    // The key table is beside the page's script, which on a site is in the
+    // player's per-build folder.
+    this.codes = await this.ask(async () => {
+      const app = document.querySelector('script[type="module"][src*="app.js"]');
+      return (await import(new URL('eka2l1-client.js', app ? app.src : location.href).href)).KEYS;
+    }, null, 'key table');
 
     // The emulator's frames for the other player leave through this callback.
     // The module is reached the way the page itself holds it; the page's own
@@ -542,8 +555,8 @@ async function pair(slug) {
 // Two pages with the same game in one room of the dev server's relay, by the
 // player's own means: A hosts in the Multiplayer dialog, B opens the invite link.
 async function pairThroughPage(slug) {
-  const health = await fetch(`http://127.0.0.1:${serverPort}/net/health`).then((response) => response.ok, () => false);
-  if (!health) throw new Error('the dev server has no room relay at /net/ (tools/web/relay.py)');
+  const health = await fetch(`${site || `http://127.0.0.1:${serverPort}`}/net/health`).then((response) => response.ok, () => false);
+  if (!health) throw new Error(site ? `${site} has no room relay at /net/` : 'the dev server has no room relay at /net/ (tools/web/relay.py)');
   const a = new Player('a', 1, 'Ann');
   const b = new Player('b', 2, 'Bo');
   a.other = b;
@@ -835,7 +848,7 @@ async function tier2(throughPage = false) {
     const carried = ca.map((conn) => `${conn.protocol} ${conn.port}: A sent ${conn.txBytes}, received ${conn.rxBytes}`).join('; ');
     return { pass: !problems.length, listener, connectionsA: ca, connectionsB: cb, totalsA: na.totals, totalsB: nb.totals,
       eventsA: after.events, eventsB: nb.events, framesAfter: frames, relayed: a.sent + b.sent, room: a.room, invite: a.invite,
-      detail: problems.join('; ') || `${game}${throughPage ? `, hosted in the page's dialog (room ${a.room}) and joined by its link, through the dev server's relay` : ''}: the host listened on ${listener.protocol} ${listener.port}; open on both sides and equal at both ends: ${carried}; closed with ${KERR_DISCONNECTED} when B left, ${frames} frames in 5 s after` };
+      detail: problems.join('; ') || `${game}${throughPage ? `, hosted in the page's dialog (room ${a.room}) and joined by its link, through ${site ? `the relay of ${site}` : "the dev server's relay"}` : ''}: the host listened on ${listener.protocol} ${listener.port}; open on both sides and equal at both ends: ${carried}; closed with ${KERR_DISCONNECTED} when B left, ${frames} frames in 5 s after` };
   } finally {
     await a.close();
     await b.close();
@@ -913,19 +926,19 @@ async function serve() {
 
 async function main() {
   fs.mkdirSync(outDir, { recursive: true });
-  for (const [file, hint] of [[path.join(binDir, 'eka2l1_web.wasm'), 'build it with tools/ci/build-web.sh or pass --bin'],
+  for (const [file, hint] of site ? [] : [[path.join(binDir, 'eka2l1_web.wasm'), 'build it with tools/ci/build-web.sh or pass --bin'],
     [path.join(assetsDir, 'NGAGE.ROM'), 'fetch it with tools/assets/fetch.py or pass --assets']]) {
     if (!fs.existsSync(file)) throw new Error(`missing ${file}: ${hint}`);
   }
   const needed = new Set();
   if (args.serve || tiers.includes('0') || tiers.includes('2') || tiers.includes('3')) needed.add(game);
   if (!args.serve && tiers.includes('1')) Object.keys(SOLO).forEach((slug) => needed.add(slug));
-  for (const slug of needed) {
+  for (const slug of site ? [] : needed) {
     const zip = path.join(assetsDir, 'games', `${slug}.zip`);
     if (!fs.existsSync(zip)) throw new Error(`missing ${zip}: fetch it with tools/assets/fetch.py, pack it with tools/games/pack.py, or pass --assets`);
   }
 
-  serverPort = await startServer();
+  if (!site) serverPort = await startServer();
   browser = await withTimeout(BROWSERS[browserName](), 60000, 'browser launch');
   browser.on('disconnected', () => { if (!ended) { console.error('the browser went away'); end(1); } });
 
