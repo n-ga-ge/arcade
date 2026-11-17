@@ -21,13 +21,13 @@
       "left": "Move the map cursor",
       "right": "Move the map cursor",
       "ok": "Select; open the city or unit under the cursor",
-      "lsk": "Game menu (Game, Kingdom, Advisors, Space race, Civilopedia, Help); Select in dialogs",
+      "lsk": "Game menu (Game, Kingdom, Advisors, Space race, Civilopedia, Help); Select",
       "rsk": "Skip unit turn, end of turn; Close or Back in dialogs",
       "1": "Move unit or cursor up-left",
       "2": "Move unit or cursor up",
       "3": "Move unit or cursor up-right",
       "4": "Move unit or cursor left",
-      "5": "Unit orders (unit cursor modes); terrain info or choose the unit or city under the cursor (terrain cursor mode)",
+      "5": "Unit orders; in terrain cursor mode, terrain info or pick the unit or city",
       "6": "Move unit or cursor right",
       "7": "Move unit or cursor down-left",
       "8": "Move unit or cursor down",
@@ -37,8 +37,26 @@
       "hash": "Tactical map"
     },
     "notes": [
-      "In the game menu a number key jumps to the entry with that number."
-    ]
+      "In the game menu a number key jumps to the entry with that number.",
+      "On a gamepad Y opens the cursor mode selector, X is 5, the right stick moves the unit or cursor (2, 4, 6, 8) and the back buttons open the minimap and the tactical map. The diagonal moves (1, 3, 7, 9) need the keyboard."
+    ],
+    "gamepad": {
+      "0": [
+        "b3"
+      ],
+      "2": [
+        "a3-"
+      ],
+      "8": [
+        "a3+"
+      ],
+      "4": [
+        "a2-"
+      ],
+      "6": [
+        "a2+"
+      ]
+    }
   },
   "test": {
     "expect": "ingame",

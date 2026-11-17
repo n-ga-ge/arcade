@@ -30,7 +30,27 @@
       "5": "Select a unit, confirm a move or action (battle); sail to the cursor (travel)",
       "6": "Information about what is under the cursor",
       "7": "Cancel the selection or move; open the battle or travel menu"
-    }
+    },
+    "gamepad": {
+      "1": [
+        "b6"
+      ],
+      "3": [
+        "b7"
+      ],
+      "2": [
+        "b1"
+      ],
+      "4": [
+        "b10"
+      ],
+      "6": [
+        "b11"
+      ]
+    },
+    "notes": [
+      "On a gamepad X is the primary key (5) and Y the secondary (7), the triggers step to the previous and next unit, B shows the map, and pressing the left or right stick shows a unit's range or the information."
+    ]
   },
   "test": {
     "expect": "ingame",

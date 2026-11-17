@@ -24,11 +24,12 @@
       "ok": "Select (menus); start the jump",
       "lsk": "Accept or Continue (menus); pause menu (during a jump)",
       "rsk": "Back or Cancel (menus)",
-      "5": "Start the jump; continue after it; on a locked jump in the selection, show what unlocks it",
+      "5": "Start the jump; continue after it; show what unlocks a locked jump",
       "8": "Send the score on-line after a game (cannot work here)"
     },
     "notes": [
-      "The other number keys are used when their number appears among the icons of a jump."
+      "The other number keys are used when their number appears among the icons of a jump.",
+      "A gamepad has the directions and 5 (X) only; jumps that show other numbers need the keyboard's digit row."
     ]
   },
   "test": {

@@ -36,8 +36,14 @@
       "7": "Rail"
     },
     "notes": [
-      "In the air every number key performs a different trick for bonus points, which fill the boost bar."
-    ]
+      "In the air every number key performs a different trick for bonus points, which fill the boost bar.",
+      "On a gamepad X jumps (5), Y rails (7) and B boosts (2); the other trick keys need the keyboard's digit row."
+    ],
+    "gamepad": {
+      "2": [
+        "b1"
+      ]
+    }
   },
   "test": {
     "expect": "ingame",
