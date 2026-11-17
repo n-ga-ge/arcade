@@ -31,7 +31,7 @@
     "players": 8,
     "menu": "Multiplayer > Host Game / Join Game",
     "status": "plays",
-    "statusNote": "Two players in one room: one hosts, the other joins and picks the host from the list, the host presses Start Session and then Start in the lobby; a deathmatch ran on both screens, one player's pause is shown to the other, and the host is told when the other quits and plays on. The list shows the host under the phone's name (EKA2L1), not the name in the room. More than two players were not tried."
+    "statusNote": "Two players in one room: one hosts, the other joins and picks the host from the list, the host presses Start Session and then Start in the lobby; a deathmatch ran on both screens, one player's pause is shown to the other, and the host is told when the other quits and plays on. More than two players were not tried."
   },
   "controls": {
     "source": "The game's defaults from Options > Map Keys (preset Default; the game can remap them there) and its tutorial messages. Moving, looking, firing and the soft keys were confirmed in the first mission.",

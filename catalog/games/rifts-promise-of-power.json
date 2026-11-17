@@ -13,7 +13,7 @@
     "The OK key (pad press) does nothing in this game: 5 is the action and select key and 7 cancels. The layout here puts 5 on Enter and Space and 7 on Backspace and Escape.",
     "Start Game leads through choosing a character class, Preset or Custom, and a name (the digits type letters; move down to Accept and press 5). The story slideshow that follows takes about two minutes and cannot be skipped.",
     "The keys can be changed in the game under Options > Controller.",
-    "Bluetooth in the main menu is the multiplayer game, between two players in one room of the site (Menu > Multiplayer). The host chooses Host Game, a save slot, a game type and its settings. The other chooses Join Game, a save slot and the host in the list (it may be listed as EKA2L1). The host then ticks the player with right and presses 5. Both tick their characters the same way (as many as the Characters setting says) and press 5; the host confirms teams, handicaps and the map.",
+    "Bluetooth in the main menu is the multiplayer game, between two players in one room of the site (Menu > Multiplayer). The host chooses Host Game, a save slot, a game type and its settings. The other chooses Join Game, a save slot and the host in the list. The host then ticks the player with right and presses 5. Both tick their characters the same way (as many as the Characters setting says) and press 5; the host confirms teams, handicaps and the map.",
     "N-Gage Arena in the main menu is no longer online."
   ],
   "multiplayer": {
