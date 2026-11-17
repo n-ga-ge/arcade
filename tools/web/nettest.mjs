@@ -34,11 +34,18 @@
 //      of both pages are written (tier2-a.png, tier2-b.png, and
 //      tier2-a-after.png once B has left): look at them, the counters cannot
 //      tell a match from an error message.
+//   3  Tier 2 again, but nothing is done by this script: page A hosts a room
+//      in the player's own Multiplayer dialog, page B opens the invite link
+//      (room=CODE), and the frames cross the room relay of the dev server
+//      (/net/). This is the whole path a visitor's game takes, short of the
+//      deployed relay. B leaves by closing its tab. Screenshots are
+//      tier3-a.png, tier3-b.png and tier3-a-after.png. Needs a player with
+//      the Multiplayer dialog and a dev server with the relay.
 //
 //   --out DIR          results: nettest.json, the pages' consoles, screenshots
-//   --tier LIST        which tiers to run, e.g. 0 or 0,2 (default: 0,1,2)
-//   --game SLUG        the game for tiers 0 and 2 (default: rayman-3); tier 2
-//                      needs an entry in SESSIONS
+//   --tier LIST        which tiers to run, e.g. 0 or 0,2 (default: 0,1,2,3)
+//   --game SLUG        the game for tiers 0, 2 and 3 (default: rayman-3); tiers
+//                      2 and 3 need an entry in SESSIONS
 //   --browser NAME     chrome-software (default, Playwright's Chromium drawing
 //                      on the CPU) or chrome (the toolchain's Chrome on the GPU)
 //   --port N           port for the dev server this tool starts (default: a free one)
@@ -86,7 +93,7 @@ const OPTIONS = { out: 'value', tier: 'value', game: 'value', browser: 'value', 
   'time-limit': 'value', serve: 'value', pages: 'value', unlinked: 'flag', log: 'value', verbose: 'flag' };
 
 function usage(message) {
-  console.error(`${message}\nusage: node tools/web/nettest.mjs --out <dir> [--tier 0,1,2] [--game SLUG] [--browser chrome-software|chrome] [--port N] [--bin DIR] [--assets DIR] [--time-limit SEC] [--log FILTER] [--verbose] [--serve PORT [--pages 1] [--unlinked]]`);
+  console.error(`${message}\nusage: node tools/web/nettest.mjs --out <dir> [--tier 0,1,2,3] [--game SLUG] [--browser chrome-software|chrome] [--port N] [--bin DIR] [--assets DIR] [--time-limit SEC] [--log FILTER] [--verbose] [--serve PORT [--pages 1] [--unlinked]]`);
   process.exit(2);
 }
 
@@ -104,8 +111,8 @@ for (const name of ['port', 'time-limit', 'serve']) {
   if (args[name] !== undefined && !(Number(args[name]) > 0)) usage(`--${name} must be a positive number`);
 }
 if (args.pages !== undefined && !['1', '2'].includes(args.pages)) usage('--pages must be 1 or 2');
-const tiers = String(args.tier === undefined ? '0,1,2' : args.tier).split(',').map((text) => text.trim());
-if (!tiers.length || tiers.some((tier) => !['0', '1', '2'].includes(tier))) usage(`--tier takes 0, 1 and 2: ${args.tier}`);
+const tiers = String(args.tier === undefined ? '0,1,2,3' : args.tier).split(',').map((text) => text.trim());
+if (!tiers.length || tiers.some((tier) => !['0', '1', '2', '3'].includes(tier))) usage(`--tier takes 0, 1, 2 and 3: ${args.tier}`);
 const game = args.game || 'rayman-3';
 // The name becomes part of file names and of a URL.
 if (!/^[a-z0-9-]+$/.test(game)) usage(`not a game name: ${game}`);
@@ -322,7 +329,9 @@ class Player {
 
   // A fresh browser context per page, so that each is the visible tab of its
   // own window: the player pauses the emulator of a hidden tab.
-  async open(slug) {
+  // `query` is added to the address; `settings` is what the page finds saved
+  // from an earlier visit (the player's name in a room, for tier 3).
+  async open(slug, query = '', settings = null) {
     this.slug = slug;
     this.context = await browser.newContext({ viewport: { width: 900, height: 700 } });
     this.page = await this.context.newPage();
@@ -342,13 +351,20 @@ class Player {
       });
     });
 
-    const url = `http://127.0.0.1:${serverPort}/?fw=/local/NGAGE.ROM&game=/local/games/${slug}.zip&persist=0${args.log ? `&log=${encodeURIComponent(args.log)}` : ''}`;
+    if (settings) {
+      await this.page.addInitScript((saved) => {
+        try { localStorage.setItem('eka2l1.settings.v1', JSON.stringify(saved)); } catch { /* the page then uses its defaults */ }
+      }, settings);
+    }
+    const url = `http://127.0.0.1:${serverPort}/?fw=/local/NGAGE.ROM&game=/local/games/${slug}.zip&persist=0${args.log ? `&log=${encodeURIComponent(args.log)}` : ''}${query}`;
     const response = await this.page.goto(url, { timeout: 60000 });
     if (!response || !response.ok()) throw new Error(`page ${this.label} did not load (HTTP ${response ? response.status() : 'no response'})`);
   }
 
-  // Resolves when the game has presented a frame.
-  async running(timeoutMs = START_MS) {
+  // Resolves when the game has presented a frame. With `bridge` this script
+  // becomes the page's relay; without, the page's own multiplayer code keeps
+  // the emulator's frames.
+  async running(timeoutMs = START_MS, bridge = true) {
     const opened = Date.now();
     for (;;) {
       const state = await this.ask(() => {
@@ -369,16 +385,17 @@ class Player {
     // The emulator's frames for the other player leave through this callback.
     // The module is reached the way the page itself holds it; the page's own
     // sources are not involved.
-    const supported = await this.ask(() => {
+    const supported = await this.ask((own) => {
       const module = window.eka2l1.module;
       if (typeof module._eka2l1_web_net_link !== 'function') return false;
+      if (!own) return true;
       module.eka2l1OnNetSend = (dst, bytes) => {
         let binary = '';
         for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
         window.__nettestSend(dst, btoa(binary));
       };
       return true;
-    }, null, 'installing the send callback');
+    }, bridge, 'installing the send callback');
     if (!supported) throw new Error('this build has no multiplayer exports (_eka2l1_web_net_link)');
   }
 
@@ -515,6 +532,39 @@ async function pair(slug) {
     await b.running();
   } catch (error) {
     // Nobody else knows these pages: an emulator left running would slow the next tier.
+    await a.close();
+    await b.close();
+    throw error;
+  }
+  return [a, b];
+}
+
+// Two pages with the same game in one room of the dev server's relay, by the
+// player's own means: A hosts in the Multiplayer dialog, B opens the invite link.
+async function pairThroughPage(slug) {
+  const health = await fetch(`http://127.0.0.1:${serverPort}/net/health`).then((response) => response.ok, () => false);
+  if (!health) throw new Error('the dev server has no room relay at /net/ (tools/web/relay.py)');
+  const a = new Player('a', 1, 'Ann');
+  const b = new Player('b', 2, 'Bo');
+  a.other = b;
+  b.other = a;
+  try {
+    await a.open(slug, '', { multiplayer: { name: a.name } });
+    await a.running(START_MS, false);
+    if (!(await a.ask(() => Boolean(document.getElementById('m-multiplayer') && document.getElementById('mp-host'))))) throw new Error('this player has no Multiplayer dialog');
+    await a.page.click('#btn-menu', { timeout: 10000 });
+    await a.page.click('#m-multiplayer', { timeout: 10000 });
+    await a.page.click('#mp-host', { timeout: 10000 });
+    const code = await until(() => a.ask(() => document.getElementById('mp-room-code').textContent.trim()), (text) => /^[A-Z2-9]{6}$/.test(text), 20000, 200);
+    if (!/^[A-Z2-9]{6}$/.test(code)) throw new Error(`hosting gave no room code (the dialog says: "${await a.ask(() => document.getElementById('mp-notice').textContent.trim())}")`);
+    a.room = code;
+    a.invite = await a.ask(() => document.getElementById('mp-link').value);
+    await a.page.screenshot({ path: path.join(outDir, 'tier3-dialog.png') });
+    await a.ask(() => document.getElementById('multiplayer').close());
+
+    await b.open(slug, `&room=${code}`, { multiplayer: { name: b.name } });
+    await b.running(START_MS, false);
+  } catch (error) {
     await a.close();
     await b.close();
     throw error;
@@ -687,23 +737,29 @@ async function tier1() {
   return { pass: parts.every((part) => part.pass), detail: parts.map((part) => part.detail).join(' | '), games: parts };
 }
 
-async function tier2() {
+// `throughPage`: tier 3, where the page and the dev server's relay do what
+// this script does in tier 2.
+async function tier2(throughPage = false) {
   const plan = SESSIONS[game];
   if (!plan) throw new Error(`no host and join scripts for ${game} in SESSIONS (tools/web/nettest.mjs)`);
+  const tier = throughPage ? 'tier3' : 'tier2';
 
-  const [a, b] = await pair(game);
+  const [a, b] = throughPage ? await pairThroughPage(game) : await pair(game);
   const stuck = async (what, state) => {
-    await a.shot('tier2-a');
-    await b.shot('tier2-b');
-    a.saveConsole('tier2-a');
-    b.saveConsole('tier2-b');
+    await a.shot(`${tier}-a`);
+    await b.shot(`${tier}-b`);
+    a.saveConsole(`${tier}-a`);
+    b.saveConsole(`${tier}-b`);
     const error = pageErrors(a, b)[0];
-    return error ? new Error(`${what}: ${error}`) : new Miss(`${what}; events ${names(state.events)} (see tier2-a.png and tier2-b.png)`);
+    return error ? new Error(`${what}: ${error}`) : new Miss(`${what}; events ${names(state.events)} (see ${tier}-a.png and ${tier}-b.png)`);
   };
   try {
-    await linkUp(a, b);
-    await until(() => a.net(), (state) => (state.peers || []).some((peer) => peer.address), 15000);
-    await until(() => b.net(), (state) => (state.peers || []).some((peer) => peer.address), 15000);
+    if (!throughPage) await linkUp(a, b);
+    const met = (state) => state.link.up && (state.peers || []).some((peer) => peer.address);
+    const ma = await until(() => a.net(), met, 30000);
+    const mb = await until(() => b.net(), met, 30000);
+    if (!met(ma) || !met(mb)) throw new Error(`the two emulators did not meet${throughPage ? ` in room ${a.room}` : ''}: A ${JSON.stringify({ link: ma.link, peers: ma.peers })}, B ${JSON.stringify({ link: mb.link, peers: mb.peers })}`);
+    if (throughPage && (ma.link.self !== a.id || mb.link.self !== b.id || ma.link.name !== a.name || mb.link.name !== b.name)) throw new Error(`the page linked the emulators under other ids or names: A ${JSON.stringify(ma.link)}, B ${JSON.stringify(mb.link)}`);
 
     // Host on A.
     await a.play(plan.host);
@@ -734,8 +790,8 @@ async function tier2() {
     await sleep(500);
     const na = await a.net();
     const nb = await b.net();
-    await a.shot('tier2-a');
-    await b.shot('tier2-b');
+    await a.shot(`${tier}-a`);
+    await b.shot(`${tier}-b`);
     await a.emulator('resume');
     await b.emulator('resume');
 
@@ -759,8 +815,9 @@ async function tier2() {
       if (state.totals.badFrames) problems.push(`${label} counted ${state.totals.badFrames} malformed frames`);
     }
 
-    // B leaves the room, as far as A is told.
-    await a.peer(b.id, false);
+    // B leaves the room: as far as A is told, or by closing its tab.
+    if (throughPage) await b.close();
+    else await a.peer(b.id, false);
     const dropped = (state) => (state.events || []).some((e) => e.op === 'close' && e.result === KERR_DISCONNECTED);
     const after = await until(() => a.net(), dropped, 15000);
     if (!dropped(after)) problems.push(`A's connection did not close with ${KERR_DISCONNECTED} after B left: ${names((after.events || []).slice(-6))}`);
@@ -770,15 +827,15 @@ async function tier2() {
     if (frames < 2) problems.push(`A stopped drawing after B left (${frames} frames in 5 s)`);
     const session = await a.session();
     if (session && session.state && session.state !== 'running') problems.push(`A's game is ${session.state} after B left`);
-    await a.shot('tier2-a-after');
-    a.saveConsole('tier2-a');
-    b.saveConsole('tier2-b');
+    await a.shot(`${tier}-a-after`);
+    a.saveConsole(`${tier}-a`);
+    b.saveConsole(`${tier}-b`);
     problems.push(...pageErrors(a, b).map((error) => `page error: ${error}`));
 
     const carried = ca.map((conn) => `${conn.protocol} ${conn.port}: A sent ${conn.txBytes}, received ${conn.rxBytes}`).join('; ');
     return { pass: !problems.length, listener, connectionsA: ca, connectionsB: cb, totalsA: na.totals, totalsB: nb.totals,
-      eventsA: after.events, eventsB: nb.events, framesAfter: frames, relayed: a.sent + b.sent,
-      detail: problems.join('; ') || `${game}: the host listened on ${listener.protocol} ${listener.port}; open on both sides and equal at both ends: ${carried}; closed with ${KERR_DISCONNECTED} when B left, ${frames} frames in 5 s after` };
+      eventsA: after.events, eventsB: nb.events, framesAfter: frames, relayed: a.sent + b.sent, room: a.room, invite: a.invite,
+      detail: problems.join('; ') || `${game}${throughPage ? `, hosted in the page's dialog (room ${a.room}) and joined by its link, through the dev server's relay` : ''}: the host listened on ${listener.protocol} ${listener.port}; open on both sides and equal at both ends: ${carried}; closed with ${KERR_DISCONNECTED} when B left, ${frames} frames in 5 s after` };
   } finally {
     await a.close();
     await b.close();
@@ -861,7 +918,7 @@ async function main() {
     if (!fs.existsSync(file)) throw new Error(`missing ${file}: ${hint}`);
   }
   const needed = new Set();
-  if (args.serve || tiers.includes('0') || tiers.includes('2')) needed.add(game);
+  if (args.serve || tiers.includes('0') || tiers.includes('2') || tiers.includes('3')) needed.add(game);
   if (!args.serve && tiers.includes('1')) Object.keys(SOLO).forEach((slug) => needed.add(slug));
   for (const slug of needed) {
     const zip = path.join(assetsDir, 'games', `${slug}.zip`);
@@ -880,9 +937,9 @@ async function main() {
   const limit = Number(args['time-limit'] || 2400) * 1000;
   setTimeout(() => { console.error(`time limit of ${limit / 1000} s reached`); end(1); }, limit).unref();
 
-  const run = { 0: tier0, 1: tier1, 2: tier2 };
+  const run = { 0: tier0, 1: tier1, 2: () => tier2(false), 3: () => tier2(true) };
   let failed = false;
-  for (const tier of ['0', '1', '2'].filter((name) => tiers.includes(name))) {
+  for (const tier of ['0', '1', '2', '3'].filter((name) => tiers.includes(name))) {
     const since = Date.now();
     let result;
     for (let attempt = 1; attempt <= 2; attempt++) {
