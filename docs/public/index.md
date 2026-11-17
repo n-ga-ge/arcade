@@ -53,5 +53,5 @@ nobody has played through.
 The site and the emulator port are open source. The code, and the technical
 documentation that goes with it, are in the project's repositories:
 
-- [the site, its catalogue and tools](https://github.com/n-ga.ge/arcade)
-- [the emulator port](https://github.com/n-ga.ge/EKA2L1)
+- [the site, its catalogue and tools](https://github.com/n-ga-ge/arcade)
+- [the emulator port](https://github.com/n-ga-ge/EKA2L1)

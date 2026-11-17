@@ -2,7 +2,7 @@
 // status vocabulary, searching, filtering and ordering. No DOM in here.
 
 export const CATALOG_URL = '/catalog/';
-export const SOURCE_URL = 'https://github.com/n-ga.ge/arcade';
+export const SOURCE_URL = 'https://github.com/n-ga-ge/arcade';
 
 // Best first: this is also the default order of the page and of the filter.
 export const STATUSES = [
