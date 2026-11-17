@@ -19,7 +19,7 @@
     "players": 2,
     "menu": "Multiplayer > Host Game / Search for Hosts, then Join",
     "status": "plays",
-    "statusNote": "Two players in one room: one chooses Host Game, the other Search for Hosts and then Join. Both get the lobby, where the track the host picks shows on the other screen, and both choose Start Race. A race on The Metropolitan ran on both screens; the joiner saw the host's car ahead and saw it drive off. When one ends the race both return to the lobby; when one leaves it the host says Connection Lost."
+    "statusNote": "Two players in one room: one chooses Host Game, the other Search for Hosts, then Join. Both get the lobby, where the track the host picks shows on the other screen, and both choose Start Race. A race on The Metropolitan ran on both screens; the joiner saw the host's car ahead until the host drove on. When one ends the race both return to the lobby; when one leaves it the host says Connection Lost."
   },
   "controls": {
     "source": "The game's Help (General Controls and Race Controls for Nokia N-Gage). Steering, accelerate, view change and pause were also tried in a race; that 5 and OK select in menus was observed.",
