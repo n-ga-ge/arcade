@@ -87,6 +87,13 @@ window keeps nothing after it closes. Export first.
 pixels (the default), smooth, or one of several filters. These change only the
 look, not the speed of the game.
 
+The N-Gage's screen is taller than it is wide, so on a monitor there is empty
+space beside the picture. **Fill the screen (beta)** uses it: **Stretch**
+widens the picture over the whole area, and **Ambient fill** keeps the
+picture's shape and fills the space beside it with a soft, blurred copy of
+what is on screen. Neither makes the game show more of its world: a game
+always draws the same picture.
+
 ## Playing your own copy
 
 The player can also run a game from files of your own. Open **Menu → Load a
