@@ -1,11 +1,63 @@
 {
   "slug": "xanadu",
   "title": "Xanadu Next",
+  "year": 2005,
+  "genre": "Action role-playing",
   "uid": "0x101FD3FA",
   "variantOf": null,
   "dump": "Xanadu",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: N-Gage logo, rating screen, title menu, Start Game > New loads the town of Harlan Berck; after the priest's opening talk (choosing a guardian and raising an ability) the character walks around the town and attacks, and the status and pause menus open.",
+  "notes": [
+    "A title menu left alone for about half a minute plays a story demo and then returns.",
+    "On the title menu the right soft key is QUIT. Quitting ends the game and leaves a black screen; reload the page to start again.",
+    "On the ability screen at the start, OK raises the selected ability; the screen closes once the bonus is spent (raise a second ability with down, then OK).",
+    "Keys 1 and 3 open the status menu (Status, Guard, Item, Magic, Skill) and step through its tabs; 5 selects in it and 7 closes it.",
+    "Either soft key opens the pause menu (Resume, Return to Main Menu, Audio, Exit Game).",
+    "Bluetooth and N-Gage Arena cannot work here."
+  ],
+  "controls": {
+    "source": "The game's own Options > Controls screen (its defaults: Attack 5, Magic 7, Equip (L) 1, Equip (R) 3). Moving, attacking, the status menu and its keys, the pause menu and OK for dialogue were tried in play.",
+    "actions": {
+      "up": "Move up",
+      "down": "Move down",
+      "left": "Move left",
+      "right": "Move right",
+      "ok": "Select; next line of dialogue",
+      "lsk": "Pause menu; OK in menus",
+      "rsk": "Pause menu; cancel in menus; quit on the title menu",
+      "1": "Equip (L): open the status menu, previous tab",
+      "3": "Equip (R): open the status menu, next tab",
+      "5": "Attack; select in the status menu",
+      "7": "Magic; close the status menu"
+    },
+    "notes": [
+      "Options > Controls can move Attack, Magic and the two Equip actions to other number keys."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 8000
+      },
+      {
+        "key": "ok",
+        "wait": 2000,
+        "repeat": 55
+      },
+      {
+        "key": "down",
+        "wait": 1500
+      },
+      {
+        "key": "ok",
+        "wait": 2000,
+        "repeat": 14
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  }
 }

@@ -1,11 +1,57 @@
 {
   "slug": "worms-world-party",
   "title": "Worms World Party",
+  "year": 2005,
+  "genre": "Turn-based artillery",
   "uid": "0x101FD3F3",
   "variantOf": null,
   "dump": "Worms World Party",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: N-Gage and Two Tribes logos, title screen, main menu, Single Game Deck > Quick Game loads a match against the computer; moving, aiming, the weapons menu, firing and the pause menu all work.",
+  "notes": [
+    "The title screen asks for key 5, and 5 is the select key in every menu. The right soft key goes back.",
+    "A title screen left alone starts a demo match; any key returns to the title.",
+    "Single Game Deck has Quick Game, Missions, Custom Game and Training. Game Options > Misc. Options > Key Layout shows what every key does.",
+    "Multiplayer over Bluetooth and N-Gage Arena cannot work here."
+  ],
+  "controls": {
+    "source": "The game's own Game Options > Misc. Options > Key Layout screen, which describes every key; moving, aiming, the weapons menu, firing, jumping and both soft keys were also tried in a Quick Game.",
+    "actions": {
+      "left": "Move the worm left",
+      "right": "Move the worm right",
+      "up": "Aim up",
+      "down": "Aim down",
+      "ok": "Select (menus)",
+      "lsk": "Game menu (pause, options, quit)",
+      "rsk": "Game menu in play; back in menus",
+      "1": "Change the bounce of thrown weapons",
+      "2": "Change the fuse time of thrown weapons",
+      "3": "Change how much is shown above each worm",
+      "4": "Show or hide the weapons menu",
+      "5": "Fire; hold to add power. Select in menus",
+      "6": "Select the next worm",
+      "7": "Jump; twice quickly jumps backwards",
+      "8": "Jump upwards; twice quickly does a backflip",
+      "9": "Centre the camera on the active worm"
+    },
+    "notes": [
+      "In the weapons menu the directions move the cursor and 5 picks the weapon."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "5",
+        "wait": 8000,
+        "repeat": 6
+      },
+      {
+        "wait": 10000
+      }
+    ]
+  }
 }

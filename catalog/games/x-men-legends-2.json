@@ -1,11 +1,61 @@
 {
   "slug": "x-men-legends-2",
   "title": "X-Men Legends II: Rise of Apocalypse",
+  "publisher": "Activision",
+  "year": 2005,
+  "genre": "Action role-playing",
   "uid": "0x101FD429",
   "variantOf": null,
   "dump": "X-Men Legends II",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Plays: N-Gage, Activision, Marvel and Barking Lizards logos, a rating screen, title screen, main menu, Single-Player > New Game plays the intro video and loads The Sanctuary; after Xavier's briefing the team of four can be walked around and attacks, and the map, objectives, stats and pause menus open.",
+  "notes": [
+    "The logos at the start cannot be skipped and take about 40 seconds. The title screen then waits for any key.",
+    "OK or the left soft key selects in menus. Key 5 skips the intro video and steps through dialogue.",
+    "The left soft key opens the pause menu (Resume, Load, Save, Options, Stats, Quit). The right soft key closes the map, the objectives and the stats screen.",
+    "Multiplayer needs Bluetooth and N-Gage Arena no longer exists; neither can work here."
+  ],
+  "controls": {
+    "source": "The game's own Options > Controller screen (its default keys for the ten actions). Moving, attacking, the map, objectives, the stats menu, both soft keys and 5 for dialogue and the video were also tried in play.",
+    "actions": {
+      "up": "Move up",
+      "down": "Move down",
+      "left": "Move left",
+      "right": "Move right",
+      "ok": "Select (menus)",
+      "lsk": "Pause menu; select in menus",
+      "rsk": "Back",
+      "1": "Map",
+      "2": "Formation select",
+      "3": "Fly",
+      "4": "Special select",
+      "5": "Attack; next line of dialogue; skip the video",
+      "6": "Item select",
+      "7": "Special",
+      "8": "Character select",
+      "9": "Objectives",
+      "0": "Stats menu"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 15000
+      },
+      {
+        "key": "ok",
+        "wait": 3000,
+        "repeat": 25
+      },
+      {
+        "key": "5",
+        "wait": 2500,
+        "repeat": 30
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  }
 }
