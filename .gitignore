@@ -19,3 +19,4 @@ tools/**/results*/
 
 # Node packages: a link into the toolchain locally, an npm install on CI.
 /node_modules
+__pycache__/

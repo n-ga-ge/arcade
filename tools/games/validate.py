@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check every catalogue entry against catalog/schema.json and a few rules the
-schema cannot express.
+schema cannot express, and every enhancement profile in catalog/enhance/
+against catalog/enhance.schema.json.
 
   python3 -I tools/games/validate.py [slug ...]        exit 1 when anything is wrong
 
@@ -15,7 +16,7 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-TYPES = {"object": dict, "array": list, "string": str, "integer": int, "boolean": bool, "null": type(None)}
+TYPES = {"object": dict, "array": list, "string": str, "integer": int, "number": (int, float), "boolean": bool, "null": type(None)}
 
 
 def check(value, schema, root, where, errors):
@@ -140,9 +141,57 @@ def main():
         missing = object()
         if isinstance(other, dict) and game.get("multiplayer", missing) != other.get("multiplayer", missing):
             errors.append(f"{slug}: multiplayer differs from that of {base}, the game it is a variant of")
+    # Enhancement profiles: each against its schema, and each entry's engine must have one.
+    profiles_folder = os.path.join(ROOT, "catalog", "enhance")
+    profile_names = sorted(name[:-5] for name in os.listdir(profiles_folder) if name.endswith(".json")) if os.path.isdir(profiles_folder) else []
+    for slug, game in games.items():
+        enhance = game.get("enhance")
+        if isinstance(enhance, dict) and isinstance(enhance.get("engine"), str) and enhance["engine"] not in profile_names:
+            errors.append(f"{slug}.enhance: there is no catalog/enhance/{enhance['engine']}.json")
+    profiles = 0
+    if not sys.argv[1:] and profile_names:
+        with open(os.path.join(ROOT, "catalog", "enhance.schema.json")) as fh:
+            profile_schema = json.load(fh)
+        for name in profile_names:
+            where = f"enhance/{name}"
+            try:
+                with open(os.path.join(profiles_folder, name + ".json")) as fh:
+                    profile = json.load(fh)
+            except (OSError, ValueError) as error:
+                errors.append(f"{where}: {error}")
+                continue
+            profiles += 1
+            check(profile, profile_schema, profile_schema, where, errors)
+            if not isinstance(profile, dict):
+                continue
+            if profile.get("engine") != name:
+                errors.append(f"{where}: engine does not match the file name")
+            for image in profile.get("images") or []:
+                if not isinstance(image, dict):
+                    continue
+                game = image.get("game")
+                if isinstance(game, str) and game not in all_slugs:
+                    errors.append(f"{where}: {image.get('name')} names an unknown game {game}")
+                for hook in image.get("hooks") or []:
+                    if not isinstance(hook, dict):
+                        continue
+                    at = f"{where}: {image.get('name')} at {hook.get('at')}"
+                    # What each kind of hook needs, which the schema cannot say per kind.
+                    kind = hook.get("do")
+                    if kind == "draw" and "fields" not in hook:
+                        errors.append(f"{at}: a draw needs fields")
+                    if kind == "set" and "vars" not in hook:
+                        errors.append(f"{at}: a set needs vars")
+                    allowed = {"begin": {"target"}, "end": set(), "set": {"vars"},
+                               "draw": {"mode", "count", "vertex", "fields", "texture", "blend", "depth"}}.get(kind, set())
+                    for field in set(hook) - allowed - {"at", "do", "note", "when", "skip", "return"}:
+                        errors.append(f"{at}: {field} means nothing on a {kind} hook")
+                    texture = hook.get("texture")
+                    if isinstance(texture, dict) and texture.get("format") == "p8" and not ("palette" in texture and "paletteFormat" in texture):
+                        errors.append(f"{at}: a p8 texture needs palette and paletteFormat")
     for error in errors:
         print(error, file=sys.stderr)
-    print(f"{len(games)} entries checked, {len(errors)} problems")
+    print(f"{len(games)} entries" + (f" and {profiles} enhancement profiles" if profiles else "") + f" checked, {len(errors)} problems")
     return 1 if errors else 0
 
 

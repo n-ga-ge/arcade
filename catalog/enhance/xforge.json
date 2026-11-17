@@ -1,0 +1,28 @@
+{
+  "engine": "xforge",
+  "about": "Fathammer's X-Forge. A first, unfinished profile: Stuntcar Extreme's triangles without their textures and colours, as proof that the capture works.",
+  "images": [
+    {
+      "name": "sce.app",
+      "hash": "0x7582D333",
+      "game": "stuntcar-extreme",
+      "hooks": [
+        { "at": "0xdc290", "do": "begin", "note": "Runs once a frame; what it does was not looked at." },
+        {
+          "at": "0xa280c",
+          "do": "draw",
+          "note": "Draws one triangle. r0: the triangle (three vertex indices first), r1: the projected vertices, 16 bytes each.",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "r1 + 16 * u32(r0 + 4 * i)",
+          "fields": {
+            "x": "fx(s32(p), 16)",
+            "y": "fx(s32(p + 4), 16)",
+            "z": "fx(s32(p + 8), 16)",
+            "w": "fx(s32(p + 12), 16)"
+          }
+        }
+      ]
+    }
+  ]
+}
