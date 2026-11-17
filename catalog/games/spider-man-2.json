@@ -8,12 +8,13 @@
   "variantOf": null,
   "dump": "Spider-Man 2",
   "status": "ingame",
-  "statusNote": "Plays: logos and legal text, main menu, a new save, the story and briefing pages, then the card's separate 3D app loads and the first level (swinging through the city to Dr. Octavius' lab) runs with steering, the countdown and the pause menu. Only this first 3D level was played; the 2D levels were not reached. Choosing N-Gage Arena on the main menu left the menu unresponsive with a still picture for over a minute.",
+  "statusNote": "Plays: logos and legal text, main menu, a new save, the story and briefing pages, then the card's separate 3D app loads and the first level (swinging through the city to Dr. Octavius' lab) runs with steering, the countdown and the pause menu. Only this first 3D level was played; the 2D levels were not reached. Once in twelve runs the 3D app froze as it started: the log had \"Access violation reading address 0x0 in thread XFcSound\" and no frame was drawn after that. Choosing N-Gage Arena on the main menu left the menu unresponsive with a still picture for over a minute.",
   "notes": [
     "The game starts by itself after about half a minute of logos. In the menus the left soft key selects and the right one goes back; on the main menu the right soft key quits.",
     "A new game asks for a three-letter save name: confirm each letter with the left soft key, 5 or OK.",
     "The first level is a 3D swinging level run by a second app on the card. After its loading screen shows a hint and Continue, press 5 or the left soft key (OK does nothing there), then 5 to start swinging.",
-    "Running out of time restarts the level; running out again sends you back to the save screen.",
+    "The level has a 30 second countdown that passing a marker refills. Running out of time more than once sends you back to the save screen.",
+    "If the picture freezes just as the first level starts, restart the game: the level's own app occasionally crashes while it starts.",
     "Do not choose N-Gage Arena on the main menu: the online service does not exist here and the menu stopped responding after it."
   ],
   "controls": {

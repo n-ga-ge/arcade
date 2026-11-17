@@ -21,7 +21,7 @@
   "notes": [
     "The game starts in Spanish. For English choose Opciones on the main menu, then press right on Idioma.",
     "5 continues and selects everywhere; the pad moves through menus and left and right change a value.",
-    "A duel is lost when the bot runs into a light bar or the arena edge, so it has to be steered from the first second. After the last round the game waits for 7 to go back to the menu.",
+    "A duel is lost when the bot runs into a light bar or the arena edge, so it has to be steered from the first second. After the last round the game waits for 7 to go back to the menu; a quick tap was sometimes missed there, so press it again if nothing happens.",
     "Multiplayer needs a Bluetooth link to a second phone and cannot work here."
   ],
   "controls": {
