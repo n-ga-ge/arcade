@@ -7,14 +7,23 @@
   "uid": "0x101FD3F8",
   "variantOf": null,
   "dump": "Pathway To Glory",
-  "status": "broken",
+  "pack": {
+    "borrow": [
+      [
+        "Pathway To Glory Ikusa Islands",
+        "system/Libs/gamecomms.dll",
+        "System/Libs/GameComms.dll"
+      ]
+    ]
+  },
+  "status": "ingame",
   "notes": [
     "Start game > Solo player > New creates a campaign; the first mission is Pantelleria, summer 1943.",
     "The game is turn-based: move the cursor over the map and press OK to send the selected soldier there (the green line shows the path and what it costs). Key 7 opens the mission menu with End turn, Mission data, Use (weapons and gear), Commands and End mission.",
     "Cooperative and multiplayer games need Bluetooth or N-Gage Arena and are not available in the browser."
   ],
   "controls": {
-    "source": "The shortcuts shown in the game's own Commands menu (stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus; the cursor, OK, key 5 (the soldier moved and his action points dropped) and key 7 were observed in the first mission. All of it was seen with GAMECOMMS.DLL added to the card (see the status note). Publisher and year are from the game's logo screens and general knowledge.",
+    "source": "The shortcuts shown in the game's own Commands menu (stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus; the cursor, OK, key 5 (the soldier moved and his action points dropped) and key 7 were observed in the first mission. Publisher and year are from the game's logo screens and general knowledge.",
     "actions": {
       "up": "Move the cursor / scroll the map",
       "down": "Move the cursor / scroll the map",
@@ -37,7 +46,7 @@
     ]
   },
   "test": {
-    "expect": "broken",
+    "expect": "ingame",
     "script": [
       {
         "wait": 12000
@@ -60,5 +69,5 @@
       }
     ]
   },
-  "statusNote": "The app exits as soon as it is launched and nothing is drawn (0 frames, screenshot fails with \"no active emulator surface\"). The log shows why: \"Can't find GAMECOMMS.DLL\", \"Try loading 6RAJ.app ... failed\", then a \"System error\" note. The dump holds only System/Apps/6RAJ and lacks the card's System/Libs, and the firmware has no GameComms. With a GAMECOMMS.DLL from another card added to the zip as System/Libs/GAMECOMMS.DLL the game runs: title, menus, campaign creation, briefing, team and gear selection, and the first mission (Pantelleria) plays on the battle map. The controls and the test script below were made that way; the script reaches the mission once the zip has the library."
+  "statusNote": "Title, menus, campaign creation, briefing, team and gear selection work, and the first mission (Pantelleria) plays on the battle map: moving a soldier, switching soldiers and the mission menu were tried. The dump came without the GameComms library (the app then exits at launch with \"Can't find GAMECOMMS.DLL\"), so the pack tool takes it from the Ikusa Islands card."
 }
