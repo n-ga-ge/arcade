@@ -10,6 +10,11 @@
     "The left and right actions use whatever is readied in each hand; the queue keys cycle what is readied.",
     "The game can also remap its own keys under Options > Customize Controls. That changes which N-Gage key an action uses, on top of the bindings here."
   ],
+  "enhance": {
+    "engine": "shadowkey",
+    "status": "experimental",
+    "note": "Sky, walls, floors, furniture, buildings and creatures are captured and match the game's picture in five scenes of the first zone. Not captured: effect sprites and a weapon in hand (neither was seen), the interface. When replacing, the game still draws the sky (its models test depth against it) and the objects a player can target (it picks targets from its own output)."
+  },
   "multiplayer": {
     "modes": [
       "bluetooth"
