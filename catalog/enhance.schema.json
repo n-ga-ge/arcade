@@ -257,6 +257,12 @@
                     "paletteFormat": {
                       "$ref": "#/definitions/format"
                     },
+                    "paletteStride": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 16,
+                      "description": "Bytes from one palette entry to the next, when the entries are wider than their format (a 12-bit colour in a 32-bit word). Default: the size of the format."
+                    },
                     "key": {
                       "$ref": "#/definitions/expr"
                     }

@@ -180,5 +180,10 @@
       }
     ]
   },
-  "statusNote": "Logos, title, menus and the control diagrams work, and the Tutorial campaign loads into the 3D world: after the instructor's briefing the soldier walks, turns, throws grenades, and the mission status and pause screens open."
+  "statusNote": "Logos, title, menus and the control diagrams work, and the Tutorial campaign loads into the 3D world: after the instructor's briefing the soldier walks, turns, throws grenades, and the mission status and pause screens open.",
+  "enhance": {
+    "engine": "torus",
+    "status": "experimental",
+    "note": "The ground and the models (soldiers) are captured; the sky backdrop, trees and the HUD are left to the game. The ground's blend between kinds of ground and its lighting are approximated. Needs the emulator's paletteStride."
+  }
 }
