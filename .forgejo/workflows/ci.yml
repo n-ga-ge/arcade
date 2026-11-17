@@ -8,10 +8,9 @@
 #   build    builds the WebAssembly player from the eka2l1 submodule (or takes
 #            the one an earlier run built from the same emulator commit),
 #            checks the catalogue and decides which of the later jobs can run
-#   game-N   one job per catalogue entry, named after the game: starts the game
+#   game     one job per catalogue entry, named after the game: starts the game
 #            in headless Chromium and fails when it falls short of the level its
-#            entry expects (test.expect). The games are dealt into batches that
-#            run one after another, see "Batches" below
+#            entry expects (test.expect). All of them start together
 #   status   collects the results into status.json and the screenshots the
 #            front page shows; runs even when games fail
 #   deploy   builds the site and publishes it to Cloudflare: production on
@@ -61,17 +60,6 @@
 # name. Packing the dumps and uploading them to R2 is a workflow of the private
 # repository, not part of this one.
 #
-# Batches. Forgejo 16 ignores strategy.max-parallel and the runner takes every
-# job it is offered, but its Docker cannot create more than about 30 job
-# networks at a time ("all predefined address pools have been fully
-# subnetted"), and other repositories use the same runner. So the games are
-# dealt into BATCHES matrices of nearly equal size (tools/ci/gen-matrix.py),
-# each batch waits for the one before it, and a batch should stay near a dozen
-# jobs. To add a batch: raise BATCHES in the plan step, add a batchN output to
-# build, copy the last game-N job with its numbers raised, and add the new job
-# to the needs of status. (The copies cannot share their text through YAML
-# anchors: Forgejo 16 refuses a workflow that has them.)
-#
 # Action URLs are written out in full, as Forgejo recommends; the artifact
 # actions are Forgejo's forks, because the upstream v4 ones refuse to run
 # anywhere but github.com.
@@ -95,12 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     outputs:
-      batch1: ${{ steps.plan.outputs.batch1 }}
-      batch2: ${{ steps.plan.outputs.batch2 }}
-      batch3: ${{ steps.plan.outputs.batch3 }}
-      batch4: ${{ steps.plan.outputs.batch4 }}
-      batch5: ${{ steps.plan.outputs.batch5 }}
-      batch6: ${{ steps.plan.outputs.batch6 }}
+      matrix: ${{ steps.plan.outputs.matrix }}
       game: ${{ steps.plan.outputs.game }}
       status: ${{ steps.plan.outputs.status }}
       deploy: ${{ steps.plan.outputs.deploy }}
@@ -122,7 +105,6 @@ jobs:
           ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
           CLOUDFLARE_API_TOKEN_PAGES: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          BATCHES: 6
           EVENT: ${{ forge.event_name }}
           REF: ${{ forge.ref }}
         run: |
@@ -136,11 +118,11 @@ jobs:
           }
           say() { echo "$1"; echo "- $1" >> "$GITHUB_STEP_SUMMARY"; }
 
-          python3 -I tools/ci/gen-matrix.py --batches "$BATCHES" >> "$GITHUB_OUTPUT"
+          python3 -I tools/ci/gen-matrix.py >> "$GITHUB_OUTPUT"
 
           why=$(missing ASSETS_URL ASSETS_TOKEN)
           if [ -z "$why" ]; then
-            say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games, in $BATCHES batches"
+            say "game: one job for each of the $(ls catalog/games/*.json | wc -l) games"
             say "status: will run"
             echo "game=true" >> "$GITHUB_OUTPUT"
             echo "status=true" >> "$GITHUB_OUTPUT"
@@ -165,8 +147,8 @@ jobs:
           fi
 
       # The game jobs all need the same Node packages and browser. They only
-      # read this cache; it is filled here, once, instead of by a dozen jobs
-      # that all find it empty at the same moment. The key is handed to them,
+      # read this cache; it is filled here, once, instead of by every game
+      # job finding it empty at the same moment. The key is handed to them,
       # and .forgejo/actions/game-test must name the same paths.
       - name: Node
         if: steps.plan.outputs.game == 'true'
@@ -295,15 +277,12 @@ jobs:
           overwrite: true
           retention-days: 14
 
-  # The six game jobs differ only in their batch and in what they wait on.
   # What a game job does is in .forgejo/actions/game-test/action.yml.
   #
   # A job is shown as "<title> (<slug>)": Forgejo appends the matrix value
-  # itself. Each job reads the titles from its own batch, which also keeps the
-  # text of the six names different: given the same text six times, Forgejo
-  # numbers the jobs before it fills in their names and then never does.
-  game-1:
-    name: ${{ fromJSON(needs.build.outputs.batch1).titles[matrix.game] }}
+  # itself.
+  game:
+    name: ${{ fromJSON(needs.build.outputs.matrix).titles[matrix.game] }}
     needs: build
     if: needs.build.outputs.game == 'true'
     runs-on: ubuntu-latest
@@ -311,128 +290,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        game: ${{ fromJSON(needs.build.outputs.batch1).slugs }}
-    steps:
-      - name: Check out
-        uses: https://data.forgejo.org/actions/checkout@v7
-        with:
-          token: ${{ secrets.FORGE_TOKEN || forge.token }}
-          persist-credentials: false
-      - name: Test the game
-        uses: ./.forgejo/actions/game-test
-        with:
-          slug: ${{ matrix.game }}
-          deps-key: ${{ needs.build.outputs.deps-key }}
-          assets-url: ${{ vars.ASSETS_URL }}
-          assets-token: ${{ secrets.ASSETS_TOKEN }}
-
-  game-2:
-    name: ${{ fromJSON(needs.build.outputs.batch2).titles[matrix.game] }}
-    needs: [build, game-1]
-    # Failures in the batch before do not stop this one.
-    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        game: ${{ fromJSON(needs.build.outputs.batch2).slugs }}
-    steps:
-      - name: Check out
-        uses: https://data.forgejo.org/actions/checkout@v7
-        with:
-          token: ${{ secrets.FORGE_TOKEN || forge.token }}
-          persist-credentials: false
-      - name: Test the game
-        uses: ./.forgejo/actions/game-test
-        with:
-          slug: ${{ matrix.game }}
-          deps-key: ${{ needs.build.outputs.deps-key }}
-          assets-url: ${{ vars.ASSETS_URL }}
-          assets-token: ${{ secrets.ASSETS_TOKEN }}
-
-  game-3:
-    name: ${{ fromJSON(needs.build.outputs.batch3).titles[matrix.game] }}
-    needs: [build, game-2]
-    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        game: ${{ fromJSON(needs.build.outputs.batch3).slugs }}
-    steps:
-      - name: Check out
-        uses: https://data.forgejo.org/actions/checkout@v7
-        with:
-          token: ${{ secrets.FORGE_TOKEN || forge.token }}
-          persist-credentials: false
-      - name: Test the game
-        uses: ./.forgejo/actions/game-test
-        with:
-          slug: ${{ matrix.game }}
-          deps-key: ${{ needs.build.outputs.deps-key }}
-          assets-url: ${{ vars.ASSETS_URL }}
-          assets-token: ${{ secrets.ASSETS_TOKEN }}
-
-  game-4:
-    name: ${{ fromJSON(needs.build.outputs.batch4).titles[matrix.game] }}
-    needs: [build, game-3]
-    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        game: ${{ fromJSON(needs.build.outputs.batch4).slugs }}
-    steps:
-      - name: Check out
-        uses: https://data.forgejo.org/actions/checkout@v7
-        with:
-          token: ${{ secrets.FORGE_TOKEN || forge.token }}
-          persist-credentials: false
-      - name: Test the game
-        uses: ./.forgejo/actions/game-test
-        with:
-          slug: ${{ matrix.game }}
-          deps-key: ${{ needs.build.outputs.deps-key }}
-          assets-url: ${{ vars.ASSETS_URL }}
-          assets-token: ${{ secrets.ASSETS_TOKEN }}
-
-  game-5:
-    name: ${{ fromJSON(needs.build.outputs.batch5).titles[matrix.game] }}
-    needs: [build, game-4]
-    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        game: ${{ fromJSON(needs.build.outputs.batch5).slugs }}
-    steps:
-      - name: Check out
-        uses: https://data.forgejo.org/actions/checkout@v7
-        with:
-          token: ${{ secrets.FORGE_TOKEN || forge.token }}
-          persist-credentials: false
-      - name: Test the game
-        uses: ./.forgejo/actions/game-test
-        with:
-          slug: ${{ matrix.game }}
-          deps-key: ${{ needs.build.outputs.deps-key }}
-          assets-url: ${{ vars.ASSETS_URL }}
-          assets-token: ${{ secrets.ASSETS_TOKEN }}
-
-  game-6:
-    name: ${{ fromJSON(needs.build.outputs.batch6).titles[matrix.game] }}
-    needs: [build, game-5]
-    if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.game == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        game: ${{ fromJSON(needs.build.outputs.batch6).slugs }}
+        game: ${{ fromJSON(needs.build.outputs.matrix).slugs }}
     steps:
       - name: Check out
         uses: https://data.forgejo.org/actions/checkout@v7
@@ -449,7 +307,7 @@ jobs:
 
   status:
     name: Status of all games
-    needs: [build, game-1, game-2, game-3, game-4, game-5, game-6]
+    needs: [build, game]
     if: ${{ !cancelled() && needs.build.result == 'success' && needs.build.outputs.status == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
