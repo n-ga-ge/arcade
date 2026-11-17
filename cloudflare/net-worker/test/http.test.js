@@ -17,6 +17,15 @@ describe('GET /net/health', () => {
     expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
+  it('names the deployed build when it is given one', async () => {
+    const id = '0123456789abcdef0123456789abcdef01234567';
+    expect((await call('/net/health', { vars: { BUILD: id } })).headers.get('X-Relay-Build')).toBe(id);
+    for (const BUILD of ['', undefined, 'not a hash', `${id}\r\nSet-Cookie: x=1`]) {
+      const response = await call('/net/health', { vars: { BUILD } });
+      expect(response.status).toBe(200);
+      expect(response.headers.get('X-Relay-Build')).toBeNull();
+    }
+  });
   it('answers HEAD', async () => expect((await call('/net/health', { method: 'HEAD' })).status).toBe(200));
   it('lets a listed origin read it, and no other', async () => {
     const listed = await call('/net/health', { headers: { Origin: 'https://abc.n-ga-ge.pages.dev' }, vars: LIST });

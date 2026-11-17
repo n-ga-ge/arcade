@@ -29,9 +29,12 @@
 # cloudflare/assets-worker/ (when that folder exists) is deployed after the
 # site, with CLOUDFLARE_API_TOKEN_WORKERS when that is set, and ASSETS_TOKEN
 # is then stored on it; after that the relay Worker in cloudflare/net-worker/
-# (when that folder exists) is deployed with the same token. A Worker that
-# cannot be deployed fails the run, and the message names it; the relay is
-# last, so it cannot keep the site or the game files from being deployed.
+# (when that folder exists) is deployed with the same token, unless the relay
+# that is live was built from the same files: a new version of it restarts
+# every room and cuts the players' connections, so an unchanged relay is left
+# alone (RELAY_DEPLOY=always deploys it regardless). A Worker that cannot be
+# deployed fails the run, and the message names it; the relay is last, so it
+# cannot keep the site or the game files from being deployed.
 # Anything else (another branch, a pull request, a tag)
 # is uploaded as the Pages branch "dev" (CF_PAGES_DEV_BRANCH), so it appears
 # at https://dev.<project>.pages.dev and at the host name pointed there
@@ -165,6 +168,25 @@ wrangler() { npx --yes "wrangler@$WRANGLER_VERSION" "$@"; }
 # skips the lookup by name, which a token limited to Workers may not be allowed.
 # The copy sits beside the original because the paths in it are relative, and
 # is removed on exit. worker_config <folder> sets WORKER_ARGS for that Worker.
+# What the relay Worker is built from, as one ID: the Git tree of its folder
+# at the commit being deployed. Empty when that cannot be told (no Git, or
+# the folder has changes that are not committed); the relay is then deployed
+# without asking what is live.
+relay_build() {
+  git -C "$ARCADE_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  [ -z "$(git -C "$ARCADE_ROOT" status --porcelain -- cloudflare/net-worker 2>/dev/null)" ] || return 0
+  git -C "$ARCADE_ROOT" rev-parse -q --verify "HEAD:cloudflare/net-worker" 2>/dev/null || true
+}
+# The build the live relay reports (the X-Relay-Build header of /net/health on
+# the first route of its configuration), or nothing.
+relay_live_build() {
+  local route
+  route=$(sed -nE 's/.*"pattern"[[:space:]]*:[[:space:]]*"([a-z0-9.-]+\/net\/)\*".*/\1/p' "$NET_WORKER_DIR/wrangler.jsonc" 2>/dev/null | head -n 1)
+  [ -n "$route" ] || return 0
+  curl -sS -m 20 -o /dev/null -D - "https://${route}health" 2>/dev/null | tr -d '\r' |
+    grep -i '^x-relay-build:' | head -n 1 | sed 's/^[^:]*:[[:space:]]*//' || true
+}
+
 WORKER_ARGS=()
 worker_config() {
   local dir=$1 name source= generated
@@ -214,8 +236,9 @@ if [ -n "$DRY_RUN" ]; then
     echo "No cloudflare/net-worker/ in this checkout: no relay Worker to deploy."
   else
     if [ "$ENVIRONMENT" = production ]; then
-      echo "and then, in cloudflare/net-worker/${CLOUDFLARE_ZONE_ID:+ (route zone by ID)}:"
-      show deploy
+      RELAY_BUILD=$(relay_build)
+      echo "and then, in cloudflare/net-worker/${CLOUDFLARE_ZONE_ID:+ (route zone by ID)}, unless the live relay is build ${RELAY_BUILD:-(unknown: always deployed)}:"
+      show deploy ${RELAY_BUILD:+--var "BUILD:$RELAY_BUILD"}
     else
       echo "The relay Worker is only deployed from $PRODUCTION_BRANCH."
     fi
@@ -337,14 +360,26 @@ if [ ! -d "$NET_WORKER_DIR" ]; then
 elif [ "$ENVIRONMENT" != production ]; then
   echo "Preview deployment: the relay Worker is only deployed from $PRODUCTION_BRANCH."
 else
-  echo "Deploying the relay Worker..."
-  [ ! -f "$NET_WORKER_DIR/package-lock.json" ] || (cd "$NET_WORKER_DIR" && npm ci --no-audit --no-fund)
-  worker_config "$NET_WORKER_DIR"
-  (cd "$NET_WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||
-    die "the deployment of the relay Worker (cloudflare/net-worker/) failed. The site and the assets Worker were deployed: $URL" \
-        "Multiplayer stays as it was before this run (not available, if this was the relay's first deployment)." \
-        "wrangler's message above says why. The relay has two Durable Object classes: the token needs Workers Scripts > Edit" \
-        "on the account, and the first deployment creates the classes (docs/deployment.md, \"The relay Worker\")."
+  # A new version of the Worker restarts its Durable Objects, which closes
+  # every player's connection. Most deployments do not touch the relay, so it
+  # is only deployed when its files differ from what the live one was built
+  # from.
+  RELAY_BUILD=$(relay_build)
+  RELAY_LIVE=
+  [ -z "$RELAY_BUILD" ] || [ "${RELAY_DEPLOY:-}" = always ] || RELAY_LIVE=$(relay_live_build)
+  if [ -n "$RELAY_BUILD" ] && [ "$RELAY_LIVE" = "$RELAY_BUILD" ]; then
+    echo "The relay Worker is unchanged (build $RELAY_BUILD is live): not deployed again, so rooms in use stay open."
+  else
+    echo "Deploying the relay Worker (build ${RELAY_BUILD:-unknown}; live: ${RELAY_LIVE:-none or unknown})..."
+    [ ! -f "$NET_WORKER_DIR/package-lock.json" ] || (cd "$NET_WORKER_DIR" && npm ci --no-audit --no-fund)
+    worker_config "$NET_WORKER_DIR"
+    [ -z "$RELAY_BUILD" ] || WORKER_ARGS+=(--var "BUILD:$RELAY_BUILD")
+    (cd "$NET_WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||
+      die "the deployment of the relay Worker (cloudflare/net-worker/) failed. The site and the assets Worker were deployed: $URL" \
+          "Multiplayer stays as it was before this run (not available, if this was the relay's first deployment)." \
+          "wrangler's message above says why. The relay has two Durable Object classes: the token needs Workers Scripts > Edit" \
+          "on the account, and the first deployment creates the classes (docs/deployment.md, \"The relay Worker\")."
+  fi
 fi
 
 echo "Deployment URL: $URL"

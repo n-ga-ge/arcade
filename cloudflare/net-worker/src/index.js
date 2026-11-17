@@ -10,6 +10,10 @@
 //
 // Rooms and lists are kept per host name the request arrived on, so the live
 // site and the dev site do not see each other's rooms.
+//
+// /net/health also names the build that is deployed (X-Relay-Build, from the
+// variable BUILD): tools/ci/deploy.sh reads it to leave an unchanged relay
+// alone, because a new version of the Worker restarts every room.
 
 import { checkOrigin } from './access.js';
 import { CLOSE, VERSION, isGame, parseJoin } from './protocol.js';
@@ -18,6 +22,7 @@ export { Directory } from './directory.js';
 export { Room } from './room.js';
 
 const ALLOW = 'GET, HEAD';
+const BUILD = /^[0-9a-f]{7,64}$/;
 
 function headers(access, extra = {}) {
   const all = new Headers({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin', ...extra });
@@ -90,7 +95,11 @@ export default {
       return text(405, 'Method not allowed', access, { Allow: ALLOW });
     }
     if (room !== null) return connect(request, env, url, room[1], access);
-    if (url.pathname === '/net/health') return json({ ok: true, v: VERSION }, access);
+    if (url.pathname === '/net/health') {
+      const response = json({ ok: true, v: VERSION }, access);
+      if (BUILD.test(env.BUILD ?? '')) response.headers.set('X-Relay-Build', env.BUILD);
+      return response;
+    }
     return rooms(env, url, access);
   },
 };

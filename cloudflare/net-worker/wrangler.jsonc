@@ -43,7 +43,11 @@
     // ("http://localhost:*"), and the word "none" for a request without an
     // Origin header (command-line tools; only for local use). Empty: only
     // the site.
-    "ALLOWED_ORIGINS": ""
+    "ALLOWED_ORIGINS": "",
+    // The Git tree of this folder that is deployed, set by tools/ci/deploy.sh
+    // (`--var BUILD:<id>`) and shown in the X-Relay-Build header of
+    // /net/health. Empty for a deployment made by hand.
+    "BUILD": ""
   },
 
   "observability": { "enabled": true }
