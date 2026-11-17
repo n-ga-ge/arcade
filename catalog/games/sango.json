@@ -1,13 +1,55 @@
 {
   "slug": "sango",
-  "title": "Sango",
+  "title": "Sango (三國演義)",
+  "publisher": "DigiRed Mobile Software",
+  "year": 2004,
+  "genre": "Role-playing",
   "uid": "0x101FE73A",
   "variantOf": null,
   "dump": "Sango",
-  "status": "untested",
+  "status": "ingame",
+  "statusNote": "Logo, intro poem, title menu and settings work; a new game opens with Liu Bei's first line and then the map, where the character walks and the mini-map, quick panel, help and pause menu open. The small text (dialogue, help) is drawn with rows of pixels missing and is hard to read.",
   "notes": [
-    "The dump has an English patch as a separate .SIS file, which a card install does not apply."
+    "The game is in Chinese only. Its title screen reads 三國演義 (Romance of the Three Kingdoms); the phone lists the app as SanGo.",
+    "The dump has an English patch as a separate .SIS file, which a card install does not apply.",
+    "Title menu, changed with left and right: 新游戏 new game, 读取进度 load, 设置 settings, 武将排行榜 ranking of generals, 退出 exit. In the settings the left soft key confirms (确定) and the right one cancels (取消).",
+    "Pause menu (right soft key): 返回游戏 return to the game, 保存游戏 save, 选项 options, 帮助 help, 退出游戏 quit."
   ],
-  "controls": null,
-  "test": null
+  "controls": {
+    "source": "Observed in play: moving, OK in menus, the mini-map on 0, the quick panel on the left soft key and 7, the pause menu on the right soft key. From the game's help (帮助, in Chinese and partly unreadable because of the damaged text): 5 confirming, the star key, the hash key and the keys 1 to 4.",
+    "actions": {
+      "up": "Move up",
+      "down": "Move down",
+      "left": "Move left; previous entry in the title menu",
+      "right": "Move right; next entry in the title menu",
+      "ok": "Confirm; next page of dialogue or help",
+      "5": "Confirm",
+      "lsk": "Show or hide the quick panel",
+      "rsk": "Pause menu",
+      "0": "Mini-map on or off",
+      "star": "Character and items screen",
+      "hash": "Switch to another member of the party",
+      "7": "Switch what the quick panel shows",
+      "1": "Quick panel slot 1 (special attack)",
+      "2": "Quick panel slot 2 (special attack)",
+      "3": "Quick panel slot 3 (special attack)",
+      "4": "Quick panel slot 4 (special attack)"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 12000
+      },
+      {
+        "key": "5",
+        "wait": 5000,
+        "repeat": 12
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  }
 }

@@ -1,11 +1,95 @@
 {
   "slug": "sega-rally",
   "title": "Sega Rally Championship",
+  "publisher": "Sega",
+  "genre": "Racing",
   "uid": "0x101FD3D3",
   "variantOf": null,
   "dump": "Sega Rally",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Logos, title, main menu and options work; a Free Run on the Oval course with the Peugeot loads, counts down and drives in 3D with the speedometer, lap times, the wrong-way warning and the pause menu.",
+  "notes": [
+    "Press 5 at the title. The main menu has Championship, Time Attack, Free Run, Records, Options and Exit; 5 selects, and Exit asks Yes or No.",
+    "Before a race you choose a course, a car and an automatic or manual gearbox. Only the automatic gearbox was tried here."
+  ],
+  "controls": {
+    "source": "Observed in play: 5 accelerating, left and right steering, 7 slowing the car faster than coasting, the pause menu on the right soft key, and 5 and the direction keys in the menus. The game has no key help in its menus.",
+    "actions": {
+      "left": "Steer left; change an option in menus",
+      "right": "Steer right; change an option in menus",
+      "up": "Move up in menus",
+      "down": "Move down in menus",
+      "5": "Accelerate; select in menus",
+      "7": "Brake",
+      "rsk": "Pause menu (Continue, Restart, Retire)"
+    },
+    "keyboard": {
+      "5": [
+        "KeyX",
+        "Space",
+        "Enter",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyZ",
+        "Digit7",
+        "Numpad7"
+      ],
+      "rsk": [
+        "Escape",
+        "KeyW"
+      ]
+    },
+    "gamepad": {
+      "5": [
+        "b0",
+        "b7"
+      ],
+      "7": [
+        "b2",
+        "b6"
+      ],
+      "rsk": [
+        "b9"
+      ]
+    },
+    "notes": [
+      "Racing layout: arrows steer, X, Space or Enter accelerates (5), Z brakes (7), Escape pauses. On a gamepad A or the right trigger accelerates, X or the left trigger brakes and Start pauses."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 35000
+      },
+      {
+        "key": "5",
+        "wait": 6000
+      },
+      {
+        "key": "down",
+        "wait": 1500,
+        "repeat": 2
+      },
+      {
+        "key": "5",
+        "wait": 4500,
+        "repeat": 6
+      },
+      {
+        "wait": 30000
+      },
+      {
+        "key": "5",
+        "hold": 1500,
+        "wait": 1000,
+        "repeat": 2
+      },
+      {
+        "wait": 1000
+      }
+    ]
+  }
 }

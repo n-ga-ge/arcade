@@ -1,11 +1,122 @@
 {
   "slug": "rayman-3",
   "title": "Rayman 3",
+  "publisher": "Gameloft",
+  "year": 2003,
+  "genre": "Platformer",
   "uid": "0x101FE1CA",
   "variantOf": null,
   "dump": "Rayman 3",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Intro, title, main menu, help and the story screens work; a new game in the first save slot starts the first level, where Rayman runs, jumps and punches and the pause menu opens.",
+  "notes": [
+    "Single Player has three save slots; pick an empty one to start. The story pages before the first level can be skipped with the left soft key.",
+    "Multiplayer (Host Game, Join Game) needs Bluetooth and a second N-Gage. Do not choose Host Game here: the game stops drawing and has to be restarted."
+  ],
+  "controls": {
+    "source": "The game's Help screens (menu keys, move, jump, punch, pause). OK selecting in menus was observed.",
+    "actions": {
+      "up": "Move Rayman; move the arrow in menus",
+      "down": "Move Rayman; move the arrow in menus",
+      "left": "Move left; change an option in menus",
+      "right": "Move right; change an option in menus",
+      "5": "Jump; select in menus",
+      "7": "Punch; back in menus",
+      "ok": "Select in menus",
+      "lsk": "Pause; select in menus; skip the story",
+      "rsk": "Pause; back in menus"
+    },
+    "keyboard": {
+      "5": [
+        "Space",
+        "KeyZ",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "KeyX",
+        "Digit7",
+        "Numpad7"
+      ],
+      "ok": [
+        "Enter"
+      ]
+    },
+    "gamepad": {
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b2",
+        "b1"
+      ],
+      "ok": [
+        "b3"
+      ]
+    },
+    "notes": [
+      "Platformer layout: jump (5) on Space or Z and punch (7) on X, besides the digit keys. On a gamepad A jumps, X or B punches and Y is OK; in menus A selects and B goes back."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 8000
+      },
+      {
+        "key": "5",
+        "hold": 250,
+        "wait": 3000,
+        "repeat": 10
+      },
+      {
+        "key": "lsk",
+        "hold": 400,
+        "wait": 7000
+      },
+      {
+        "key": "5",
+        "hold": 250,
+        "wait": 3000,
+        "repeat": 4
+      },
+      {
+        "key": "lsk",
+        "hold": 400,
+        "wait": 7000
+      },
+      {
+        "key": "5",
+        "hold": 250,
+        "wait": 3000,
+        "repeat": 4
+      },
+      {
+        "key": "lsk",
+        "hold": 400,
+        "wait": 7000
+      },
+      {
+        "key": "5",
+        "hold": 250,
+        "wait": 3000,
+        "repeat": 4
+      },
+      {
+        "key": "lsk",
+        "hold": 400,
+        "wait": 7000
+      },
+      {
+        "key": "5",
+        "hold": 250,
+        "wait": 3000,
+        "repeat": 4
+      },
+      {
+        "wait": 3000
+      }
+    ]
+  }
 }

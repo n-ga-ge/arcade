@@ -1,11 +1,111 @@
 {
   "slug": "rifts-promise-of-power",
   "title": "Rifts: Promise of Power",
+  "publisher": "Nokia",
+  "year": 2005,
+  "genre": "Role-playing",
   "uid": "0x101FD3F2",
   "variantOf": null,
   "dump": "Rifts - Promise Of Power",
-  "status": "untested",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "Logos, main menu, options and character creation work; after the story slideshow the first scene plays: the conversation with Larson, picking up the bag, then walking around the map, rotating the view, the area map and the pause menu.",
+  "notes": [
+    "The OK key (pad press) does nothing in this game: 5 is the action and select key and 7 cancels. The layout here puts 5 on Enter and Space and 7 on Backspace and Escape.",
+    "Start Game leads through choosing a character class, Preset or Custom, and a name (the digits type letters; move down to Accept and press 5). The story slideshow that follows takes about two minutes and cannot be skipped.",
+    "The keys can be changed in the game under Options > Controller.",
+    "Bluetooth and N-Gage Arena in the main menu are multiplayer and online features that cannot work here."
+  ],
+  "controls": {
+    "source": "The game's Options > Controller screen (its defaults) for the digit keys. Moving, 5 selecting in menus and conversations, 2 and 3 turning the view, 9 opening the map, 7 closing it, the soft keys and OK doing nothing were observed in play.",
+    "actions": {
+      "up": "Move; move up in menus",
+      "down": "Move; move down in menus",
+      "left": "Move",
+      "right": "Move",
+      "5": "Action; select in menus; next line in conversations",
+      "7": "Run / cancel; close the map",
+      "2": "Rotate the view left",
+      "3": "Rotate the view right",
+      "8": "Switch character",
+      "9": "Map",
+      "0": "Info",
+      "lsk": "Pause menu; select in menus",
+      "rsk": "Pause menu; back in menus"
+    },
+    "keyboard": {
+      "5": [
+        "Enter",
+        "Space",
+        "Digit5",
+        "Numpad5"
+      ],
+      "7": [
+        "Backspace",
+        "Escape",
+        "Digit7",
+        "Numpad7"
+      ]
+    },
+    "gamepad": {
+      "5": [
+        "b0"
+      ],
+      "7": [
+        "b1"
+      ],
+      "0": [
+        "b2"
+      ],
+      "9": [
+        "b3"
+      ],
+      "2": [
+        "b4"
+      ],
+      "3": [
+        "b5"
+      ],
+      "8": [
+        "b6"
+      ],
+      "lsk": [
+        "b9"
+      ],
+      "rsk": [
+        "b8"
+      ]
+    },
+    "notes": [
+      "Keyboard: the standard layout, except that Enter and Space press 5 and Backspace and Escape press 7. Gamepad: A is 5 (action), B is 7 (cancel), X is info, Y is the map, the shoulder buttons rotate the view, the left trigger switches character, Start and Back are the soft keys."
+    ]
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 35000
+      },
+      {
+        "key": "5",
+        "wait": 3000,
+        "repeat": 14
+      },
+      {
+        "key": "down",
+        "wait": 1500
+      },
+      {
+        "key": "5",
+        "wait": 4000
+      },
+      {
+        "key": "5",
+        "wait": 2400,
+        "repeat": 95
+      },
+      {
+        "wait": 2000
+      }
+    ]
+  }
 }
