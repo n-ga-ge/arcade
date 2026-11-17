@@ -15,8 +15,8 @@ Credentials come from the environment only:
                                SHA-256 of its value as the secret. The id is
                                looked up with the token verify call.
   CLOUDFLARE_API_TOKEN         used when CLOUDFLARE_API_TOKEN_R2 is not set, for a
-                               setup with one token for everything (the name
-                               wrangler and the deployment use)
+                               setup with one token for everything (wrangler's
+                               own name for a token)
 """
 import base64
 import datetime

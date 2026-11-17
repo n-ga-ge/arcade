@@ -1,22 +1,26 @@
-// The assets Worker: serves n-ga.ge/assets/* from the private R2 bucket.
-// README.md explains every setting; `npx wrangler deploy` publishes it.
+// The assets Worker: serves /assets/* on n-ga.ge and dev.n-ga.ge from the
+// private R2 bucket. README.md explains every setting. tools/ci/deploy.sh
+// publishes it with every production deployment (by hand: `npx wrangler
+// deploy`); when CLOUDFLARE_ZONE_ID is set it deploys from a copy of this
+// file in which each "zone_name" is replaced by "zone_id".
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "n-ga-ge-assets",
   "main": "src/index.js",
   "compatibility_date": "2026-11-01",
 
-  // The site's hostname, here and nowhere else. The Pages site owns the rest
-  // of the hostname, so the route covers /assets/ only. The Worker takes the
+  // The site's hostnames, here and nowhere else. The Pages site owns the rest
+  // of each hostname, so a route covers /assets/ only. The Worker takes the
   // site's origin from the request it receives.
   "routes": [
     { "pattern": "n-ga.ge/assets/*", "zone_name": "n-ga.ge" },
-    // The dev site (dev deployments of the Pages project) loads its games the same way.
+    // The dev site (the Pages branch "dev", where every deployment that is
+    // not production goes) loads its games the same way.
     { "pattern": "dev.n-ga.ge/assets/*", "zone_name": "n-ga.ge" }
   ],
 
-  // Also at https://n-ga-ge-assets.<account subdomain>.workers.dev, which is
-  // what preview deployments of the site and CI can use.
+  // Also at https://n-ga-ge-assets.<account subdomain>.workers.dev. Nothing
+  // uses that address now: CI downloads through n-ga.ge/assets/.
   "workers_dev": true,
   "preview_urls": false,
 
@@ -31,7 +35,9 @@
     "ALLOWED_ORIGINS": ""
   },
 
-  // The secret ASSETS_TOKEN is not in this file: `npx wrangler secret put ASSETS_TOKEN`.
+  // The secret ASSETS_TOKEN is not in this file: tools/ci/deploy.sh stores it
+  // after every production deployment, from CI's secret of the same name
+  // (by hand: `npx wrangler secret put ASSETS_TOKEN`).
 
   "observability": { "enabled": true }
 }

@@ -1,4 +1,9 @@
-# CI for n-ga.ge/arcade on Forgejo Actions (runners labelled ubuntu-latest).
+# CI for n-ga.ge/arcade on Forgejo Actions (runners labelled ubuntu-latest;
+# on this forge that is a node:lts container). docs/ci.md describes it.
+#
+# Runs for every push to main, for every pull request and when started by
+# hand. A newer run of the same branch or pull request cancels the one in
+# progress, and every run on main that gets through deploys production.
 #
 #   build    builds the WebAssembly player from the eka2l1 submodule (or takes
 #            the one an earlier run built from the same emulator commit),
@@ -10,7 +15,9 @@
 #   status   collects the results into status.json and the screenshots the
 #            front page shows; runs even when games fail
 #   deploy   builds the site and publishes it to Cloudflare: production on
-#            main, the dev site for a pull request or a manual run elsewhere
+#            main, the dev site for a pull request or a manual run elsewhere.
+#            Runs even when games failed (the front page reports them), but
+#            not when the status job itself failed
 #
 # Configuration, under the repository's (or the organisation's) Settings >
 # Actions. A job whose configuration is missing is skipped, and the "Plan the
@@ -22,12 +29,15 @@
 #                                   served by the assets Worker from the R2 bucket
 #     CF_PAGES_PROJECT              Cloudflare Pages project; "n-ga-ge" when unset
 #   Secrets
-#     ASSETS_TOKEN                  bearer token for ASSETS_URL
+#     ASSETS_TOKEN                  bearer token for ASSETS_URL; a production
+#                                   deployment stores it on the assets Worker,
+#                                   which is what makes the Worker accept it
 #     CLOUDFLARE_API_TOKEN_PAGES    Cloudflare token that uploads the site
 #     CLOUDFLARE_ACCOUNT_ID         the Cloudflare account the site lives in
 #     CLOUDFLARE_API_TOKEN_WORKERS  optional: a separate token that deploys the
 #                                   assets Worker, when the Pages one may not
-#     CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's route
+#     CLOUDFLARE_ZONE_ID            optional: the zone of the Worker's routes,
+#                                   which then name it by ID instead of by name
 #     FORGE_TOKEN                   an access token of this forge with repository
 #                                   read access, for the checkout and for the
 #                                   eka2l1 submodule while n-ga.ge/EKA2L1 is
@@ -38,10 +48,11 @@
 #
 # The game jobs need ASSETS_URL and ASSETS_TOKEN, the deployment needs
 # CLOUDFLARE_API_TOKEN_PAGES and CLOUDFLARE_ACCOUNT_ID. Pull requests from
-# forks get no secrets, so there the game tests and the preview are skipped
+# forks get no secrets, so there the game tests and the deployment are skipped
 # and only build runs. tools/ci/deploy.sh decides what a deployment is: main
 # goes live and deploys the Worker, anything else (a pull request above all)
-# becomes the dev deployment at https://dev.<project>.pages.dev (dev.n-ga.ge).
+# becomes the dev deployment at https://dev.<project>.pages.dev (dev.n-ga.ge),
+# which the plan step and the Pages project call a preview.
 #
 # The firmware and the game cards are copyrighted. They are downloaded into
 # testdata/ inside a game job and must never be uploaded as an artifact or
