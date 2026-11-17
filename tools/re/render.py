@@ -21,7 +21,8 @@ The rules, which the GPU layer follows too:
     triangle differ, u, v and the colour are interpolated with perspective;
   - colour is 0xAARRGGBB and multiplies the texel;
   - blend `none` replaces, `key` replaces unless the texel's alpha is zero,
-    `alpha` mixes by alpha, `add` and `multiply` do that;
+    `alpha` mixes by alpha, `add` and `multiply` do that, `subtract` takes the
+    colour from the pixel and stops at black;
   - depth `none` draws in order; the others compare z as named and write it.
 """
 import argparse
@@ -126,6 +127,8 @@ def render(frame, textures, scale, background=(0, 0, 0)):
                         r, g, b = r + out[pixel], g + out[pixel + 1], b + out[pixel + 2]
                     elif blend == 'multiply':
                         r, g, b = r * out[pixel] / 255, g * out[pixel + 1] / 255, b * out[pixel + 2] / 255
+                    elif blend == 'subtract':
+                        r, g, b = out[pixel] - r, out[pixel + 1] - g, out[pixel + 2] - b
 
                     out[pixel] = min(255, max(0, int(r)))
                     out[pixel + 1] = min(255, max(0, int(g)))

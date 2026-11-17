@@ -23,6 +23,11 @@
     ],
     "status": "untested"
   },
+  "enhance": {
+    "engine": "airplay",
+    "status": "experimental",
+    "note": "The race's 3D is captured in full (polygons, rectangles, lines, textures, colours, blending). The HUD and the background above the horizon stay the game's own. The pause menu's blue tint is a pass over the whole screen and is not captured; textured shading is approximate."
+  },
   "controls": {
     "source": "The game's defaults from Options > Controls (Control Configuration). Accelerate, turning, jump, the camera switch and the pause menu were also tried in a race; that 5 and OK select in menus was observed.",
     "actions": {

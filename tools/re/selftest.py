@@ -69,6 +69,15 @@ def main():
     cover, diff = render.compare(small, once, covered)
     ok &= check('four times the size, scaled back, is the same picture', (sw, sh) == (8, 8) and diff < 1 and cover > 0.7)
 
+    # Subtracting takes the colour from what is there and stops at black.
+    grey = vertex(0, 0, 0xFF808080) + vertex(8, 0, 0xFF808080) + vertex(0, 8, 0xFF808080)
+    shade = vertex(0, 0, 0xFF40C000) + vertex(8, 0, 0xFF40C000) + vertex(0, 8, 0xFF40C000)
+    frame = {'width': 8, 'height': 8, 'textures': [], 'vertices': grey + shade,
+             'draws': [{'first': 0, 'count': 3, 'texture': -1, 'blend': 'none', 'depth': 'none'},
+                       {'first': 3, 'count': 3, 'texture': -1, 'blend': 'subtract', 'depth': 'none'}]}
+    _, _, rgba, _ = render.render(frame, {}, 1)
+    ok &= check('subtract darkens and does not go below black', rgba[0:3] == bytes((0x40, 0, 0x80)))
+
     sys.exit(0 if ok else 1)
 
 
