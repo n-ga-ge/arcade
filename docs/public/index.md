@@ -16,15 +16,19 @@ open-source Symbian emulator, built here to run inside a web page.
 
 Everything happens on your own device. The game is downloaded once, runs in
 your browser, and keeps its saves in your browser. Nothing you do in a game is
-sent anywhere.
+sent anywhere, with one exception: when you play with someone else, what your
+game sends to theirs passes through the site.
 
 Emulation is demanding. A recent computer runs most games at their original
 speed; older computers may be slow. The site has been tried in Chrome and
 Firefox on a computer. It has not been tried on real phones and tablets, or in
 Safari.
 
-What needed a second N-Gage or an online service does not work: multiplayer
-over Bluetooth and N-Gage Arena.
+Many of the games could be played together, from one N-Gage to another over
+Bluetooth. The site can connect two players' games over the internet instead:
+see [playing with someone else](playing.md#playing-with-someone-else). This
+is new, and a game is only known to work this way once its page says so. What
+needed an online service does not work: N-Gage Arena was shut down long ago.
 
 ## What the labels on the games mean
 

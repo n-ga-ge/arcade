@@ -76,10 +76,12 @@ browser.
 ## The menu
 
 **Pause** and **Menu** are above the picture. The game also pauses by itself
-when you switch to another tab.
+when you switch to another tab, except while you are playing with someone
+else.
 
 The menu restarts the game, mutes the sound, goes fullscreen, and opens the
-controls, the display settings, your saves and the guide to the running game.
+controls, the display settings, your saves, multiplayer and the guide to the
+running game.
 **Copy link to this game** gives you a link that starts it directly, and
 **All games** takes you back to the front page.
 
@@ -94,6 +96,47 @@ Use it as a backup, or to move your saves to another browser or device.
 Clearing this site's data in the browser deletes your saves and the games kept
 on your device, and a private window keeps nothing after it closes. Export
 first.
+
+## Playing with someone else
+
+Many N-Gage games could be played together over Bluetooth: one phone hosted a
+game and the others joined it. Here you can do the same over the internet.
+Each of you plays in your own browser, and to the games the other players
+look like N-Gages nearby.
+
+First meet in a room:
+
+1. Open **Menu → Multiplayer…** once the game has started.
+2. Set a name. It is what the other players see.
+3. Choose **Host a room**. You get a room code and an invite link, with
+   **Copy link** to copy it.
+4. Send the link to your friend. If you would like anyone to be able to join,
+   tick **List this room publicly**: the room is then shown, with your name,
+   to everyone who looks at the game.
+
+To join, your friend opens the link. Or they start the same game, open
+**Menu → Multiplayer…**, choose **Join** and type the code, or pick the room
+from the open rooms listed there. Open rooms are also shown on the front
+page.
+
+Then use the game's own multiplayer menu, as you would on two N-Gages: one of
+you hosts the game and the others join it.
+
+**Leave room** ends it. A room exists only while someone is in it.
+
+Good to know:
+
+- **Keep the tab in front**, both of you. A browser slows down a tab you
+  cannot see, and the game may then lose its connection to the other player.
+- **Play with two for now.** A room takes more people, but games are not
+  expected to connect more than two players yet.
+- **N-Gage Arena does not work.** It was Nokia's online service, and it has
+  been shut down.
+- **This is new, and most games have not been tried this way.** Each game's
+  page says whether its multiplayer has been tried, and a game that has not
+  been tried may not connect.
+- While you are in a room, what your game sends to the other players passes
+  through the site on its way to them, together with the name you set.
 
 ## Display
 
@@ -123,5 +166,8 @@ none yet. Files you choose from your device are not uploaded anywhere.
   does not say **Unmute**.
 - **The game is slow or stutters.** Close other heavy tabs. The speed depends
   on your processor; the display options make no difference.
+- **The other player's game does not find yours.** Check in
+  **Menu → Multiplayer…** that you are both in the same room, keep both tabs
+  in front, and let one game host before the other searches.
 - **A game does not start.** Check its label on the front page: not every game
   works yet. **Menu → Guide** says how far the running game gets.
