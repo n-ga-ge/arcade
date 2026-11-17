@@ -1,0 +1,542 @@
+{
+  "engine": "call-of-duty",
+  "about": "The engine of Call of Duty (2004). Captures the sky, the world and the models as textured polygons after clipping, with light and fog as vertex colours. The weapon, the muzzle flash and the HUD are 2D and left to the game. The game reads back which soldier is under the crosshair, so a polygon over that pixel is never skipped.",
+  "images": [
+    {
+      "name": "6r48.app",
+      "hash": "0x8412A469",
+      "game": "call-of-duty",
+      "hooks": [
+        {
+          "at": "0x176c8",
+          "do": "begin",
+          "note": "Draws one frame of a mission; r0 is the renderer. The target is the 12-bit screen buffer, where the 3D picture and then the 2D end up.",
+          "target": {
+            "pixels": "u32(r0 + 0x480)",
+            "width": 176,
+            "height": 208,
+            "pitch": 352,
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x3eb00",
+          "do": "draw",
+          "note": "Sky polygon: a 256 by 256 picture of 12-bit colours, no light, no fog, drawn first and over everything.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": 256,
+            "height": 256,
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x3eb00",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x44d88",
+          "do": "set",
+          "vars": {
+            "row": "sar(max(max(max(s32(r1 + 24), s32(r1 + 68)), max(s32(r1 + 112), s32(r1 + 24 + 132 * (r2 > 3)))), max(max(s32(r1 + 24 + 176 * (r2 > 4)), s32(r1 + 24 + 220 * (r2 > 5))), max(s32(r1 + 24 + 264 * (r2 > 6)), s32(r1 + 24 + 308 * (r2 > 7))))), 8)"
+          }
+        },
+        {
+          "at": "0x44d88",
+          "do": "draw",
+          "note": "World polygon, far, on a map with fog.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3)) * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "g": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3)) * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "b": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3)) * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 4)",
+            "height": "1 << u32(sp + 4)",
+            "format": "p8",
+            "palette": "u32(sp + 12) + 512 * $row",
+            "paletteFormat": "rgb444",
+            "id": "u32(sp) + (((u32(sp + 12) >> 9) + $row) & 0x3fff)"
+          },
+          "blend": "none",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x44d88",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x435c4",
+          "do": "set",
+          "vars": {
+            "row": "sar(max(max(max(s32(r1 + 24), s32(r1 + 68)), max(s32(r1 + 112), s32(r1 + 24 + 132 * (r2 > 3)))), max(max(s32(r1 + 24 + 176 * (r2 > 4)), s32(r1 + 24 + 220 * (r2 > 5))), max(s32(r1 + 24 + 264 * (r2 > 6)), s32(r1 + 24 + 308 * (r2 > 7))))), 8)"
+          }
+        },
+        {
+          "at": "0x435c4",
+          "do": "draw",
+          "note": "World polygon, near (the game corrects the perspective), on a map with fog.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3)) * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "g": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3)) * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "b": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3)) * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 4)",
+            "height": "1 << u32(sp + 4)",
+            "format": "p8",
+            "palette": "u32(sp + 12) + 512 * $row",
+            "paletteFormat": "rgb444",
+            "id": "u32(sp) + (((u32(sp + 12) >> 9) + $row) & 0x3fff)"
+          },
+          "blend": "none",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x435c4",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x447ac",
+          "do": "set",
+          "vars": {
+            "row": "sar(max(max(max(s32(r1 + 24), s32(r1 + 68)), max(s32(r1 + 112), s32(r1 + 24 + 132 * (r2 > 3)))), max(max(s32(r1 + 24 + 176 * (r2 > 4)), s32(r1 + 24 + 220 * (r2 > 5))), max(s32(r1 + 24 + 264 * (r2 > 6)), s32(r1 + 24 + 308 * (r2 > 7))))), 8)"
+          }
+        },
+        {
+          "at": "0x447ac",
+          "do": "draw",
+          "note": "World polygon, far, on a map without fog. Not seen running.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3))",
+            "g": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3))",
+            "b": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3))"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 4)",
+            "height": "1 << u32(sp + 4)",
+            "format": "p8",
+            "palette": "u32(sp + 12) + 512 * $row",
+            "paletteFormat": "rgb444",
+            "id": "u32(sp) + (((u32(sp + 12) >> 9) + $row) & 0x3fff)"
+          },
+          "blend": "none",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x447ac",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x42554",
+          "do": "set",
+          "vars": {
+            "row": "sar(max(max(max(s32(r1 + 24), s32(r1 + 68)), max(s32(r1 + 112), s32(r1 + 24 + 132 * (r2 > 3)))), max(max(s32(r1 + 24 + 176 * (r2 > 4)), s32(r1 + 24 + 220 * (r2 > 5))), max(s32(r1 + 24 + 264 * (r2 > 6)), s32(r1 + 24 + 308 * (r2 > 7))))), 8)"
+          }
+        },
+        {
+          "at": "0x42554",
+          "do": "draw",
+          "note": "World polygon, near, on a map without fog. Not seen running.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3))",
+            "g": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3))",
+            "b": "255 * min(1, (fx(s32(p + 24), 8) - 1.7) / max($row - 1.7, 0.3))"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 4)",
+            "height": "1 << u32(sp + 4)",
+            "format": "p8",
+            "palette": "u32(sp + 12) + 512 * $row",
+            "paletteFormat": "rgb444",
+            "id": "u32(sp) + (((u32(sp + 12) >> 9) + $row) & 0x3fff)"
+          },
+          "blend": "none",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x42554",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x3a024",
+          "do": "draw",
+          "note": "Model polygon, near, with fog.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "g": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "b": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x3a024",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x3b0c8",
+          "do": "draw",
+          "note": "Model polygon, far, with fog.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "g": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "b": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x3b0c8",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x39568",
+          "do": "draw",
+          "note": "Model polygon, near, without fog. Not seen running.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x39568",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x3ac08",
+          "do": "draw",
+          "note": "Model polygon, far, without fog. Not seen running.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x3ac08",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x3b67c",
+          "do": "draw",
+          "note": "Polygon of a model that can be aimed at (it also marks its pixels in the buffer of the crosshair), near, with fog.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "g": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "b": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x3b67c",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x3d2c8",
+          "do": "draw",
+          "note": "Polygon of a model that can be aimed at, far, with fog. Not seen running.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)",
+            "r": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "g": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)",
+            "b": "255 * (1 - min(s32(p + 8) * u32(r0 + 0x5c8) / 1048576, 15.99) / 16)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x3d2c8",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x3c2bc",
+          "do": "draw",
+          "note": "Polygon of a model that can be aimed at, near, without fog. Not seen running.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x3c2bc",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x3cdd0",
+          "do": "draw",
+          "note": "Polygon of a model that can be aimed at, far, without fog. Not seen running.",
+          "mode": "fan",
+          "count": "r2",
+          "vertex": "r1 + 44 * i",
+          "fields": {
+            "x": "fx(s32(p + 4), 8) + 0.5",
+            "y": "fx(s32(p), 8) + 0.5",
+            "z": "-65536 / max(s32(p + 8), 1)",
+            "w": "max(s32(p + 8), 1)",
+            "u": "fx(s32(p + 28), 8)",
+            "v": "fx(s32(p + 32), 8)"
+          },
+          "texture": {
+            "pixels": "u32(sp)",
+            "width": "1 << u32(sp + 8)",
+            "height": "1 << u32(sp + 8)",
+            "format": "rgb444",
+            "key": "0xf0f"
+          },
+          "blend": "key",
+          "depth": "less"
+        },
+        {
+          "at": "0x3cdd0",
+          "do": "set",
+          "when": "r2 <= 8 && (min(min(min(s32(r1 + 4), s32(r1 + 48)), min(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), min(min(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), min(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) > 22784 || max(max(max(s32(r1 + 4), s32(r1 + 48)), max(s32(r1 + 92), s32(r1 + 4 + 132 * (r2 > 3)))), max(max(s32(r1 + 4 + 176 * (r2 > 4)), s32(r1 + 4 + 220 * (r2 > 5))), max(s32(r1 + 4 + 264 * (r2 > 6)), s32(r1 + 4 + 308 * (r2 > 7))))) < 22272 || min(min(min(s32(r1 + 0), s32(r1 + 44)), min(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), min(min(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), min(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) > 26880 || max(max(max(s32(r1 + 0), s32(r1 + 44)), max(s32(r1 + 88), s32(r1 + 0 + 132 * (r2 > 3)))), max(max(s32(r1 + 0 + 176 * (r2 > 4)), s32(r1 + 0 + 220 * (r2 > 5))), max(s32(r1 + 0 + 264 * (r2 > 6)), s32(r1 + 0 + 308 * (r2 > 7))))) < 26368)",
+          "skip": true,
+          "note": "When replacing: the game need not draw this polygon itself, because it is not under the crosshair.",
+          "vars": {
+            "away": 1
+          }
+        },
+        {
+          "at": "0x19068",
+          "do": "end",
+          "note": "In the frame function, the instruction after the call (to 0x46b88) that copies the finished 3D picture to the screen buffer through the fog table. The target holds the 3D alone here; the weapon and the HUD are drawn next."
+        }
+      ]
+    }
+  ]
+}
