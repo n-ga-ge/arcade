@@ -361,9 +361,8 @@ fi
 
 # --- the relay Worker (production only) --------------------------------------------
 
-# Last, so that a relay that cannot be deployed (its Durable Objects need more
-# of the account and the token than the assets Worker does) leaves the site
-# and the game files deployed. It still fails the run.
+# Last, so that a relay that cannot be deployed leaves the site and the game
+# files deployed. It still fails the run.
 if [ ! -d "$NET_WORKER_DIR" ]; then
   echo "No cloudflare/net-worker/ in this checkout: no relay Worker to deploy."
 elif [ "$ENVIRONMENT" != production ]; then
