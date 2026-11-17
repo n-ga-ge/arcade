@@ -43,13 +43,18 @@
 //
 // Exit code 0 on pass, 1 on fail, 2 when the command line is wrong. It always
 // ends: every wait has a limit and the browser and the server are stopped.
+//
+// Beside the verdict the result keeps what the player's diagnostics said about
+// the run ("perf": frame rates and the codes of its findings; perfFrom() in
+// gamecheck.mjs, docs/diagnostics.md). That is a record only: it never changes
+// pass or fail, and a player without diagnostics has no such block.
 import { chromium } from 'playwright';
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SHOWN_AT, checkScript, difference, likeness, picture, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
+import { SHOWN_AT, checkScript, difference, likeness, perfFrom, picture, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OPTIONS = { game: 'value', out: 'value', browser: 'value', port: 'value', bin: 'value', assets: 'value', entry: 'value', 'time-limit': 'value', verbose: 'flag' };
@@ -104,6 +109,9 @@ const BOOT_MAX_MS = 45000;
 // Generous: the CI machine is slow and shared.
 const ANSWER_MS = 30000;
 const PAGE_MS = 30000;
+// The diagnostics report is a record, not a check: it gets this long and is
+// done without when it takes longer.
+const PERF_MS = 2000;
 // A picture counts as changed when more than this share of its pixels differ.
 const CHANGED_SHARE = 0.001;
 const CONSOLE_KEPT = 200;
@@ -125,6 +133,8 @@ const run = {
   version: null,
   renderer: null,
   checks: {},
+  perf: null, // what the player's diagnostics said, when it has them
+  perfAsked: false, // at the end of the script
   shot: null, // the last screenshot worth keeping
   shotBlank: true,
   console: [],
@@ -200,6 +210,7 @@ async function finish() {
     commit: commit(),
     checks: run.checks,
   };
+  if (run.perf) result.perf = run.perf;
   if (better) {
     result.better = true;
     result.note = `listed as ${expect}, reached ${run.reached}: the catalogue entry can be updated`;
@@ -222,6 +233,10 @@ async function finish() {
   }
 
   const level = run.reached === null ? 'not run' : `reached ${run.reached}`;
+  if (run.perf) {
+    const { findings, ...numbers } = run.perf;
+    console.log(`diagnostics  ${run.slug}  ${Object.entries(numbers).map(([name, value]) => `${name} ${value}`).join(', ')}; findings: ${findings.join(', ') || 'none'}`);
+  }
   console.log(`${result.pass ? 'PASS' : 'FAIL'}  ${run.slug}  ${level}${expect ? ` (expected ${expect})` : ''} in ${result.seconds} s${better ? '  BETTER than listed' : ''}${error ? `  ${error}` : ''}`);
 
   // Closing can hang when the browser is stuck; exiting kills what is left
@@ -516,6 +531,41 @@ async function pictureChanges(before, press, actionKeys = []) {
   return null;
 }
 
+// What the player's diagnostics say about the run so far, as the result's
+// "perf" block, or null. Never in the way: it does not go through ask(), so a
+// game that has just failed can still be asked what it found, and a player
+// without diagnostics, a page that is gone or one that does not answer in
+// time gives null and no error. Why a player that has diagnostics gave no
+// block is printed, because the result does not say.
+async function askPerf() {
+  if (!page) return null;
+  const asked = Date.now();
+  let perf = null;
+  try {
+    const report = await withTimeout(page.evaluate(() => {
+      const diag = window.eka2l1Page && window.eka2l1Page.diag;
+      return diag && typeof diag.report === 'function' ? diag.report() : null;
+    }), PERF_MS, 'the report');
+    perf = perfFrom(report);
+    if (report !== null && !perf) console.log(`diagnostics  ${run.slug}  not kept: what the page answered is not a report`);
+  } catch (error) {
+    console.log(`diagnostics  ${run.slug}  not read: ${firstLine(error)}`);
+  }
+  if (args.verbose) console.log(`  the diagnostics report took ${Date.now() - asked} ms`);
+  return perf;
+}
+
+// The read at the end of the run. A run that got to the end of its script has
+// its numbers from there (see test()); when it then ended with an error, it is
+// asked again for what was found since: the crash, the lost picture. A run
+// that never got that far is asked here for the first time.
+async function lastPerf() {
+  if (run.perfAsked && !run.error) return;
+  const later = await askPerf();
+  if (run.perf && later) run.perf.findings = [...new Set([...later.findings, ...run.perf.findings])];
+  else run.perf = run.perf || later;
+}
+
 // --- the test --------------------------------------------------------------------
 
 async function test() {
@@ -647,6 +697,12 @@ async function test() {
   const least = script ? 0 : BOOT_MIN_MS;
   while (Date.now() - since < BOOT_MAX_MS && !(Date.now() - since >= least && watch.sawPicture && watch.sawFrames)) await pause(500);
 
+  // The diagnostics are read here, at the end of the script: their rates are
+  // those of the last half minute of play, and the checks below pause the
+  // emulator and press keys of their own, which is not the game's speed.
+  run.perfAsked = true;
+  run.perf = await guard(askPerf());
+
   // How far did it get? Still here means: installed, launched, no reported
   // error, no abort, not exited.
   run.phase = script ? 'checking the screen after the script' : 'checking the screen';
@@ -711,4 +767,8 @@ try {
 } catch (error) {
   failed(error);
 }
+// What the diagnostics found is worth the most on a run that failed (a crash,
+// an unsupported browser). A run that the time limit or a signal ends does
+// not come by here: it keeps what it had.
+await lastPerf();
 await finish();
