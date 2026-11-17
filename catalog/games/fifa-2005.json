@@ -13,14 +13,16 @@
     "The first screen asks for a favourite team: 5 picks the one shown, 9 means no favourite. Either way a confirmation follows with Cancel preselected; move up to Ok and press 5.",
     "Menus show their own key hints: 5 selects (OK works too in most menus), 7 goes back.",
     "Left idle on the first screens, the game starts a demo match; a soft key leaves it for the main menu.",
-    "Multiplayer (Bluetooth) and N-Gage Arena cannot work here."
+    "Multiplayer (Bluetooth, Host or Join in the main menu's Multiplayer) does not work here yet: the joining player's search finds no host. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host / Join",
+    "status": "broken",
+    "statusNote": "Two players in one room do not find each other: one chooses Host and waits for clients, the other chooses Join and its search ends with None Found, also at a second try. The host gives the phone a Bluetooth name with a marker in front of the player's name, and the marker does not reach the other player whole, so the joining game does not recognise the host."
   },
   "controls": {
     "source": "The game's own Game Controls diagrams (Defending and Attacking), shown before kick-off. Moving, pass, instant replay and the pause menu were confirmed in a match.",
