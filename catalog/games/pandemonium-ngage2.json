@@ -11,9 +11,51 @@
   "pack": {
     "file": "Games/Fixes and cracks/Pandemonium.zip/pandemonium.n-gage"
   },
-  "status": "broken",
-  "statusNote": "The N-Gage 2.0 game of 2009, not the original N-Gage card Pandemonium! (2003). It installs and starts; the screen turns to landscape and white, and within a few seconds the emulator stops: RuntimeError: table index is out of bounds, in an HLE dispatch call, after unimplemented system calls 0x2C and 0x2D. The same through the N-Gage application, on Start Game.",
-  "notes": [],
-  "controls": null,
-  "test": null
+  "status": "ingame",
+  "statusNote": "The N-Gage 2.0 game of 2009, not the original N-Gage card Pandemonium! (2003). Plays: the N-Gage and Eidos logos, the trial note (Try Game), the title, New Game, and World I's first level in landscape with correct 3D, about 21 fps. Its movies are skipped (no video decoder in the web build).",
+  "notes": [
+    "The game's help lists A to jump and B to fire, keys the phone does not have: the centre key (OK) jumps, and fire has no key here.",
+    "The keypad is turned for landscape: 8 moves left, 2 right, 4 up, 6 down, as well as the arrows."
+  ],
+  "controls": {
+    "source": "The game's own help screen, and watched in play (OK jumps, left and right move, the left soft key pauses).",
+    "actions": {
+      "left": "Move left",
+      "right": "Move right",
+      "up": "Move up; up in menus",
+      "down": "Move down; down in menus",
+      "ok": "Jump (twice: double jump); select in menus",
+      "lsk": "Pause menu",
+      "8": "Move left",
+      "2": "Move right",
+      "4": "Move up",
+      "6": "Move down",
+      "9": "Attack",
+      "hash": "Zoom",
+      "star": "Change character"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 30000
+      },
+      {
+        "key": "ok",
+        "hold": 200,
+        "wait": 4000,
+        "repeat": 10
+      },
+      {
+        "wait": 20000
+      },
+      {
+        "key": "right",
+        "hold": 2000,
+        "wait": 1000
+      }
+    ],
+    "timeoutMs": 150000
+  }
 }

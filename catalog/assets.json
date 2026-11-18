@@ -1,6 +1,6 @@
 {
   "fw": {"bytes": 18612224, "sha256": "afc1cc8b693f2b68d23ca203aa4d4eb4266baad4ab718f013a33b915d39574ef"},
-  "ngage2Device": {"bytes": 104013321, "sha256": "7849e1677b45acfa398934d3003caa1adc0ce9156b1a30bdd248f934e7fd76c8"},
+  "ngage2Device": {"bytes": 104013321, "sha256": "bc73e330d30a3db5a159cb1eebaad83d77e57bb2b81ec1fdf5fd747429128d92"},
   "ngage2App": {"bytes": 9638872, "sha256": "b863df8303c2de113147cda7324139f93bdd77a0433edfb3ef878085356e15fb"},
   "games": {
     "alien-front": {"bytes": 6032533, "sha256": "cf17adc80820243f27ceca88352dd402c1aeae8bb2a15953bcc4cf0e2115ca07"},
