@@ -30,6 +30,11 @@
     ],
     "status": "untested"
   },
+  "enhance": {
+    "engine": "stormvm",
+    "status": "experimental",
+    "note": "The arena floor, the bots and their light bars are captured with their textures; the distance shade is approximated. The sky, the HUD and the messages stay the game's own 2D. The HUD's translucent direction arrow shows pink where it lies over the 3D. Only Arena #0 in Duel mode was seen."
+  },
   "controls": {
     "source": "The game's own controls screen at start-up and its help pages (Options > Help): left and right move the bot, 7 is turbo. The soft keys and the menu keys were observed. The help also lists \"R. Hand: Change Sight\"; which key that is was not found.",
     "actions": {
