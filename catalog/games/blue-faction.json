@@ -20,6 +20,11 @@
     "menu": "VS",
     "status": "untested"
   },
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "The same executable as Red Faction, so the same profile image: the mine, doors and effects are captured; the HUD and the gun are 2D."
+  },
   "controls": {
     "source": "Same as Red Faction (its Help, page 4, and keys confirmed in play there); in this mod the menu keys and the walk into the first level were checked again.",
     "actions": {
