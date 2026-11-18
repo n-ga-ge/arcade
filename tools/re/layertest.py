@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test the GPU layer with a made-up scene, without a game's profile.
 
-    python3 -I tools/re/layertest.py --control-port 8101 --out .scratch/layer [--scales 1,4] [--filter nearest]
+    python3 -I tools/re/layertest.py --control-port 8101 --out .scratch/layer [--scales 1,4] [--filter nearest] [--flat sharp]
 
 It needs a session of tools/web/explore.mjs with any game running (the layer
 draws when a guest presents its screen, and into that screen's texture). The
@@ -19,11 +19,19 @@ tool pauses the emulator, and for each scale:
   - saves a screenshot of the page.
 
 Then it checks that the picture at the highest scale is nearer to the scene
-than the picture at scale 1 enlarged, which is what the layer is for, puts
-everything back and resumes the emulator.
+than the picture at scale 1 enlarged, which is what the layer is for.
+
+The comparison is exact for the flat picture (`flat`, how the guest's own
+picture is enlarged) `sharp` and `smooth`. With `--flat sharp` (the default)
+the scene is then drawn once more at the highest scale with the pixel-art
+scaler, which is not modelled here: it has to differ from the sharp picture
+(it redraws edges), but only near edges of the picture (most pixels the same,
+the mean difference small). Then everything is put back and the emulator
+resumed.
 
 Files in --out: layer-<N>x.png (the emulator's picture), reference-<N>x.png,
-page-<N>x.png (what the page shows), frame.json (the body that was posted).
+page-<N>x.png (what the page shows), layer-<N>x-scaler.png, frame.json (the
+body that was posted).
 
 `python3 -I tools/re/layertest.py --write FILE.json` only writes the frame.
 """
@@ -48,6 +56,8 @@ KEY = (255, 0, 255)
 REACH = 3
 MIXED_REACH = 2
 MIXED_FROM = 0.2
+# Left, top, right and bottom of the line in steps in the picture's bar.
+LINE = (8, 182, 48, 187)
 
 
 def is_key(r, g, b):
@@ -137,7 +147,8 @@ def picture(frame):
     A sky, the key colour on every pixel a triangle touches (as the emulator
     fills it when it replaces a game's triangles), and an overlay that the
     game would have drawn afterwards: a bar at the bottom and a box in the
-    middle of the 3D.
+    middle of the 3D. In the bar, a shallow line in steps, for the pixel-art
+    scaler to smooth.
     """
     out = bytearray()
     for y in range(HEIGHT):
@@ -162,6 +173,9 @@ def picture(frame):
     for n in range(8):
         box(8 + n * 20, 188, 22 + n * 20, 200, (200, 60 + n * 20, 40))
     box(76, 84, 100, 100, (20, 20, 20))
+    for x in range(LINE[0], LINE[2]):
+        y = LINE[3] - 1 - (x - LINE[0]) // 8
+        out[(y * WIDTH + x) * 4:(y * WIDTH + x) * 4 + 3] = bytes((230, 230, 230))
 
     # The soft edge of an overlay: a dark line two pixels wide under the box,
     # drawn over what is there with half and with a quarter of its strength.
@@ -302,6 +316,8 @@ def main():
     parser.add_argument('--scales', default='1,4', help='whole numbers, the last being the one that has to be sharper')
     parser.add_argument('--filter', default='nearest', choices=['nearest', 'linear'],
                         help='the textures\' filter; the comparison is only exact enough to fail on with nearest')
+    parser.add_argument('--flat', default='sharp', choices=['sharp', 'smooth'],
+                        help='how the guest\'s picture is enlarged for the exact comparison')
     parser.add_argument('--write', help='only write the frame to this file')
     parser.add_argument('--keep', action='store_true', help='leave the last frame on screen and the emulator paused')
     args = parser.parse_args()
@@ -320,7 +336,7 @@ def main():
     (out / 'frame.json').write_text(json.dumps(body))
     session = dbg.Session(args.control_port)
     scales = [int(s) for s in args.scales.split(',')]
-    smooth = not session.call('GET', '/v1/config')['nearestNeighborFiltering']
+    smooth = args.flat == 'smooth'
 
     def pageshot(name):
         # The page dims the picture under its "click for sound" note.
@@ -336,7 +352,7 @@ def main():
     session.call('POST', '/v1/emulator/pause')
     try:
         for scale in scales:
-            status = session.call('PATCH', '/v1/enhance', {'scale': scale, 'filter': args.filter})
+            status = session.call('PATCH', '/v1/enhance', {'scale': scale, 'filter': args.filter, 'flat': args.flat})
             session.call('POST', '/v1/enhance/test-frame', body)
             status = session.call('GET', '/v1/enhance')
             if status['scale'] != scale:
@@ -380,6 +396,29 @@ def main():
             ok &= good
             print(f'{"ok  " if good else "FAIL"} against the scene at {top}x: the layer at {top}x differs by {sharp:.2f}, '
                   f'the layer at 1x enlarged by {coarse:.2f}')
+
+        if args.flat == 'sharp' and scales[-1] > 1:
+            top = scales[-1]
+            session.call('PATCH', '/v1/enhance', {'scale': top, 'filter': args.filter, 'flat': 'scaler'})
+            session.call('POST', '/v1/enhance/test-frame', body)
+            code, data = session.raw('GET', f'/v1/screenshot?scale={top}')
+            if code >= 400:
+                raise SystemExit(f'screenshot: {data.decode("latin1")[:200]}')
+            (out / f'layer-{top}x-scaler.png').write_bytes(data)
+            _, _, scaled = dbg.read_png(data)
+            mean, far = difference(scaled, shots[top])
+            changed = sum(1 for at in range(0, len(scaled), 4)
+                          if scaled[at:at + 3] != shots[top][at:at + 3]) / (len(scaled) // 4)
+            # The scene's picture is mostly rectangles, whose corners the
+            # scaler rounds; it has to smooth the line in steps, and change
+            # little else.
+            left, top_row, right, bottom = (v * top for v in LINE)
+            line = [(y * WIDTH * top + x) * 4 for y in range(top_row, bottom) for x in range(left, right)]
+            smoothed = sum(1 for at in line if scaled[at:at + 3] != shots[top][at:at + 3]) / len(line)
+            good = smoothed > 0.01 and changed < 0.1 and mean < 3
+            ok &= good
+            print(f'{"ok  " if good else "FAIL"} the scaler at {top}x: {smoothed * 100:.1f}% of the pixels around the line in '
+                  f'steps and {changed * 100:.1f}% of all differ from the sharp picture, by {mean:.2f} of 255 a channel on average')
     finally:
         if not args.keep:
             session.call('DELETE', '/v1/enhance/test-frame')

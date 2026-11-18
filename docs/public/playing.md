@@ -158,12 +158,14 @@ picture's shape and fills the space beside it with a soft, blurred copy of
 what is on screen. Neither makes the game show more of its world: a game
 always draws the same picture.
 
-For a few games the dialog will also offer **3D resolution (beta)**: the
+For some 3D games the dialog also offers **3D resolution (beta)**: the
 game's 3D drawn again by your graphics card at two, three or four times the
-phone's resolution, with **3D textures** sharp or smooth, while menus and text
-stay as they are. This is being built. The two settings show only for a game
-it has been prepared for, and where the dialog says it is not available, your
-choice is kept and changes nothing yet.
+phone's resolution, or at the size it is shown at, with **3D textures** sharp
+or smooth. The game's menus, text and logos are drawn at that size too, and
+**Menus, text and logos** says how: through a pixel-art scaler that redraws
+their edges smooth (the default), blended, or as sharp pixels. These settings
+show only for a game that has been prepared for them, and parts of the picture
+may still be wrong.
 
 ## Playing your own copy
 
