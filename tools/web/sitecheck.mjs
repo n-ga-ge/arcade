@@ -174,7 +174,9 @@ async function checkShareTags(catalog) {
   const lacking = [['cross-origin-opener-policy', 'same-origin'], ['cross-origin-embedder-policy', 'require-corp']]
     .filter(([name, value]) => response.headers.get(name) !== value).map(([name]) => name);
   if (lacking.length) fail(`/play/?g=${game.slug} lacks ${lacking.join(' and ')}: the player cannot use threads`);
-  if (!local && !/script-src 'self' 'wasm-unsafe-eval';/.test(response.headers.get('content-security-policy') || '')) fail(`/play/?g=${game.slug} lacks the player's Content-Security-Policy`);
+  // The player's own policy: WebAssembly allowed, no inline script (the rest of the site allows it).
+  const scripts = ((response.headers.get('content-security-policy') || '').match(/script-src ([^;]*)/) || [])[1] || '';
+  if (!local && (!scripts.includes("'wasm-unsafe-eval'") || scripts.includes("'unsafe-inline'"))) fail(`/play/?g=${game.slug} lacks the player's Content-Security-Policy`);
   const title = decode(metaContent(html, 'property="og:title"') || '');
   if (title.startsWith(game.title)) {
     const image = decode(metaContent(html, 'property="og:image"') || '');
