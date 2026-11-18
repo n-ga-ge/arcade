@@ -1,0 +1,216 @@
+{
+  "engine": "snakes",
+  "about": "The renderer of Snakes (iomo): a display list of flat-coloured triangles, quads and lines, drawn in list order into a 176 by 208 bitmap of 12-bit pixels, with 2D sprites and text drawn into the same bitmap between them.",
+  "viewport": {
+    "width": 176,
+    "height": 208
+  },
+  "images": [
+    {
+      "name": "6r45_1.app",
+      "hash": "0x6AE888EC",
+      "game": "snakes",
+      "hooks": [
+        {
+          "at": "0x6f998",
+          "do": "begin",
+          "note": "The display list interpreter (0x6f980) has just stored the address of the 3D bitmap's pixels at r4 + 0x274: 176 by 208 12-bit pixels, 352 bytes a row. r4 the renderer.",
+          "target": {
+            "pixels": "u32(r4 + 0x274)",
+            "width": 176,
+            "height": 208,
+            "pitch": 352,
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x6de24",
+          "do": "draw",
+          "when": "u32(r0 + 0x2a4) == 1 && u32(r0 + 0x29c) == 0",
+          "note": "The frame's background: the buffer filled with black (white when the byte at r0 + 0x299 is set), as a rectangle over the whole screen, so that every edge of the 3D lies on captured pixels.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "r0",
+          "fields": {
+            "x": "sel(i == 1 || i == 2, 176, 0)",
+            "y": "sel(i >= 2, 208, 0)",
+            "r": "sel(u8(r0 + 0x299), 255, 0)",
+            "g": "sel(u8(r0 + 0x299), 255, 0)",
+            "b": "sel(u8(r0 + 0x299), 255, 0)"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x6de24",
+          "do": "set",
+          "when": "u32(r0 + 0x2a4) == 1 && u32(r0 + 0x29c) == 0",
+          "skip": true,
+          "vars": {},
+          "note": "When replacing: the fill of the buffer captured above. Not run; the key colour takes its place."
+        },
+        {
+          "at": "0x7c8c4",
+          "do": "draw",
+          "note": "A flat quad (command 0x70000012) after clipping: r7 its corners, 20 bytes each (x, y in 20.12 pixels; the colour at +12, taken from the first), r5 how many.",
+          "mode": "fan",
+          "count": "r5",
+          "vertex": "r7 + 20 * i",
+          "fields": {
+            "x": "fx(s32(p), 12) + 0.5",
+            "y": "fx(s32(p + 4), 12) + 0.5",
+            "r": "((u16(r7 + 12) >> 8) & 15) * 17",
+            "g": "((u16(r7 + 12) >> 4) & 15) * 17",
+            "b": "(u16(r7 + 12) & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x7c388",
+          "do": "draw",
+          "note": "A flat triangle (command 0x70000002) that needed no clipping: r4, r5, r6 its corners from top to bottom; its colour (from the top corner) at sp + 0x10.",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sel(i == 0, r4, sel(i == 1, r5, r6))",
+          "fields": {
+            "x": "fx(s32(p), 12) + 0.5",
+            "y": "fx(s32(p + 4), 12) + 0.5",
+            "r": "((u16(sp + 0x10) >> 8) & 15) * 17",
+            "g": "((u16(sp + 0x10) >> 4) & 15) * 17",
+            "b": "(u16(sp + 0x10) & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x7c244",
+          "do": "draw",
+          "note": "A flat triangle after clipping: r4 corners at sp + 44, 20 bytes each; its colour at sp + 0x10.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "sp + 44 + 20 * i",
+          "fields": {
+            "x": "fx(s32(p), 12) + 0.5",
+            "y": "fx(s32(p + 4), 12) + 0.5",
+            "r": "((u16(sp + 0x10) >> 8) & 15) * 17",
+            "g": "((u16(sp + 0x10) >> 4) & 15) * 17",
+            "b": "(u16(sp + 0x10) & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x7be08",
+          "do": "set",
+          "when": "(lr - pc == 0x740 || lr - pc == 0xc08) && u32(r0 + 0x29c) == 0 && (u32(r0 + 0x2a4) == 1 || u32(r0 + 0x2a4) >= 4)",
+          "skip": true,
+          "vars": {},
+          "note": "When replacing: the span filler, when the triangle (returning to 0x7c548) or the quad function (0x7ca10) calls it, after the corners were captured above, while the frame started from a filled buffer (r0 + 0x2a4) and no fade is on (r0 + 0x29c): both would carry the key colour on. Not run."
+        },
+        {
+          "at": "0x7b7e8",
+          "do": "set",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "note": "A line (command 0x70000001) that needs no clipping: u32(r1) and u32(r1) + 20 are its ends (x, y in 20.12 pixels at +0 and +4, the colour at +12, clip flags at +16). The game rounds them to whole pixels and draws one pixel wide, both ends included.",
+          "vars": {
+            "X0": "sar(s32(u32(r1)) + 2048, 12)",
+            "Y0": "sar(s32(u32(r1) + 4) + 2048, 12)",
+            "X1": "sar(s32(u32(r1) + 20) + 2048, 12)",
+            "Y1": "sar(s32(u32(r1) + 24) + 2048, 12)"
+          }
+        },
+        {
+          "at": "0x7b7e8",
+          "do": "set",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "note": "The line as a quad one pixel wide: from the start S to the end E along its longer axis, and one pixel across.",
+          "vars": {
+            "xm": "abs($X1 - $X0) >= abs($Y1 - $Y0)",
+            "sx": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), min($X0, $X1), sel($Y0 <= $Y1, $X0, $X1))",
+            "sy": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y0, $Y1), min($Y0, $Y1))",
+            "ex": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), max($X0, $X1), sel($Y0 <= $Y1, $X1, $X0))",
+            "ey": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y1, $Y0), max($Y0, $Y1))"
+          }
+        },
+        {
+          "at": "0x7b7e8",
+          "do": "draw",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "note": "A line (command 0x70000001), opaque in one colour.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "u32(r1)",
+          "fields": {
+            "x": "sel(i == 0 || i == 3, $sx, $ex) + sel((i == 1 || i == 2) && $xm, 1, 0) + sel(i >= 2 && !$xm, 1, 0)",
+            "y": "sel(i == 0 || i == 3, $sy, $ey) + sel((i == 1 || i == 2) && !$xm, 1, 0) + sel(i >= 2 && $xm, 1, 0)",
+            "r": "((u16(u32(r1) + 12) >> 8) & 15) * 17",
+            "g": "((u16(u32(r1) + 12) >> 4) & 15) * 17",
+            "b": "(u16(u32(r1) + 12) & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x7b7e8",
+          "do": "set",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0 && u32(r0 + 0x29c) == 0 && (u32(r0 + 0x2a4) == 1 || u32(r0 + 0x2a4) >= 4)",
+          "skip": true,
+          "vars": {},
+          "note": "When replacing: a line (command 0x70000001) that needs no clipping, captured above. Not drawn by the game; one that needs clipping, or drawn in a frame with a fade or a trail, is left to it."
+        },
+        {
+          "at": "0x7d35c",
+          "do": "set",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "note": "A smoothed line (command 0x70000011) that needs no clipping: u32(r1) and u32(r1) + 20 are its ends (x, y in 20.12 pixels at +0 and +4, the colour at +12, clip flags at +16). The game rounds them to whole pixels and draws one pixel wide, both ends included.",
+          "vars": {
+            "X0": "sar(s32(u32(r1)) + 2048, 12)",
+            "Y0": "sar(s32(u32(r1) + 4) + 2048, 12)",
+            "X1": "sar(s32(u32(r1) + 20) + 2048, 12)",
+            "Y1": "sar(s32(u32(r1) + 24) + 2048, 12)"
+          }
+        },
+        {
+          "at": "0x7d35c",
+          "do": "set",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "note": "The line as a quad one pixel wide: from the start S to the end E along its longer axis, and one pixel across.",
+          "vars": {
+            "xm": "abs($X1 - $X0) >= abs($Y1 - $Y0)",
+            "sx": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), min($X0, $X1), sel($Y0 <= $Y1, $X0, $X1))",
+            "sy": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y0, $Y1), min($Y0, $Y1))",
+            "ex": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), max($X0, $X1), sel($Y0 <= $Y1, $X1, $X0))",
+            "ey": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y1, $Y0), max($Y0, $Y1))"
+          }
+        },
+        {
+          "at": "0x7d35c",
+          "do": "draw",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "note": "A smoothed line (command 0x70000011), which the game mixes into what is under it by how near each pixel is; captured opaque.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "u32(r1)",
+          "fields": {
+            "x": "sel(i == 0 || i == 3, $sx, $ex) + sel((i == 1 || i == 2) && $xm, 1, 0) + sel(i >= 2 && !$xm, 1, 0)",
+            "y": "sel(i == 0 || i == 3, $sy, $ey) + sel((i == 1 || i == 2) && !$xm, 1, 0) + sel(i >= 2 && $xm, 1, 0)",
+            "r": "((u16(u32(r1) + 12) >> 8) & 15) * 17",
+            "g": "((u16(u32(r1) + 12) >> 4) & 15) * 17",
+            "b": "(u16(u32(r1) + 12) & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x7d35c",
+          "do": "set",
+          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0 && u32(r0 + 0x29c) == 0 && (u32(r0 + 0x2a4) == 1 || u32(r0 + 0x2a4) >= 4)",
+          "skip": true,
+          "vars": {},
+          "note": "When replacing: a smoothed line (command 0x70000011) that needs no clipping, captured above. Not drawn by the game; one that needs clipping, or drawn in a frame with a fade or a trail, is left to it."
+        }
+      ]
+    }
+  ]
+}
