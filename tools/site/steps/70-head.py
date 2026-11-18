@@ -17,10 +17,10 @@ theme colours; this step adds the rest before </head>:
 
 The player's page is the fork's, made for any host: here it gets the site's
 title (the player puts the running game's name in front of it) and a
-description. A link to one game, /play/?g=<slug> or /?game=<slug>, has the
-same page, so its preview would be the site's; the share Worker
+description. A link to one game, /play/?g=<slug>, has the same page for
+every game, so its preview would be the player's; the share Worker
 (cloudflare/share-worker/) puts the game's title, description and screenshot
-into those two pages' share tags on the live site.
+into its share tags on the live site.
 
 It also writes /robots.txt and /sitemap.xml (the front page, the documentation
 and one player address per game).

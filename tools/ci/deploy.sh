@@ -376,8 +376,8 @@ fi
 
 # --- the share Worker (production only) --------------------------------------------
 
-# Link previews for one game: it rewrites the share tags of / and /play/ when
-# the address names a game, and passes everything else through. Deployed
+# Link previews for one game: on /play/* it rewrites the share tags of the
+# player's page when the address names a game, and passes everything else through. Deployed
 # after the site, whose pages carry the tags it rewrites.
 if [ -d "$SHARE_WORKER_DIR" ] && [ "$ENVIRONMENT" = production ]; then
   echo "Deploying the share Worker..."

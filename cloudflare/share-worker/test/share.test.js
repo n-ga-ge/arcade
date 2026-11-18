@@ -33,7 +33,7 @@ const HEADERS = {
   ETag: '"abc"',
 };
 
-// The Pages site: the page on / and /play/, the catalogue, 404 for the rest.
+// The Pages site: the player's page, one of its files, the catalogue, 404 for the rest.
 function site({ catalog = CATALOG, page = PAGE, status = 200 } = {}) {
   const seen = [];
   const origin = async (request) => {
@@ -42,7 +42,8 @@ function site({ catalog = CATALOG, page = PAGE, status = 200 } = {}) {
     if (url.pathname === '/catalog/index.json') {
       return catalog ? Response.json(catalog) : new Response('no', { status: 404 });
     }
-    if (url.pathname === '/' || url.pathname === '/play/') return new Response(page, { status, headers: HEADERS });
+    if (url.pathname === '/play/' || url.pathname === '/') return new Response(page, { status, headers: HEADERS });
+    if (url.pathname === '/play/b/1/eka2l1_web.wasm') return new Response('wasm', { headers: { 'Content-Type': 'application/wasm', ETag: '"w"' } });
     return new Response('not found', { status: 404 });
   };
   return { origin, seen };
@@ -80,12 +81,12 @@ describe('a link to one game', () => {
     expect(response.headers.get('ETag')).toBeNull();
   });
 
-  it('previews the game on the front page, whose canonical address stays the front page', async () => {
+  it('takes addresses from the host asked, but keeps the canonical one on the live site', async () => {
     const { origin } = site();
-    const html = await (await handle(new Request('https://dev.n-ga.ge/?game=ashen&q=x'), origin)).text();
-    expect(contentOf(html, 'property="og:url"')).toBe('https://dev.n-ga.ge/?game=ashen');
+    const html = await (await handle(new Request('https://dev.n-ga.ge/play/?g=ashen&x=1'), origin)).text();
+    expect(contentOf(html, 'property="og:url"')).toBe('https://dev.n-ga.ge/play/?g=ashen');
     expect(contentOf(html, 'property="og:image"')).toBe('https://dev.n-ga.ge/catalog/shots/ashen.png');
-    expect(tag(html, 'rel="canonical"')).toContain('href="https://n-ga.ge/play/"');
+    expect(tag(html, 'rel="canonical"')).toContain('href="https://n-ga.ge/play/?g=ashen"');
   });
 
   it('keeps the site picture for a game without a screenshot, and cuts a long note', async () => {
@@ -107,6 +108,7 @@ describe('everything else passes through unchanged', () => {
     ['a slug that is not one', 'https://n-ga.ge/play/?g=..%2Fx'],
     ['a game the catalogue does not have', 'https://n-ga.ge/play/?g=nothing'],
     ['another path', 'https://n-ga.ge/docs/?g=ashen'],
+    ['the front page', 'https://n-ga.ge/?game=ashen'],
   ];
   for (const [name, address] of cases) {
     it(name, async () => {
@@ -121,8 +123,16 @@ describe('everything else passes through unchanged', () => {
 
   it('asks nothing more than the page for an address without a game', async () => {
     const { origin, seen } = site();
-    await handle(new Request('https://n-ga.ge/'), origin);
-    expect(seen).toEqual(['/']);
+    await handle(new Request('https://n-ga.ge/play/'), origin);
+    expect(seen).toEqual(['/play/']);
+  });
+
+  it('the player\'s own files, untouched', async () => {
+    const { origin, seen } = site();
+    const response = await handle(new Request('https://n-ga.ge/play/b/1/eka2l1_web.wasm?g=ashen'), origin);
+    expect(await response.text()).toBe('wasm');
+    expect(response.headers.get('ETag')).toBe('"w"');
+    expect(seen).toEqual(['/play/b/1/eka2l1_web.wasm?g=ashen']);
   });
 
   it('a HEAD request', async () => {
@@ -141,10 +151,10 @@ describe('everything else passes through unchanged', () => {
 
 describe('describe()', () => {
   it('leaves out facts the catalogue does not have', () => {
-    expect(describeGame({ slug: 'a', title: 'A', status: 'boots' }, 'https://n-ga.ge', '/play/').description)
+    expect(describeGame({ slug: 'a', title: 'A', status: 'boots' }, 'https://n-ga.ge').description)
       .toBe('N-Gage game. Starts in the browser.');
   });
   it('ignores a screenshot path that is not one', () => {
-    expect(describeGame({ slug: 'a', title: 'A', ci: { shot: '../x.png' } }, 'https://n-ga.ge', '/').image).toBeNull();
+    expect(describeGame({ slug: 'a', title: 'A', ci: { shot: '../x.png' } }, 'https://n-ga.ge').image).toBeNull();
   });
 });

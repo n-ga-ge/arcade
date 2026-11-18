@@ -1,9 +1,10 @@
-// Link previews for one game. A link to a game is /play/?g=<slug> (the
-// player) or /?game=<slug> (the front page with the game's card open). Both
-// are the same static page for every game, and a chat or social site reading
-// the link runs no script, so without this Worker every game would preview as
-// the site. The Worker sits on exactly those two paths, passes the request to
-// the Pages site, and in the answer rewrites the share tags that
+// Link previews for one game. A link to a game is /play/?g=<slug>, the
+// player, and that is the same static page for every game; a chat or social
+// site reading the link runs no script, so without this Worker every game
+// would preview as the site. The Worker's route is /play/* (a route matches
+// the whole URL, query string included, so /play/ alone would never match a
+// link to a game). It passes every request to the Pages site, and only for
+// /play/?g=<known slug> rewrites, in the page Pages answered, the share tags that
 // tools/site/steps/70-head.py put there: title, description, address and
 // picture (the game's CI screenshot). README.md has the rest.
 //
@@ -14,8 +15,9 @@
 // Pages sent it.
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
-// The parameter that names the game, by path.
-const PARAMETER = { '/': 'game', '/play/': 'g' };
+// The page whose links name a game, and the parameter that names it.
+const PAGE = '/play/';
+const PARAMETER = 'g';
 // What each status level (site/js/model.js) means, as the start of a sentence.
 const STATUS = {
   ingame: 'Playable in the browser',
@@ -36,13 +38,13 @@ function clip(text, limit) {
 }
 
 // What the preview says about a game, from its summary in /catalog/index.json.
-export function describe(game, origin, path) {
+export function describe(game, origin) {
   const facts = [game.year, game.genre, game.publisher].filter(Boolean).join(' · ');
   const status = STATUS[game.status] || STATUS.untested;
   const lead = `${facts ? `N-Gage · ${facts}` : 'N-Gage game'}. ${status}`;
   const note = game.statusNote ? `: ${game.statusNote}` : '.';
   const shot = game.ci && typeof game.ci.shot === 'string' && /^shots\/[a-z0-9-]+\.png$/.test(game.ci.shot) ? game.ci.shot : null;
-  const url = path === '/play/' ? `${origin}/play/?g=${game.slug}` : `${origin}/?game=${game.slug}`;
+  const url = `${origin}${PAGE}?${PARAMETER}=${game.slug}`;
   return {
     title: `${game.title} · ${SITE_NAME}`,
     description: clip(lead + note, DESCRIPTION_LIMIT),
@@ -59,14 +61,13 @@ function content(value) {
   return { element(element) { element.setAttribute('content', escapeAmpersands(value)); } };
 }
 
-export function rewrite(page, share, { canonical }) {
+export function rewrite(page, share) {
   let rewriter = new HTMLRewriter()
     .on('meta[name="description"]', content(share.description))
     .on('meta[property="og:title"]', content(share.title))
     .on('meta[property="og:description"]', content(share.description))
-    .on('meta[property="og:url"]', content(share.url));
-  if (canonical) {
-    rewriter = rewriter.on('link[rel="canonical"]', {
+    .on('meta[property="og:url"]', content(share.url))
+    .on('link[rel="canonical"]', {
       element(element) {
         const href = element.getAttribute('href');
         if (!href) return;
@@ -77,7 +78,6 @@ export function rewrite(page, share, { canonical }) {
         } catch { /* leave it */ }
       },
     });
-  }
   if (share.image) {
     // A portrait screenshot is a thumbnail beside the text, not a wide banner.
     rewriter = rewriter
@@ -100,8 +100,8 @@ export function rewrite(page, share, { canonical }) {
 // Worker's request to its own zone skips the Worker), a stand-in in tests.
 export async function handle(request, origin = fetch) {
   const url = new URL(request.url);
-  const parameter = PARAMETER[url.pathname];
-  const slug = parameter ? url.searchParams.get(parameter) : null;
+  // The player's own files under /play/ go straight through.
+  const slug = url.pathname === PAGE ? url.searchParams.get(PARAMETER) : null;
   if (request.method !== 'GET' || !slug || !SLUG.test(slug)) return origin(request);
 
   const page = await origin(request);
@@ -112,7 +112,7 @@ export async function handle(request, origin = fetch) {
     const catalog = await index.json();
     const game = (catalog.games || []).find((entry) => entry.slug === slug);
     if (!game || !game.title) return page;
-    return rewrite(page, describe(game, url.origin, url.pathname), { canonical: url.pathname === '/play/' });
+    return rewrite(page, describe(game, url.origin));
   } catch {
     return page;
   }
