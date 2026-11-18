@@ -218,8 +218,35 @@ if [ -n "$FORCE_FORK" ]; then
   lease=("--force-with-lease=refs/heads/web-port:$current")
   echo "mirror: --force-fork: GitHub's web-port ${current:-(none)} may be replaced"
 fi
-"${GH_GIT[@]}" -C "$FORK" push "${lease[@]}" "$GITHUB/EKA2L1.git" "${fork_refs[@]}" ||
-  { echo "mirror: the fork's push was refused. If web-port was rebased on the forge, run the mirror by hand with force_fork (docs/mirror.md)." >&2; exit 1; }
-"${GH_GIT[@]}" -C "$ARC" push "$GITHUB/arcade.git" "refs/mirror/main:refs/heads/main" ||
-  { echo "mirror: arcade's push was refused: the rewritten main does not start with GitHub's. Something changed the rewrite (the identity, the tool addresses, the rules); read docs/mirror.md before forcing anything." >&2; exit 1; }
+# push_to <name> <repo> <git push arguments>...: push, and when GitHub refuses,
+# say why in words. The fork goes first and arcade only after it, so that
+# arcade's pin never names a commit GitHub does not have.
+push_to() {
+  local name=$1 repo=$2 out status; shift 2
+  out=$("${GH_GIT[@]}" -C "$repo" push --porcelain "$@" 2>&1) && status=0 || status=$?
+  echo "$out" | grep -v '^remote: *$'
+  [ "$status" = 0 ] && return 0
+  echo "mirror: GitHub refused the push of $name; nothing of it was published." >&2
+  case "$out" in
+    *"without \`workflow\` scope"*|*"workflow scope"*|*"without workflow"*)
+      echo "  The token may not change workflows, and $name carries .github/workflows/ (upstream's, in the fork)." >&2
+      echo "  Give GITHUBTOKEN the workflow scope (classic) or Workflows: Read and write (fine-grained) and run again." >&2 ;;
+    *"Authentication failed"*|*"Invalid username or token"*|*"Permission to "*" denied"*|*"403"*)
+      echo "  GITHUBTOKEN was not accepted, or may not write to $GITHUB/$name: check the token and its repositories." >&2 ;;
+    *"Repository not found"*)
+      echo "  $GITHUB/$name does not exist, or the token cannot see it." >&2 ;;
+    *"non-fast-forward"*|*"fetch first"*|*"stale info"*)
+      if [ "$name" = EKA2L1 ]; then
+        echo "  The rewritten web-port does not start with GitHub's. After a rebase of web-port on the forge," >&2
+        echo "  run the workflow by hand with push and force_fork (docs/mirror.md, 'Rebasing the fork')." >&2
+      else
+        echo "  The rewritten main does not start with GitHub's: something changed the rewrite (the identity," >&2
+        echo "  the tool addresses, the rules). Read docs/mirror.md before forcing anything." >&2
+      fi ;;
+    *) echo "  The reason is in git's output above." >&2 ;;
+  esac
+  return 1
+}
+push_to EKA2L1 "$FORK" "${lease[@]}" "$GITHUB/EKA2L1.git" "${fork_refs[@]}" || exit 1
+push_to arcade "$ARC" "$GITHUB/arcade.git" "refs/mirror/main:refs/heads/main" || exit 1
 say "pushed: $GITHUB/EKA2L1 web-port and $GITHUB/arcade main"
