@@ -20,3 +20,6 @@ tools/**/results*/
 # Node packages: a link into the toolchain locally, an npm install on CI.
 /node_modules
 __pycache__/
+
+# The demo video's work folder: game footage, never committed (docs/demo-video.md).
+/demo-work/
