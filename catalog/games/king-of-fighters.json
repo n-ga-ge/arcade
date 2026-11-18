@@ -11,13 +11,15 @@
     "Teams are three fighters: pick three on the Player Selection screen, then choose their order.",
     "Either soft key pauses a fight. The pause menu has the Command List with each fighter's special moves.",
     "Options > Controls in the game can reassign the keypad actions; that changes which N-Gage key an action uses, on top of the bindings here.",
-    "Versus play over Bluetooth is not available in the browser."
+    "Versus play over Bluetooth works between two players in one room: Start > Battle, one chooses Host and the other Client; the client picks the host in its list, then the host picks the client in its own list, and both choose their fighters."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "status": "untested"
+    "menu": "Start > Battle > Host / Client",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Host, the other Client and the host in the list, then the host picks the client in its own list. Both chose three fighters and their order on a shared screen, and a fight ran on both screens: one player's steps and the other's punches showed on both, and a pause is shown to the other player. When one gave up, both games went back to the opening logos."
   },
   "controls": {
     "source": "The game's defaults, read from its Options > Controls screen (keys 0 to 9, star and hash). Directions, OK and the soft keys were observed in menus and in a fight.",

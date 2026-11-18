@@ -7,7 +7,7 @@
   "genre": "Racing",
   "uid": "0x2000AFE3",
   "variantOf": null,
-  "dump": "Asphalt3",
+  "dump": "Asphalt 3 (N-Gage 2.0)",
   "status": "ingame",
   "statusNote": "Language menu, attract demo, menus and an Instant Play race in landscape, with correct 3D and with its music (MP3), at 11 to 13 fps on a fast laptop. In about one start in three it quits by itself within the first minute or while a race loads (a fault of the emulator, under investigation); starting it again works. The dump is a community release without signatures, which the N-Gage application refuses, so the player installs the game directly.",
   "notes": [

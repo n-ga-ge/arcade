@@ -10,15 +10,17 @@
     "This game was never released; the card holds a development build (© 2004 Sega, made by Fuel Studios). All four levels (Docks, Garage, Lobby, Office) can be picked from the start.",
     "Shoot enemies before the ring around them closes. The gun holds six shots; reload with 7.",
     "After a game over, the left soft key (Done) leaves the statistics, and the high-score question is answered with the soft keys (Yes / No), not with OK.",
-    "Options > Languages offers English, German, French, Spanish and Italian. Multi Player and sending scores were not tried and need a second phone or N-Gage Arena."
+    "Options > Languages offers English, German, French, Spanish and Italian. Sending scores was not tried and needs N-Gage Arena, which is no longer online.",
+    "A Bluetooth game is under Start Game > New Game > Multi Player > Bluetooth. The joining player goes first: Join Game, which waits (Finding Hosts). Then the other chooses Host Game, which searches once and lists the players who wait; the left soft key (Launch) goes on to the level and the difficulty. A host who searched too early cancels and chooses Host Game again."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "menu": "Multi Player",
-    "status": "untested"
+    "menu": "Start Game > New Game > Multi Player > Bluetooth > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one waits in Join Game, then the other hosts, finds them, launches and picks level and difficulty. The Docks level ran on both screens as a score duel: each plays their own run, the host's score showed on the joiner's screen, and at the end the host's screen said WINNER and each could read the other's statistics. Neither saw the other's cursor or shots."
   },
   "enhance": {
     "engine": "xforge",

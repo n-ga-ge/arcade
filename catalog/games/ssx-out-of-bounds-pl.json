@@ -14,15 +14,17 @@
     "On the first start the game asks for a profile name (the digit keys type letters, the left soft key accepts) and a favourite rider.",
     "In menus 5 selects and 7 goes back. In a race, tricks fill the boost meter and 5 spends it; after a fall, tap 5 to recover.",
     "The keys can be changed in the game under Options > Key Mapping.",
-    "Multiplayer and N-Gage Arena in the main menu need Bluetooth or the N-Gage Arena service and cannot work here."
+    "Multiplayer in the main menu was tried with the original game, where it works: one player hosts, the other joins and picks the host from the list, the host accepts and connects, each picks a rider and the host the track. N-Gage Arena was Nokia's online service and cannot work."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "menu": "Main menu > Multiplayer",
-    "status": "untested"
+    "players": 4,
+    "menu": "Multiplayer > Host / Join",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Host and accepts the warning that the Bluetooth name will change, the other Join and the host in the list; the host accepts and presses Connect, each picks a rider, the host the track. A race ran on both screens with both riders in view; a pause is shown to the other player, and when one gives up the other is told. Tried with the original game, two players."
   },
   "controls": {
     "source": "Same as SSX Out of Bounds; the translated key mapping screen (Opcje > Sterowanie) lists the same keys. This variant was checked up to its menus by hand and into a race with the same key script.",
