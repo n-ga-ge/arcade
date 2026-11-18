@@ -682,6 +682,8 @@ const TESTS = {
       beta: !document.getElementById('enhance-beta').hidden,
       scale: document.getElementById('enhance-select').value,
       filter: document.getElementById('enhance-filter-select').value,
+      flat: document.getElementById('enhance-flat-select').value,
+      flats: [...document.querySelectorAll('#enhance-flat-select option')].map((option) => option.value).join(','),
       scales: [...document.querySelectorAll('#enhance-select option')].map((option) => option.value).join(','),
       filters: [...document.querySelectorAll('#enhance-filter-select option')].map((option) => option.value).join(','),
       note: document.getElementById('enhance-note').textContent,
@@ -703,6 +705,9 @@ const TESTS = {
     await site.page.selectOption('#enhance-filter-select', 'linear');
     await sleep(500);
     const choseSmooth = await sent();
+    await site.page.selectOption('#enhance-flat-select', 'sharp');
+    await sleep(500);
+    const choseSharpFlat = await sent();
     await site.page.locator('#display').screenshot({ path: path.join(outDir, `${name}-display-3d.png`) });
 
     // Kept for the next visit, and sent to the emulator again there.
@@ -739,9 +744,11 @@ const TESTS = {
     const enhanceOk = bare.hidden && bare.state === null
       && emulator.http === 200 && emulator.available === true && emulator.engine === 'suite'
       && first.shown && first.beta && first.scale === 'off' && first.filter === 'nearest' && first.scales === 'off,2,3,4,auto' && first.filters === 'nearest,linear'
+      && first.flat === 'scaler' && first.flats === 'scaler,smooth,sharp'
       && first.note.includes('A note from the suite.') && notice
-      && chose4 === 'PATCH /v1/enhance {"scale":4,"filter":"nearest"}' && choseSmooth === 'PATCH /v1/enhance {"scale":4,"filter":"linear"}'
-      && again.shown && again.scale === '4' && again.filter === 'linear' && againSent === '{"scale":4,"filter":"linear"}'
+      && chose4 === 'PATCH /v1/enhance {"scale":4,"filter":"nearest","flat":"scaler"}' && choseSmooth === 'PATCH /v1/enhance {"scale":4,"filter":"linear","flat":"scaler"}'
+      && choseSharpFlat === 'PATCH /v1/enhance {"scale":4,"filter":"linear","flat":"sharp"}'
+      && again.shown && again.scale === '4' && again.filter === 'linear' && again.flat === 'sharp' && againSent === '{"scale":4,"filter":"linear","flat":"sharp"}'
       && without.shown && without.scale === '4' && notAvailable.test(without.notice) && withoutAdvances > 0
       && !site.log.some((line) => line.startsWith('[pageerror]'));
 
@@ -749,8 +756,8 @@ const TESTS = {
     return { pass, filters: filters.length, broken: failed.join(',') || 'none', brightnessVsNearestVsSmooth: JSON.stringify(results), sizes: JSON.stringify(sizes),
       fpsFsrSharp: heavy.fps, graphicsMsFsrSharp: heavy.graphicsMsPerFrame, keptAfterReload: `${kept.filter} ${kept.width}x${kept.height}`,
       enhanceHiddenWithoutProfile: bare.hidden && bare.state === null, enhanceEmulator: JSON.stringify(emulator),
-      enhanceOffered: `${first.shown ? 'shown' : 'hidden'}${first.beta ? ', beta' : ''}: ${first.scales} / ${first.filters}`, enhanceNotice: first.notice || 'none',
-      enhanceSent: `${chose4} | ${choseSmooth}`, enhanceKeptAfterReload: `${again.scale} ${again.filter}, sent ${againSent}`,
+      enhanceOffered: `${first.shown ? 'shown' : 'hidden'}${first.beta ? ', beta' : ''}: ${first.scales} / ${first.filters} / ${first.flats}`, enhanceNotice: first.notice || 'none',
+      enhanceSent: `${chose4} | ${choseSmooth} | ${choseSharpFlat}`, enhanceKeptAfterReload: `${again.scale} ${again.filter} ${again.flat}, sent ${againSent}`,
       enhanceWithoutRoutes: `${without.notice || 'no notice'}; game ${withoutAdvances > 0 ? 'runs' : 'stopped'}`, enhanceOk, errors: log.length + site.log.length };
   },
 

@@ -29,9 +29,9 @@ From 2026-11-16 to 2026-11-18, in 90 conversations with the agents:
 | Model | Requests | Input tokens | Cache writes | Cache reads | Output tokens | At API prices |
 |---|---:|---:|---:|---:|---:|---:|
 | Claude Fable 5.2 | 9,450 | 19,484 | 26,249,722 | 2,132,303,493 | 9,719,822 | $1,211 |
-| Claude Opus 5.5 | 3,919 | 7,960 | 11,314,992 | 1,008,788,183 | 2,808,492 | $338 |
+| Claude Opus 5.5 | 4,028 | 8,208 | 11,424,900 | 1,048,340,756 | 2,863,033 | $348 |
 | Claude Sonnet 5.5 | 6 | 18 | 32,793 | 303,181 | 4,532 | $0 |
-| **Total** | 13,375 | 27,462 | 37,597,507 | 3,141,394,857 | 12,532,846 | $1,550 |
+| **Total** | 13,484 | 27,710 | 37,707,415 | 3,180,947,430 | 12,587,387 | $1,560 |
 
 A request is one reply from the model, and an agent makes hundreds of
 them in a task. Each request sends the conversation so far. Most of it
