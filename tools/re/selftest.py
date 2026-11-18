@@ -8,6 +8,7 @@ sys.path.insert(0, str(HERE))
 import dbg  # noqa: E402
 import e32  # noqa: E402
 import render  # noqa: E402
+import sig  # noqa: E402
 
 
 def check(name, condition):
@@ -69,7 +70,51 @@ def main():
     cover, diff = render.compare(small, once, covered)
     ok &= check('four times the size, scaled back, is the same picture', (sw, sh) == (8, 8) and diff < 1 and cover > 0.7)
 
+    ok &= check_sig()
+
     sys.exit(0 if ok else 1)
+
+
+class FakeImage:
+    """Just enough of an e32.Image for sig.Code: words, and which of them the loader relocates."""
+
+    def __init__(self, words, relocated=()):
+        import struct
+        self.code = struct.pack('<%dI' % len(words), *words)
+        self.text_size = len(self.code)
+        self.base = 0x10000000
+        self._relocated = list(relocated)
+
+    def word(self, offset):
+        import struct
+        return struct.unpack_from('<I', self.code, offset)[0]
+
+    def relocations(self):
+        return self._relocated
+
+
+def check_sig():
+    ok = True
+    push, pop, mov, add, sub, cmp = 0xE92D4010, 0xE8BD4010, 0xE1A04000, 0xE2800001, 0xE2411001, 0xE3500000
+    other = [push, add, add, sub, pop]
+    # The function to find: a call, a literal loaded from the pool, and the pool word.
+    def function(call, literal, extra=()):
+        return [push, mov, call, 0xE59F0004, *extra, cmp, add, sub, pop, literal]
+
+    first = sig.Code(FakeImage(other + function(0xEB000010, 0x10001234), relocated=[4 * (len(other) + 8)]))
+    second = sig.Code(FakeImage(other + other + function(0xEBFFFF80, 0x10004444), relocated=[4 * (2 * len(other) + 8)]))
+    at = 4 * len(other) + 8                     # the call, inside the function
+    found, likeness, note = sig.find(first, at, second)
+    ok &= check('sig: a function is found whatever its branch distances and relocated words',
+                found == 4 * 2 * len(other) + 8 and note == 'exact')
+
+    longer = sig.Code(FakeImage(other + function(0xEB000001, 0x10000000, extra=[0xE3A00000] * 2) + other,
+                                relocated=[4 * (len(other) + 10)]))
+    later = 4 * len(other) + 4 * 6              # add, after the inserted instructions in the other copy
+    found, likeness, note = sig.find(first, later, longer, least=0.7)
+    ok &= check('sig: an offset is carried over through an inserted instruction',
+                note == 'alike' and found == 4 * len(other) + 4 * 8)
+    return ok
 
 
 if __name__ == '__main__':

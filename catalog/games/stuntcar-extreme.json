@@ -19,6 +19,11 @@
     "players": 2,
     "status": "untested"
   },
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "Track, cars, scenery and the cars' shadows are captured. The sky picture, the HUD and the dashboard are 2D and stay at 176x208."
+  },
   "controls": {
     "source": "The game's Help (General Controls and Race Controls for Nokia N-Gage). Steering, accelerate, view change and pause were also tried in a race; that 5 and OK select in menus was observed.",
     "actions": {
