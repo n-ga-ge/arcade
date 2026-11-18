@@ -24,13 +24,14 @@ No other AI models or services were used.
 
 ## Tokens and cost
 
-From 2026-11-16 to 2026-11-17, in 36 conversations with the agents:
+From 2026-11-16 to 2026-11-18, in 85 conversations with the agents:
 
 | Model | Requests | Input tokens | Cache writes | Cache reads | Output tokens | At API prices |
 |---|---:|---:|---:|---:|---:|---:|
-| Claude Fable 5.2 | 4,865 | 10,206 | 15,577,350 | 1,263,310,204 | 5,529,173 | $707 |
-| Claude Opus 5.5 | 398 | 800 | 1,407,024 | 43,255,517 | 269,850 | $21 |
-| **Total** | 5,263 | 11,006 | 16,984,374 | 1,306,565,721 | 5,799,023 | $728 |
+| Claude Fable 5.2 | 9,450 | 19,484 | 26,249,722 | 2,132,303,493 | 9,719,822 | $1,211 |
+| Claude Opus 5.5 | 3,243 | 6,558 | 9,924,159 | 843,374,992 | 2,183,406 | $282 |
+| Claude Sonnet 5.5 | 6 | 18 | 32,793 | 303,181 | 4,532 | $0 |
+| **Total** | 12,699 | 26,060 | 36,206,674 | 2,975,981,666 | 11,907,760 | $1,493 |
 
 A request is one reply from the model, and an agent makes hundreds of
 them in a task. Each request sends the conversation so far. Most of it
@@ -47,4 +48,4 @@ work took, not what was paid.
 Counted by [a script](../../tools/ai/usage.py) from the transcripts the
 agents keep of every conversation. It does not see the few small
 requests the tools make without writing them down, such as the titles
-of conversations. Figures as of 2026-11-17.
+of conversations. Figures as of 2026-11-18.
