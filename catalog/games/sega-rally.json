@@ -92,5 +92,10 @@
         "wait": 1000
       }
     ]
+  },
+  "enhance": {
+    "engine": "sega-rally",
+    "status": "experimental",
+    "note": "The track, hills, barriers and trees of the Oval course are captured with their textures and drawn sharper. The sky and distant scenery behind them and the HUD stay the game's own 2D. Textures are mapped without perspective, as the game does, so they bend on large polygons. Only the Oval course was tried."
   }
 }

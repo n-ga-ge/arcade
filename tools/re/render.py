@@ -27,6 +27,7 @@ The rules, which the GPU layer follows too:
 """
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -108,8 +109,8 @@ def render(frame, textures, scale, background=(0, 0, 0), canvas=None):
                         r, g, b, a = ((b0 * ch[0] + b1 * ch[1] + b2 * ch[2]) / q for ch in channels)
 
                     if texture:
-                        tu = int((b0 * us[0] + b1 * us[1] + b2 * us[2]) / q) % tw
-                        tv = int((b0 * vs[0] + b1 * vs[1] + b2 * vs[2]) / q) % th
+                        tu = math.floor((b0 * us[0] + b1 * us[1] + b2 * us[2]) / q) % tw
+                        tv = math.floor((b0 * vs[0] + b1 * vs[1] + b2 * vs[2]) / q) % th
                         texel = (tv * tw + tu) * 4
                         if blend == 'key' and texels[texel + 3] == 0:
                             continue

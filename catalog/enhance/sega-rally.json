@@ -1,0 +1,254 @@
+{
+  "engine": "sega-rally",
+  "about": "Sega Rally Championship's own renderer: a list of textured polygons and sprite rectangles per layer, sorted far to near and filled without perspective into a 176 by 208 buffer of 12-bit pixels, which is then copied into the bitmap the HUD is drawn on.",
+  "viewport": {
+    "width": 176,
+    "height": 208
+  },
+  "images": [
+    {
+      "name": "6r12.app",
+      "hash": "0xEDAE2D27",
+      "game": "sega-rally",
+      "hooks": [
+        {
+          "at": "0x1fdbc",
+          "do": "begin",
+          "note": "The scene's first pass: clears the 3D buffer to 0x8000 (nothing drawn) and draws the first of three polygon layers. r0 the scene, u32(r0 + 4) the renderer; its 3D buffer of 12-bit pixels is at +0x8778.",
+          "target": {
+            "pixels": "u32(r0 + 4) + 0x8778",
+            "width": 176,
+            "height": 208,
+            "pitch": 352,
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x1dc94",
+          "do": "end",
+          "note": "Copies the 3D buffer, pixel by pixel and leaving out those with bit 15 set, into the bitmap the HUD is then drawn on."
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 1 && u32(r10 + 0x88) == 3",
+          "note": "A clipped polygon in screen space, about to be cut into edges: 16-bit texture, opaque. r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
+          "mode": "fan",
+          "count": "u32(sp)",
+          "vertex": "r6 + 32 * i",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(p + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(p + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 5 && u32(r10 + 0x88) == 3",
+          "note": "A clipped polygon in screen space, about to be cut into edges: 16-bit texture, 0xFFFF transparent (trees, signs, the car's shadow). r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
+          "mode": "fan",
+          "count": "u32(sp)",
+          "vertex": "r6 + 32 * i",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(p + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(p + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "rgb444",
+            "key": "0xFFFF"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 2 && u32(r10 + 0x88) == 3",
+          "note": "A clipped polygon in screen space, about to be cut into edges: 8-bit texture with a palette of 12-bit colours, opaque. r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
+          "mode": "fan",
+          "count": "u32(sp)",
+          "vertex": "r6 + 32 * i",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(p + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(p + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "p8",
+            "palette": "u32(r7 + 0x30)",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 6 && u32(r10 + 0x88) == 3",
+          "note": "A clipped polygon in screen space, about to be cut into edges: 8-bit texture with a transparent palette entry (bit 15), not seen: index 0 is a guess. r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
+          "mode": "fan",
+          "count": "u32(sp)",
+          "vertex": "r6 + 32 * i",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(p + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(p + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "p8",
+            "palette": "u32(r7 + 0x30)",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d39c",
+          "do": "set",
+          "when": "u32(r10 + 0x88) != 3",
+          "note": "A rectangle (a sprite: trees, signs): the game fills it between two opposite corners, the first and third when the first two share a row, else the fourth and second.",
+          "vars": {
+            "A": "sel(s32(r6 + 4) == s32(r6 + 36), r6, r6 + 96)",
+            "B": "sel(s32(r6 + 4) == s32(r6 + 36), r6 + 64, r6 + 32)"
+          }
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 1 && u32(r10 + 0x88) != 3",
+          "note": "The rectangle, 16-bit texture, opaque, as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0 || i == 3, $A, $B)",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(sel(i < 2, $A, $B) + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(sel(i < 2, $A, $B) + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 5 && u32(r10 + 0x88) != 3",
+          "note": "The rectangle, 16-bit texture, 0xFFFF transparent (trees, signs, the car's shadow), as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0 || i == 3, $A, $B)",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(sel(i < 2, $A, $B) + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(sel(i < 2, $A, $B) + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "rgb444",
+            "key": "0xFFFF"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 2 && u32(r10 + 0x88) != 3",
+          "note": "The rectangle, 8-bit texture with a palette of 12-bit colours, opaque, as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0 || i == 3, $A, $B)",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(sel(i < 2, $A, $B) + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(sel(i < 2, $A, $B) + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "p8",
+            "palette": "u32(r7 + 0x30)",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d39c",
+          "do": "draw",
+          "when": "r9 == 6 && u32(r10 + 0x88) != 3",
+          "note": "The rectangle, 8-bit texture with a transparent palette entry (bit 15), not seen: index 0 is a guess, as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0 || i == 3, $A, $B)",
+          "fields": {
+            "x": "fx(s32(p), 10) - 0.5",
+            "y": "fx(s32(sel(i < 2, $A, $B) + 4), 10) - 0.5",
+            "u": "fx(s32(p + 16), 10)",
+            "v": "fx(s32(sel(i < 2, $A, $B) + 20), 10)"
+          },
+          "texture": {
+            "pixels": "u32(r7 + 0x2c)",
+            "width": "u32(r7 + 0x1c)",
+            "height": "u32(r7 + 0x20)",
+            "format": "p8",
+            "palette": "u32(r7 + 0x30)",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x1d7e8",
+          "do": "set",
+          "skip": true,
+          "vars": {},
+          "note": "When replacing: one edge of a polygon, which on the second edge of a row fills the span between them. Not run."
+        },
+        {
+          "at": "0x1d458",
+          "do": "set",
+          "skip": true,
+          "vars": {},
+          "note": "When replacing: fills a rectangle. Not run."
+        }
+      ]
+    }
+  ]
+}
