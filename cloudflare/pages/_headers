@@ -7,7 +7,8 @@
 # set by two rules is joined with a comma, so a narrower rule first detaches
 # ("! Name") what it replaces. Pages does not apply this file to responses
 # from Pages Functions (the site has none) or from the assets Worker, which
-# sets its own headers on /assets/.
+# sets its own headers on /assets/. The share Worker on /play/* passes on
+# the headers Pages gave each response, so these rules hold there too.
 
 /*
   # Cross-origin isolation. The player runs the emulator on threads, which
@@ -99,6 +100,15 @@
   # neither here nor revalidated.
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable
+
+/demo.mp4
+  # The demo video (docs/demo-video.md), made to be shared: other sites may
+  # show it in a <video> of their own, which the resource policy of /* would
+  # block. It keeps its address from one video to the next, so it is
+  # revalidated like the pages (the Cache-Control of /*); the zone's Browser
+  # Cache TTL may let a browser keep it for four hours, which does no harm.
+  ! Cross-Origin-Resource-Policy
+  Cross-Origin-Resource-Policy: cross-origin
 
 # No Content-Type rule: Pages takes the type from the file extension, and
 # .wasm is served as application/wasm (which streaming compilation requires)

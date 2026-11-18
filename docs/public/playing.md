@@ -85,6 +85,11 @@ running game.
 **Copy link to this game** gives you a link that starts it directly, and
 **All games** takes you back to the front page.
 
+In fullscreen, Chrome and Edge give every key the game uses to the game,
+Escape too: hold Escape to leave fullscreen, or choose **Fullscreen** in the
+menu again. In Firefox and Safari a press of Escape leaves fullscreen, so a
+game that uses Escape gets it only outside fullscreen.
+
 ## Saves
 
 Save from inside the game, with the game's own menu, as you would on the
