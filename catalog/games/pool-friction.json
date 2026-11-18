@@ -10,14 +10,15 @@
   "notes": [
     "The game is in Spanish only. Main menu: Iniciar juego (start game), Opciones (options), Créditos (credits), Ayuda (help), Salir (quit). Start game offers Estilo libre (free play), Jugador VS. CPU (player against the computer) and Juego en red (network game).",
     "A shot has three steps: place or aim with the direction keys, press 5 to accept, then hold 5 until the power indicator shows the strength you want and let go.",
-    "Juego en red (network game) needs a second phone and cannot work here."
+    "Juego en red (network game) works between two players in one room of the site (Menu > Multiplayer): one chooses Crear partida (create a game) and waits, the other Buscar partidas (look for games), then the host's name in the list and the left soft key (Unirse: join). The host breaks. To leave, open the pause menu and choose Salir de la partida."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "menu": "Iniciar juego > Juego en red",
-    "status": "untested"
+    "menu": "Iniciar juego > Juego en red > Crear partida / Buscar partidas",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Crear partida, the other Buscar partidas, the host's name in the list and Unirse; the table appears on both screens and they take turns. Each player's shot (placing the cue ball, the cue, the rolling ball, whose turn is next) is shown to the other. When one leaves, the other reads \"Juego terminado por el anfitrión o desconexión\". The host plays as EKA2L1."
   },
   "enhance": {
     "engine": "stormvm",

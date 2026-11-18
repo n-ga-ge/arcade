@@ -14,9 +14,10 @@
     ]
   },
   "status": "ingame",
-  "statusNote": "Plays with Multiplayer set to No: logos, menu, help, the story intro and the first area (Norgaram Neighborhoods) work; the knight walks, inventory and quest log open. With Multiplayer left at Yes (the default) the game also starts, and waits for other players in the background; playing it with a second player was not tried. The dumped card also holds RealPlayer and a Videos app, which the installer refuses, so the zip is packed without them.",
+  "statusNote": "Plays with Multiplayer set to No: logos, menu, help, the story intro and the first area (Norgaram Neighborhoods) work; the knight walks, inventory and quest log open. With Multiplayer left at Yes (the default) the game also starts, and waits for other players in the background; a second player can then join it. The dumped card also holds RealPlayer and a Videos app, which the installer refuses, so the zip is packed without them.",
   "notes": [
-    "The main menu has a Multiplayer switch, Yes by default. To play alone, move to it and press OK so it reads \"Multiplayer:No\"; with Yes the game starts too and listens for other players; joining it from a second player in the same room of the site (Menu > Multiplayer) was not tried.",
+    "The main menu has a Multiplayer switch, Yes by default. To play alone, move to it and press OK so it reads \"Multiplayer:No\"; with Yes the game starts too and listens for other players.",
+    "Two players in one adventure (cooperation): both leave Multiplayer at Yes and start Play > New Adventure. Once both are in the first area, one opens the game menu (left soft key) and chooses Play > Join to a game, then the other player's name under Select Game with OK; that player's hero then appears in the other's world. The game menu of the one who joined pauses both; its Exit > Exit from cooperation leaves.",
     "A new adventure opens with an illustrated story that plays by itself for about 40 seconds before the first area loads.",
     "In play the left soft key opens the menu (Play > Go to the game returns) and the right soft key the inventory. In the inventory 5 uses an object, 7 throws it away, 4 reads and 8 drinks.",
     "Saving costs 200 gold, paid to the Wizard; after dying, use Resurrection in the game menu."
@@ -25,8 +26,9 @@
     "modes": [
       "bluetooth"
     ],
-    "menu": "Main menu > Multiplayer: Yes / No, then New Adventure",
-    "status": "untested"
+    "menu": "Multiplayer: Yes, Play > New Adventure; to join: game menu > Play > Join to a game",
+    "status": "plays",
+    "statusNote": "Two players in one room: both start a New Adventure with Multiplayer at Yes, then one picks Play > Join to a game in the game menu and the other's name; its hero appeared in the other's world, each screen showed the other walk, and the joiner's menu paused both (\"Pause, waiting for the mate\"). After Exit from cooperation the host plays on with no message and the mate's hero stays standing."
   },
   "controls": {
     "source": "The game's Help (controls during the game and in the inventory). Movement, the soft keys and * were also seen in play; attack, protect, spells and potion showed nothing with no enemy near, so they are as Help gives them. Help calls * \"Enemy\"; in play it showed the current adventure.",

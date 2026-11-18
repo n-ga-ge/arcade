@@ -12,15 +12,17 @@
   "notes": [
     "Start Game > Single Player > Start New Game begins level 1. Empty the blue bar at the top by collecting pick-ups before the time runs out; the snake cannot stop or go backwards.",
     "The instructions are under Start Game > Instructions and in the pause menu.",
-    "Send Game, Multiplayer and N-Gage Arena need Bluetooth or the N-Gage Arena service and cannot work here."
+    "Multiplayer (Start Game > Multiplayer) is a Bluetooth game for up to four. Between two players of the site the host's lobby fills, but Start Game does not start a game yet. Send Game in the main menu was not tried; N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "menu": "Multiplayer",
-    "status": "untested"
+    "players": 4,
+    "menu": "Start Game > Multiplayer > Host Game / Join Game",
+    "status": "connects",
+    "statusNote": "Two players in one room: one chooses Host Game, the other Join Game and the host in the list; the host accepts the player in its lobby and the joiner is told the connection was accepted. No game starts: when the host chooses Start Game, the joiner disappears from the host's lobby and stays on its waiting screen. The host hangs up after accepting and cannot reach the joiner again."
   },
   "controls": {
     "source": "Observed in play: turning with left and right and with 4 and 6, the camera view on 3, the pause menu on both soft keys, OK and the direction keys in menus. The game's Instructions describe turning and a boost that speeds the snake up or slows it down, but name no keys; no key tried here used the boost.",

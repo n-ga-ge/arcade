@@ -11,7 +11,8 @@
   "notes": [
     "Menus are chosen with the left soft key or 5, not with OK; the right soft key goes back.",
     "Main menu from the top: Single Player, Multiplayer, N-Gage Arena, Options, High Scores, Quit. Single Player offers Adventure, Arcade and Time Trial.",
-    "Multiplayer (Bluetooth) and N-Gage Arena cannot work here.",
+    "A Bluetooth race is under Multiplayer in the main menu: one player chooses Host, the other Client and then Connect when the host's name appears. The host chooses Accept and Start Game, moves down through the race settings (both players see them) to Race! and presses 5.",
+    "N-Gage Arena is no longer online.",
     "The main menu starts a demo race when left idle for about 25 seconds; a soft key returns to the menu."
   ],
   "multiplayer": {
@@ -19,8 +20,9 @@
       "bluetooth",
       "arena"
     ],
-    "menu": "Main menu > Multiplayer (second from the top, below Single Player)",
-    "status": "untested"
+    "menu": "Main menu > Multiplayer (second from the top) > Host / Client",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other is the client and connects to the host it finds, the host accepts, starts and sets up the race; a single race ran on both screens, and one player fell from 7th to 8th when the other drove past. One player's pause is shown to the other, and both say Connection Lost when one leaves. More than two players were not tried."
   },
   "controls": {
     "source": "The game's defaults from its Options > Controls screen (Hop 2, Brake 8, Fire 4, Accel 5; the game can change them there). Accelerate, hop, the soft keys and the pause menu were confirmed in a race; steering, brake and fire were not checked there.",

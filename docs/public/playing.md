@@ -153,9 +153,8 @@ Good to know:
   expected to connect more than two players yet.
 - **N-Gage Arena does not work.** It was Nokia's online service, and it has
   been shut down.
-- **This is new, and most games have not been tried this way.** Each game's
-  page says whether its multiplayer has been tried, and a game that has not
-  been tried may not connect.
+- **Most games play, a few do not.** Every game with a Bluetooth game has
+  been tried between two players, and each game's page says how far it got.
 - While you are in a room, what your game sends to the other players passes
   through the site on its way to them, together with the name you set.
 
