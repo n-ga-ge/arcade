@@ -7,10 +7,7 @@
   "genre": "Platformer",
   "uid": "0x2001AD92",
   "variantOf": null,
-  "dump": "N-Gage 2.0",
-  "pack": {
-    "file": "Games/Fixes and cracks/Pandemonium.zip/pandemonium.n-gage"
-  },
+  "dump": "Pandemonium (N-Gage 2.0)",
   "status": "ingame",
   "statusNote": "The N-Gage 2.0 game of 2009, not the original N-Gage card Pandemonium! (2003). Plays: the N-Gage and Eidos logos, the trial note (Try Game), the title, New Game, and World I's first level in landscape with correct 3D, about 21 fps. Its movies are skipped (no video decoder in the web build).",
   "notes": [

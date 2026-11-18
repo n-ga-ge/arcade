@@ -31,8 +31,8 @@
                      (default: private/firmware/devices/rm-409.zip, else
                      testdata/devices/rm-409.zip; tools/devices/pack.py makes it)
   --ngage2-app FILE  the N-Gage application 1.40.1557 (default:
-                     testdata/ngage2/ngage-1.40.1557.sis, else the installer's
-                     zip in private/games/N-Gage 2.0/). A path may go into a
+                     private/firmware/ngage2/ngage-1.40.1557.sis, else
+                     testdata/ngage2/ngage-1.40.1557.sis). A path may go into a
                      .zip: <file>.zip/<name in it>; that file is then taken
                      out into <out>/firmware/ first.
   The N-Gage 2.0 files are needed only while the catalogue has an N-Gage 2.0
@@ -93,10 +93,8 @@ def parse_args():
                                                        os.path.join(main, "testdata", "NGAGE.ROM"), os.path.join(main, "NGAGE.ROM")))
     parser.add_argument("--ngage2-device", default=first_existing(os.path.join(main, "private", "firmware", "devices", "rm-409.zip"),
                                                                   os.path.join(main, "testdata", "devices", "rm-409.zip")))
-    parser.add_argument("--ngage2-app", default=first_existing(
-        os.path.join(main, "testdata", "ngage2", "ngage-1.40.1557.sis"),
-        os.path.join(main, "private", "games", "N-Gage 2.0", "Software", "N-Gage Installer v1.40.1557", "Other",
-                     "N-Gage Installer v1.40.1557.zip", "N-Gage_Installer_v.1.40.1557_.sis")))
+    parser.add_argument("--ngage2-app", default=first_existing(os.path.join(main, "private", "firmware", "ngage2", "ngage-1.40.1557.sis"),
+                                                               os.path.join(main, "testdata", "ngage2", "ngage-1.40.1557.sis")))
     parser.add_argument("--out", default=os.path.join(main, "testdata", "games"))
     parser.add_argument("--bucket", default=os.environ.get("R2_BUCKET") or "n-ga-ge-assets")
     parser.add_argument("--manifest", default=common.MANIFEST)
