@@ -23,6 +23,11 @@ writes to DIR:
 
 and compares render-1x with guest where the triangles cover the picture.
 It passes when they cover at least --min-cover of the screen (default 0.15)
+Where the game draws its own 2D over the 3D (a status bar, a HUD), the
+comparison counts that 2D against the triangles; leave such rectangles out
+with --exclude X,Y,W,H in guest pixels (repeatable), and say so where the
+result is reported.
+
 and differ by at most --max-diff per colour channel on average (default 24
 of 255; the guest shows 4 bits a channel and its rasteriser rounds its own
 way, so a correct profile lands around 5 to 15).
@@ -88,6 +93,8 @@ def main():
     parser.add_argument('--keys', default='')
     parser.add_argument('--min-cover', type=float, default=0.15)
     parser.add_argument('--max-diff', type=float, default=24)
+    parser.add_argument('--exclude', action='append', default=[],
+                        help='X,Y,W,H in guest pixels: leave this rectangle out of the comparison (repeatable)')
     args = parser.parse_args()
 
     out = Path(args.out)
@@ -161,6 +168,14 @@ def main():
     dbg.write_png(out / f'render-{args.scale}x.png', width, height, rgba)
     sw, sh, small, covered = render.shrink(width, height, rgba, coverage, args.scale)
     dbg.write_png(out / 'render-1x.png', sw, sh, small)
+    for spec in args.exclude:
+        try:
+            x, y, w, h = (int(v) for v in spec.split(','))
+        except ValueError:
+            fail(f'--exclude takes X,Y,W,H, not {spec}')
+        for row in range(max(0, y), min(sh, y + h)):
+            for col in range(max(0, x), min(sw, x + w)):
+                covered[row * sw + col] = 0
     cover, diff = render.compare(small, guest, covered)
 
     triangles = len(frame['vertices']) // (3 * render.stride_of(frame))
@@ -169,7 +184,8 @@ def main():
           f'{len(textures)}/{len(frame["textures"])} textures read, {faults} faults, '
           f'drawn in {time.time() - started:.1f} s')
     print(f'covers {100 * cover:.1f}% of the screen (needs {100 * args.min_cover:.0f}%), '
-          f'differs by {diff:.1f} of 255 there (at most {args.max_diff:g})')
+          f'differs by {diff:.1f} of 255 there (at most {args.max_diff:g})'
+          + (f', leaving out {"; ".join(args.exclude)}' if args.exclude else ''))
     print(f'pictures in {out}: guest.png, render-{args.scale}x.png, render-1x.png')
     passed = cover >= args.min_cover and diff <= args.max_diff
     print('PASS' if passed else 'FAIL')
