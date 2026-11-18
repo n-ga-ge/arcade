@@ -161,6 +161,12 @@ def main():
     dbg.write_png(out / f'render-{args.scale}x.png', width, height, rgba)
     sw, sh, small, covered = render.shrink(width, height, rgba, coverage, args.scale)
     dbg.write_png(out / 'render-1x.png', sw, sh, small)
+    # The GPU layer keys only inside the frame's target, so the 3D never shows outside it
+    # (the black bars around a view smaller than the screen): those pixels are not compared.
+    target = frame.get('target') or {}
+    tw, th = int(target.get('width') or sw), int(target.get('height') or sh)
+    if tw < sw or th < sh:
+        covered = bytearray(on and (at % sw) < tw and (at // sw) < th for at, on in enumerate(covered))
     cover, diff = render.compare(small, guest, covered)
 
     triangles = len(frame['vertices']) // 21

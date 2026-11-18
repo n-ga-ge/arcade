@@ -159,5 +159,10 @@
         "wait": 3000
       }
     ]
+  },
+  "enhance": {
+    "engine": "exient",
+    "status": "experimental",
+    "note": "Riders, course, rails, trees and rocks are redrawn. Not exact yet: a texture whose light changes across a polygon gets one light level per polygon, scenery the game fades in with a checker pattern is drawn half transparent, and dithered snow shading shows as bands at the larger sizes."
   }
 }
