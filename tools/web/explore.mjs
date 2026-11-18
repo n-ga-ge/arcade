@@ -3,13 +3,16 @@
 // script can press keys and look at screenshots one step at a time.
 //
 //   node tools/web/explore.mjs [--game SLUG] [--script] [--port 8080] [--control-port 8091] [--out DIR]
-//                              [--gameplay] [--query "..."] [--log "*:warn"]
+//                              [--gameplay] [--query "..."] [--log "*:warn"] [--viewport 1280x800] [--dpr 1]
 //
 //   --game SLUG      load testdata/games/<SLUG>.zip (see tools/games/pack.py); default is Shadowkey
 //   --script         after the game starts, replay "test.script" from catalog/games/<SLUG>.json
 //   --port           the dev server's port (tools/web/devserver.py)
 //   --control-port   the port this tool listens on
 //   --gameplay       Shadowkey only: its key script into the first room
+//   --viewport WxH   the window's size in CSS pixels (default 1280x800)
+//   --dpr N          screen pixels per CSS pixel (default 1; 2 is a high-density screen), for looking at
+//                    how the picture is scaled: /pageshot then has N times as many pixels
 //
 // The page's console (emulator log lines included) is written to DIR/console.log.
 // If the game does not start within 90 s the tool says so and still serves
@@ -47,7 +50,8 @@ const root = path.join(TOOLCHAIN, 'chrome', 'chrome');
 const exe = TOOLCHAIN && fs.existsSync(root) ? path.join(root, fs.readdirSync(root).sort().pop(), 'chrome-linux64', 'chrome') : undefined;
 const browser = await chromium.launch({ executablePath: exe, headless: true,
   args: ['--autoplay-policy=no-user-gesture-required', '--use-gl=angle', '--use-angle=gl-egl', '--enable-gpu', '--ignore-gpu-blocklist'] });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const [viewWidth, viewHeight] = String(args.viewport || '1280x800').split('x').map(Number);
+const page = await browser.newPage({ viewport: { width: viewWidth || 1280, height: viewHeight || 800 }, deviceScaleFactor: Number(args.dpr) || 1 });
 const consoleLog = fs.createWriteStream(path.join(outDir, 'console.log'));
 page.on('console', (message) => consoleLog.write(`[${message.type()}] ${message.text()}\n`));
 page.on('pageerror', (error) => { console.log('[pageerror]', error.message); consoleLog.write(`[pageerror] ${error.message}\n`); });
