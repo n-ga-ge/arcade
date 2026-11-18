@@ -113,6 +113,24 @@ async function open(browser, { device = 'desktop', url = `${base}/?${query}`, in
   return { context, page, log, started };
 }
 
+// Share of the n by n blocks of a screenshot that are one colour: 1 when the
+// picture is game pixels enlarged n times and shown pixel for pixel. 0 when
+// the screenshot is not a whole number of such blocks.
+function evenBlocks(png, n) {
+  if (!Number.isInteger(n) || n < 1 || png.width % n || png.height % n) return 0;
+  let even = 0;
+  const at = (x, y) => png.data.readUInt32LE((y * png.width + x) * 4);
+  for (let y = 0; y < png.height; y += n) {
+    for (let x = 0; x < png.width; x += n) {
+      const first = at(x, y);
+      let same = true;
+      for (let j = 0; j < n && same; j++) for (let i = 0; i < n && same; i++) same = at(x + i, y + j) === first;
+      if (same) even++;
+    }
+  }
+  return even / ((png.width / n) * (png.height / n));
+}
+
 const state = (page) => page.evaluate(() => {
   const p = window.eka2l1Page || {};
   return {
@@ -553,7 +571,10 @@ const TESTS = {
     const results = {};
     let reference = null;
     let smooth = null;
+    let previous = null;
     const failed = [];
+    // At a whole-number scale "Sharp pixels, evened" is sharp pixels.
+    const evenScale = await page.evaluate(() => Number.isInteger(window.eka2l1Page.surface.width / 176));
     for (const filter of filters) {
       await page.selectOption('#filter-select', filter);
       await page.evaluate(() => document.getElementById('display').close());
@@ -567,7 +588,10 @@ const TESTS = {
       // shader filter must differ from that too.
       const versusSmooth = smooth && filter !== 'linear' && filter !== 'nearest' ? difference(smooth, png) : 1;
       results[filter] = `${lit.toFixed(0)}/${diff.toFixed(1)}/${versusSmooth.toFixed(2)}`;
-      if (lit < 15 || (filter !== 'nearest' && diff < 0.05) || versusSmooth < 0.02) failed.push(filter);
+      // A shader that does not compile leaves the one before it in place.
+      const versusPrevious = previous ? difference(previous, png) : 1;
+      previous = png;
+      if (lit < 15 || (filter !== 'nearest' && diff < 0.05 && !(filter === 'sharp_bilinear' && evenScale)) || versusSmooth < 0.02 || versusPrevious < 0.02) failed.push(filter);
       if (filter === 'fsr' || filter === 'fsr_sharp' || filter === 'nearest') fs.writeFileSync(path.join(outDir, `${name}-display-${filter}.png`), PNG.sync.write(png));
       await page.click('#btn-menu'); await page.click('#m-display');
     }
@@ -587,8 +611,26 @@ const TESTS = {
       const size = await page.evaluate(() => ({ want: window.eka2l1Page.surface, got: [document.getElementById('canvas').width, document.getElementById('canvas').height] }));
       sizes[resolution] = `${size.got[0]}x${size.got[1]}`;
       if (size.got[0] !== size.want.width || size.got[1] !== size.want.height) sizesOk = false;
-      if (resolution !== 'auto' && size.got[0] !== 176 * Number(resolution)) sizesOk = false;
+      if (/^\d+$/.test(resolution) && size.got[0] !== 176 * Number(resolution)) sizesOk = false;
     }
+
+    // The largest whole multiple, with sharp pixels: the page shows the canvas
+    // pixel for pixel, so every game pixel is a square block of one size.
+    await page.selectOption('#filter-select', 'nearest');
+    await page.selectOption('#resolution-select', 'fit');
+    await page.evaluate(() => document.getElementById('display').close());
+    await sleep(1500);
+    const whole = await page.evaluate(() => {
+      const element = document.getElementById('canvas');
+      const box = element.getBoundingClientRect();
+      const ratio = window.devicePixelRatio;
+      return { multiple: element.width / 176, rows: element.height / 208, shown: [box.width * ratio, box.height * ratio], backing: [element.width, element.height] };
+    });
+    const blocks = evenBlocks(await shot(), whole.multiple);
+    sizes.fitShown = `${whole.multiple}x, shown ${whole.shown.map((n) => Number(n.toFixed(2))).join('x')}, even blocks ${blocks}`;
+    if (!(Number.isInteger(whole.multiple) && whole.multiple >= 1 && whole.rows === whole.multiple
+      && Math.abs(whole.shown[0] - whole.backing[0]) < 0.01 && Math.abs(whole.shown[1] - whole.backing[1]) < 0.01 && blocks === 1)) sizesOk = false;
+    await page.click('#btn-menu'); await page.click('#m-display');
 
     // The choice is kept for the next visit.
     await page.selectOption('#filter-select', 'fsr');
