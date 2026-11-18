@@ -14,6 +14,7 @@
     "The game's help lists A to jump and B to fire, keys the phone does not have: the centre key (OK) jumps, and fire has no key here.",
     "The keypad is turned for landscape: 8 moves left, 2 right, 4 up, 6 down, as well as the arrows."
   ],
+  "multiplayer": null,
   "controls": {
     "source": "The game's own help screen, and watched in play (OK jumps, left and right move, the left soft key pauses).",
     "actions": {

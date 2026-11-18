@@ -14,6 +14,14 @@
     "Punch and kick start on keys the phone does not have. Rebind them in the game's pause menu (left soft key).",
     "The phone is turned to landscape by the game, 320×240."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Play > Multiplayer > Host a Game / Join a Game",
+    "status": "broken",
+    "statusNote": "Choosing Fight! under Host a Game, or Join a Game, ends the game at once with an access violation, before it makes any Bluetooth call, so two players cannot meet. Two linked phones do find each other; the game stops first."
+  },
   "controls": {
     "source": "Watched in play during the bring-up: the menus, Versus and a fight. Punch and kick were not mapped to phone keys by default.",
     "actions": {

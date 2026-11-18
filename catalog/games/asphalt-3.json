@@ -14,6 +14,7 @@
     "Sometimes quits by itself soon after starting: start it again.",
     "The phone is turned to landscape by the game, 320×240."
   ],
+  "multiplayer": null,
   "controls": {
     "source": "Watched in play during the bring-up: the language, sound and menu screens, and an Instant Play race.",
     "actions": {
