@@ -34,7 +34,24 @@
         {
           "at": "0xa0bf8",
           "do": "set",
-          "note": "Dims a rectangle of the picture (behind a menu): the polygons are left to the game while it is used.",
+          "note": "Dims a rectangle of the picture (behind a menu): while one of at least half the view is dimmed, the polygons are left to the game.",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa10b0",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa06a4",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
           "vars": {
             "dimmed": "$fno"
           }
@@ -65,13 +82,14 @@
           "at": "0x62da0",
           "do": "set",
           "vars": {
-            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, sar($L, 5))) * 512"
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
           }
         },
         {
           "at": "0x62da0",
           "do": "set",
-          "note": "Clipping at the top of the view: where each corner of the triangle moves to.",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
           "vars": {
             "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
             "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
@@ -84,6 +102,7 @@
         {
           "at": "0x62da0",
           "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
           "vars": {
             "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
             "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
@@ -97,7 +116,34 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, opaque: 64 by 64 texels of 8 bits, 256 bytes a row, through one of 64 palettes picked by the light, or a row per pixel by the shade (mode bit 0x80).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -125,7 +171,35 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, index 0 transparent (bit 2).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -154,7 +228,35 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, half and half with the picture (bit 4), or every other pixel (bit 0x20).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -183,7 +285,36 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, every other pixel, index 0 transparent.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -213,7 +344,31 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, shaded: each pixel takes the colour ramp entry (32 entries of 12 bits) of the shade interpolated across the polygon, dithered; the ramp is drawn as a texture.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -221,7 +376,7 @@
           "fields": {
             "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
             "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {
@@ -238,7 +393,32 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, shaded, every other pixel (bit 0x20): drawn as half and half.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -246,7 +426,7 @@
           "fields": {
             "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
             "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5",
             "a": "128"
           },
@@ -264,7 +444,25 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, one colour: the material's 12-bit colour through the light.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -283,7 +481,26 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, one colour, half and half (bit 4) or every other pixel (bit 0x20).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -325,13 +542,14 @@
           "at": "0x60734",
           "do": "set",
           "vars": {
-            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, sar($L, 5))) * 512"
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
           }
         },
         {
           "at": "0x60734",
           "do": "set",
-          "note": "Clipping at the top of the view: where each corner of the triangle moves to.",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
             "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
@@ -344,6 +562,7 @@
         {
           "at": "0x60734",
           "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
             "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
@@ -357,6 +576,7 @@
           "at": "0x60734",
           "do": "set",
           "note": "The same for the quad's second triangle (vertices 0, 2, 3).",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "e1_0": "sel(s16(r1 + 36 + 2) >= 0, r1 + 36, r1 + 24)",
             "e1_1": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 36)",
@@ -369,6 +589,7 @@
         {
           "at": "0x60734",
           "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "t1_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_0 + 2)))",
             "t1_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_1 + 2)))",
@@ -381,7 +602,34 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -408,7 +656,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -435,7 +683,35 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -463,7 +739,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -491,7 +767,35 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -519,7 +823,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -547,7 +851,36 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -576,7 +909,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -605,15 +938,15 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
           "skip": true,
           "mode": "fan",
-          "count": "6",
-          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
           "fields": {
-            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
-            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {
@@ -629,7 +962,31 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -637,7 +994,7 @@
           "fields": {
             "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
             "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {
@@ -653,15 +1010,15 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
           "skip": true,
           "mode": "fan",
-          "count": "6",
-          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
           "fields": {
-            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
-            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
             "v": "0.5",
             "a": "128"
           },
@@ -678,15 +1035,15 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
-          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
           "fields": {
-            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
-            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5",
             "a": "128"
           },
@@ -703,7 +1060,50 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -721,7 +1121,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -739,7 +1139,26 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -758,7 +1177,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -804,7 +1223,24 @@
         {
           "at": "0xa0bf8",
           "do": "set",
-          "note": "Dims a rectangle of the picture (behind a menu): the polygons are left to the game while it is used.",
+          "note": "Dims a rectangle of the picture (behind a menu): while one of at least half the view is dimmed, the polygons are left to the game.",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa10b0",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa06a4",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
           "vars": {
             "dimmed": "$fno"
           }
@@ -835,13 +1271,14 @@
           "at": "0x62da0",
           "do": "set",
           "vars": {
-            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, sar($L, 5))) * 512"
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
           }
         },
         {
           "at": "0x62da0",
           "do": "set",
-          "note": "Clipping at the top of the view: where each corner of the triangle moves to.",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
           "vars": {
             "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
             "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
@@ -854,6 +1291,7 @@
         {
           "at": "0x62da0",
           "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
           "vars": {
             "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
             "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
@@ -867,7 +1305,34 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, opaque: 64 by 64 texels of 8 bits, 256 bytes a row, through one of 64 palettes picked by the light, or a row per pixel by the shade (mode bit 0x80).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -895,7 +1360,35 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, index 0 transparent (bit 2).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -924,7 +1417,35 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, half and half with the picture (bit 4), or every other pixel (bit 0x20).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -953,7 +1474,36 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Textured, every other pixel, index 0 transparent.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -983,7 +1533,31 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, shaded: each pixel takes the colour ramp entry (32 entries of 12 bits) of the shade interpolated across the polygon, dithered; the ramp is drawn as a texture.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -991,7 +1565,7 @@
           "fields": {
             "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
             "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {
@@ -1008,7 +1582,32 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, shaded, every other pixel (bit 0x20): drawn as half and half.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1016,7 +1615,7 @@
           "fields": {
             "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
             "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5",
             "a": "128"
           },
@@ -1034,7 +1633,25 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, one colour: the material's 12-bit colour through the light.",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1053,7 +1670,26 @@
           "at": "0x62da0",
           "do": "draw",
           "note": "Untextured, one colour, half and half (bit 4) or every other pixel (bit 0x20).",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1095,13 +1731,14 @@
           "at": "0x60734",
           "do": "set",
           "vars": {
-            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, sar($L, 5))) * 512"
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
           }
         },
         {
           "at": "0x60734",
           "do": "set",
-          "note": "Clipping at the top of the view: where each corner of the triangle moves to.",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
             "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
@@ -1114,6 +1751,7 @@
         {
           "at": "0x60734",
           "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
             "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
@@ -1127,6 +1765,7 @@
           "at": "0x60734",
           "do": "set",
           "note": "The same for the quad's second triangle (vertices 0, 2, 3).",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "e1_0": "sel(s16(r1 + 36 + 2) >= 0, r1 + 36, r1 + 24)",
             "e1_1": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 36)",
@@ -1139,6 +1778,7 @@
         {
           "at": "0x60734",
           "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
           "vars": {
             "t1_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_0 + 2)))",
             "t1_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_1 + 2)))",
@@ -1151,7 +1791,34 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1178,7 +1845,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1205,7 +1872,35 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1233,7 +1928,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1261,7 +1956,35 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1289,7 +2012,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1317,7 +2040,36 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1346,7 +2098,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1375,15 +2127,15 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
           "skip": true,
           "mode": "fan",
-          "count": "6",
-          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
           "fields": {
-            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
-            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {
@@ -1399,7 +2151,31 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1407,7 +2183,7 @@
           "fields": {
             "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
             "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {
@@ -1423,15 +2199,15 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
           "skip": true,
           "mode": "fan",
-          "count": "6",
-          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
           "fields": {
-            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
-            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
             "v": "0.5",
             "a": "128"
           },
@@ -1448,15 +2224,15 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
           "skip": true,
           "mode": "fan",
           "count": "6",
-          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
           "fields": {
-            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
-            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
-            "u": "(s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5",
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
             "v": "0.5",
             "a": "128"
           },
@@ -1473,7 +2249,50 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1491,7 +2310,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1509,7 +2328,26 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1528,7 +2366,7 @@
         {
           "at": "0x60734",
           "do": "draw",
-          "when": "$clear && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
           "skip": true,
           "mode": "fan",
           "count": "6",
@@ -1576,7 +2414,24 @@
         {
           "at": "0x86c1c",
           "do": "set",
-          "note": "Dims a rectangle of the picture (behind a menu): the polygons are left to the game while it is used.",
+          "note": "Dims a rectangle of the picture (behind a menu): while one of at least half the view is dimmed, the polygons are left to the game.",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0x870d4",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0x866c8",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
           "vars": {
             "dimmed": "$fno"
           }
@@ -1608,7 +2463,7 @@
           "at": "0x624f4",
           "do": "set",
           "vars": {
-            "pal": "u32(r2 + 0x2c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, sar($L, 5))) * 512"
+            "pal": "u32(r2 + 0x2c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
           }
         },
         {
@@ -1760,7 +2615,7 @@
           "fields": {
             "x": "s32(p) / 64",
             "y": "s32(p + 4) / 64 + $yo",
-            "u": "s32(p + 16) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, s32(p + 16) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {
@@ -1839,7 +2694,7 @@
           "at": "0x60a90",
           "do": "set",
           "vars": {
-            "pal": "u32(r2 + 0x2c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, sar($L, 5))) * 512"
+            "pal": "u32(r2 + 0x2c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
           }
         },
         {
@@ -1985,7 +2840,7 @@
           "fields": {
             "x": "s32(p) / 64",
             "y": "s32(p + 4) / 64 + $yo",
-            "u": "s32(p + 16) / 32 + 0.5",
+            "u": "min(31.5, max(0.5, s32(p + 16) / 32 + 0.5))",
             "v": "0.5"
           },
           "texture": {

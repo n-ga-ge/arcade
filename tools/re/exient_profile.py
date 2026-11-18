@@ -11,8 +11,11 @@ each of the two functions, told apart by `when`. They are written once here;
 an image is a row of IMAGES. docs/enhancements.md (Engine notes, Exient)
 explains every address and field.
 """
+import argparse
 import json
-import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 # The kinds of span filler. SSX's material says which by its mode bits (the
 # filler table's own tests, in this order); WWE's material holds the filler's
@@ -42,7 +45,9 @@ IMAGES = [
     {
         'name': '6R65.app', 'hash': '0x4E81FA0B', 'game': 'ssx-out-of-bounds',
         'begin': 0x70394,           # empties the renderer's sorted list: the 3D of a frame starts
-        'darken': 0xa0bf8,          # halves every pixel of a rectangle: the dimming behind a menu
+        # Dim a rectangle (r3 wide, [sp] high): every pixel halved, quartered, or averaged with a colour (the pause
+        # menu's veil).
+        'darken': [0xa0bf8, 0xa10b0, 0xa06a4],
         'polygons': [0x62da0, 0x60734],    # a triangle and a quad (mode bit 0x10 picks the triangle)
         # Offsets inside the renderer object.
         'view': 0x10,               # the 3D view's first pixel (16 rows into the screen buffer)
@@ -67,10 +72,10 @@ IMAGES.append(dict(IMAGES[0], hash='0x299798D8', game='ssx-out-of-bounds-pl'))
 IMAGES.append({
     'name': '6RAA.APP', 'hash': '0x1CAE5616', 'game': 'wwe-aftershock',
     'begin': 0x6cfbc,
-    'darken': 0x86c1c,
+    'darken': [0x86c1c, 0x870d4, 0x866c8],
     # The match's frame function (0x7d26c) draws the 3D in two passes with 2D between them, emptying the list
-    # before each: only the first starts a frame.
-    'begin_when': 'lr - (pc - 0x6cfbc) != 0x7d404',
+    # before each: only the first starts a frame. The return address of the second call:
+    'begin_not_from': 0x7d404,
     'polygons': [0x624f4, 0x60a90],
     'view': 0x10,                   # here the screen buffer itself: the view is the whole screen
     'pitch': 0x18,
@@ -136,6 +141,11 @@ def clip_vars(vertex, half, corners):
     return ends, moves
 
 
+def ramp_u(shade):
+    """The ramp entry of a shade, inside the 32 entries (the game's dithering adds 0 or 1: half on average)."""
+    return f'min(31.5, max(0.5, {shade} / 32 + 0.5))'
+
+
 def fields_of(vertex, kind, extra, clip, half):
     """The fields of a draw: position, and u, v, w for a texture (`kind` 'texture'), u for a ramp ('ramp')."""
     if not clip:
@@ -146,7 +156,7 @@ def fields_of(vertex, kind, extra, clip, half):
             out['u'] = vertex['u'].format(a='p')
             out['v'] = vertex['v'].format(a='p')
         elif kind == 'ramp':
-            out['u'] = f'{vertex["shade"].format(a="p")} / 32 + 0.5'
+            out['u'] = ramp_u(vertex['shade'].format(a='p'))
             out['v'] = '0.5'
         out.update(extra)
         return out
@@ -168,11 +178,15 @@ def fields_of(vertex, kind, extra, clip, half):
 
     out = {'x': linear(vertex['x']), 'y': linear(vertex['y']) + ' + $yo'}
     if kind == 'texture':
-        out['w'] = f'1 / ((1 - {t}) / {vertex["w"].format(a="p")} + {t} / {vertex["w"].format(a=e)})'
-        out['u'] = perspective(vertex['u'])
-        out['v'] = perspective(vertex['v'])
+        if vertex['w']:
+            out['w'] = f'1 / ((1 - {t}) / {vertex["w"].format(a="p")} + {t} / {vertex["w"].format(a=e)})'
+            out['u'] = perspective(vertex['u'])
+            out['v'] = perspective(vertex['v'])
+        else:
+            out['u'] = linear(vertex['u'])
+            out['v'] = linear(vertex['v'])
     elif kind == 'ramp':
-        out['u'] = f'{linear(vertex["shade"])} / 32 + 0.5'
+        out['u'] = ramp_u(linear(vertex['shade']))
         out['v'] = '0.5'
     out.update(extra)
     return out
@@ -199,19 +213,24 @@ def hooks(image):
                  'is the screen buffer: the view is the whole screen.'),
         'target': target,
     }]
-    if image.get('begin_when'):
-        out[0]['when'] = image['begin_when']
+    begin_when = None
+    if image.get('begin_not_from'):
+        begin_when = f'lr - (pc - {hx(image["begin"])}) != {hx(image["begin_not_from"])}'
+        out[0]['when'] = begin_when
     # A menu over the 3D (the pause menu, the end of a match) dims the whole picture after the 3D is drawn, which
     # turns the key colour into a dark purple the layer cannot find. So the polygons are left to the game for a frame
     # after any dimming: the frames are counted, and the dimming function notes the frame it ran in.
     count = {'at': hx(image['begin']), 'do': 'set', 'note': 'Counts the frames.', 'vars': {'fno': '$fno + 1'}}
-    if image.get('begin_when'):
-        count['when'] = image['begin_when']
+    if begin_when:
+        count['when'] = begin_when
     out.append(count)
-    out.append({'at': hx(image['darken']), 'do': 'set',
-                'note': 'Dims a rectangle of the picture (behind a menu): the polygons are left to the game while it '
-                        'is used.',
-                'vars': {'dimmed': '$fno'}})
+    for n, at in enumerate(image['darken']):
+        hook = {'at': hx(at), 'do': 'set'}
+        if n == 0:
+            hook['note'] = ('Dims a rectangle of the picture (behind a menu): while one of at least half the view is '
+                            'dimmed, the polygons are left to the game.')
+        hook.update({'when': f'r3 * u16(sp) >= {VIEW_WIDTH * VIEW_HEIGHT // 2}', 'vars': {'dimmed': '$fno'}})
+        out.append(hook)
     for n, at_value in enumerate(image['polygons']):
         at = hx(at_value)
         first = n == 0
@@ -257,37 +276,45 @@ def hooks(image):
             'at': at, 'do': 'set',
             'vars': {
                 'pal': f'u32(r2 + {hx(mat["palette"])}) + sel($rows, min(31, max(0, sar($shade, 5))), '
-                       'sel($m & 0x80, 0, sar($L, 5))) * 512',
+                       'sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512',
             },
         })
+        # Drawn whole (None) when every corner is inside the view; when one is above it (only where the view is
+        # smaller than the screen), as clipped triangles.
         halves = [None]
+        all_inside = ' && '.join(vertex['top'].format(a=f'r1 + {size * c}') + ' >= 0' for c in range(corners))
         if image['clip']:
-            halves = [(0, 1, 2)] if first else [(0, 1, 2), (0, 2, 3)]
-            for half, corners_of_half in enumerate(halves):
+            halves += [(0, 1, 2)] if first else [(0, 1, 2), (0, 2, 3)]
+            for half, corners_of_half in enumerate(halves[1:]):
                 ends, moves = clip_vars(vertex, half, corners_of_half)
-                note = ('Clipping at the top of the view: where each corner of the triangle moves to.' if half == 0
-                        else 'The same for the quad\'s second triangle (vertices 0, 2, 3).')
-                out.append({'at': at, 'do': 'set', 'note': note, 'vars': ends})
-                out.append({'at': at, 'do': 'set', 'vars': moves})
+                note = ('Clipping at the top of the view, for a polygon that reaches above it: where each corner of '
+                        'the triangle moves to.' if half == 0 else
+                        'The same for the quad\'s second triangle (vertices 0, 2, 3).')
+                out.append({'at': at, 'do': 'set', 'note': note, 'when': f'!({all_inside})', 'vars': ends})
+                out.append({'at': at, 'do': 'set', 'when': f'!({all_inside})', 'vars': moves})
 
         def draw(kind, note, field_kind, extra, blend, texture=None):
             when = image['kinds'].get(kind)
             if when is None:
                 return
             when = f'({when})'
-            for half, corners_of_half in enumerate(halves):
+            for slot, corners_of_half in enumerate(halves):
                 hook = {'at': at, 'do': 'draw'}
-                if first and half == 0:
+                if first and slot == 0:
                     hook['note'] = note
                 if corners_of_half is None:
-                    hook.update({'when': f'$clear && {when}', 'skip': True, 'mode': 'triangles' if first else 'fan',
-                                 'count': str(corners), 'vertex': f'r1 + {size} * i'})
+                    whole = f' && {all_inside}' if image['clip'] else ''
+                    hook.update({'when': f'$clear{whole} && {when}', 'skip': True,
+                                 'mode': 'triangles' if first else 'fan', 'count': str(corners),
+                                 'vertex': f'r1 + {size} * i'})
+                    half = None
                 else:
+                    half = slot - 1
                     vertex_at = '((i - i % 2) / 2)' if half == 0 else 'sel(i < 2, 0, (i - i % 2) / 2 + 1)'
                     inside = ' || '.join(vertex['top'].format(a=f'r1 + {size * c}') + ' >= 0'
                                          for c in corners_of_half)
-                    hook.update({'when': f'$clear && ({inside}) && {when}', 'skip': True, 'mode': 'fan', 'count': '6',
-                                 'vertex': f'r1 + {size} * {vertex_at}'})
+                    hook.update({'when': f'$clear && !({all_inside}) && ({inside}) && {when}', 'skip': True,
+                                 'mode': 'fan', 'count': '6', 'vertex': f'r1 + {size} * {vertex_at}'})
                 hook['fields'] = fields_of(vertex, field_kind, extra, corners_of_half is not None, half)
                 if texture:
                     hook['texture'] = texture
@@ -325,8 +352,8 @@ def hooks(image):
     return out
 
 
-def main():
-    profile = {
+def profile():
+    return {
         'engine': 'exient',
         'about': "Exient's software renderer (SSX Out of Bounds, WWE Aftershock): polygons sorted far to near, each "
                  'drawn by a triangle or a quad function through a span filler the material picks: 8-bit textures '
@@ -335,10 +362,18 @@ def main():
         'images': [{'name': image['name'], 'hash': image['hash'], 'game': image['game'], 'hooks': hooks(image)}
                    for image in IMAGES],
     }
-    out = sys.argv[1] if len(sys.argv) > 1 else 'catalog/enhance/exient.json'
-    with open(out, 'w') as fh:
-        json.dump(profile, fh, indent=2)
-        fh.write('\n')
+
+
+def text():
+    """The profile as the file holds it."""
+    return json.dumps(profile(), indent=2) + '\n'
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('out', nargs='?', default=str(ROOT / 'catalog' / 'enhance' / 'exient.json'))
+    args = parser.parse_args()
+    Path(args.out).write_text(text())
 
 
 if __name__ == '__main__':

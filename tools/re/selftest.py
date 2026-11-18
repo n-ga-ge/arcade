@@ -90,6 +90,11 @@ def main():
     _, _, rgba, _ = render.render(frame, {}, 1)
     ok &= check('subtract darkens and does not go below black', rgba[0:3] == bytes((0x40, 0, 0x80)))
 
+    # A profile written by a script is what the script writes now (edit the script, not the JSON).
+    import exient_profile
+    ok &= check('catalog/enhance/exient.json is what tools/re/exient_profile.py writes',
+                (exient_profile.ROOT / 'catalog' / 'enhance' / 'exient.json').read_text() == exient_profile.text())
+
     sys.exit(0 if ok else 1)
 
 
