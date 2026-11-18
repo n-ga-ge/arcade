@@ -188,5 +188,10 @@
       }
     ]
   },
-  "statusNote": "Runs from the legal screens and logos through the menus into a Single-Player exhibition match: both ring entrances play in 3D, then the match itself with strikes, grapples, the health and SmackDown! meters and the pause menu."
+  "statusNote": "Runs from the legal screens and logos through the menus into a Single-Player exhibition match: both ring entrances play in 3D, then the match itself with strikes, grapples, the health and SmackDown! meters and the pause menu.",
+  "enhance": {
+    "engine": "exient",
+    "status": "experimental",
+    "note": "Ring, ropes, crowd and wrestlers are redrawn. Not exact yet: textures lit per pixel take one light level per polygon, and where a see-through part has nothing behind it (the screen above the stage) the key colour can show dimmed under the end-of-match menu. The larger sizes cost frames here."
+  }
 }
