@@ -32,8 +32,8 @@ def main():
         width, height, back = dbg.read_png(path.read_bytes())
     ok &= check('a PNG comes back as written', (width, height, bytes(back)) == (11, 9, pixels))
 
-    def vertex(x, y, colour=0xFFFF0000, u=0, v=0, w=1, z=0):
-        return [x, y, z, w, u, v, colour]
+    def vertex(x, y, colour=0xFFFF0000, u=0, v=0, w=1, z=0, row=0):
+        return [x, y, z, w, u, v, colour, row]
 
     frame = {'width': 8, 'height': 8, 'textures': [],
              'vertices': vertex(0, 0) + vertex(8, 0) + vertex(0, 8),
@@ -81,6 +81,42 @@ def main():
     ok &= check('the layer\'s reference keeps the picture away from the key colour',
                 all(shown[at:at + 3] == screen[at:at + 3] for at in plain))
     ok &= check('and shows no key colour', not any(layertest.is_key(*shown[at:at + 3]) for at in range(0, len(shown), 4)))
+
+    # Palette rows: a texture of two indices through a table of four palettes,
+    # the row running from 0 at the left to 3.99 at the right, so each pixel
+    # takes the palette floor(row) names; rows outside the table are clamped.
+    rows = 4
+    stacked = bytearray()
+    for r in range(rows):
+        for index in (0, 1, 0, 1):
+            stacked += bytes((r * 60, 0, 0, 255)) if index == 0 else bytes((0, r * 60, 0, 255))
+    texture = (2, 2 * rows, bytes(stacked))
+
+    def lit(left, right):
+        return (vertex(0, 0, 0xFFFFFFFF, 0, 0, row=left) + vertex(8, 0, 0xFFFFFFFF, 2, 0, row=right)
+                + vertex(0, 8, 0xFFFFFFFF, 0, 2, row=left) + vertex(8, 0, 0xFFFFFFFF, 2, 0, row=right)
+                + vertex(8, 8, 0xFFFFFFFF, 2, 2, row=right) + vertex(0, 8, 0xFFFFFFFF, 0, 2, row=left))
+
+    def lit_frame(corners):
+        return {'width': 8, 'height': 8, 'textures': [{'paletteRows': rows}], 'vertices': corners,
+                'draws': [{'first': 0, 'count': 6, 'texture': 0, 'blend': 'none', 'depth': 'none'}]}
+
+    _, _, rgba, _ = render.render(lit_frame(lit(0, 3.99)), {0: texture}, 1)
+    # Pixel centres at x + 0.5 have row (x + 0.5) / 8 * 3.99: 0, 0, 1, 1, 2, 2, 3, 3;
+    # the left half shows index 0 (red), the right half index 1 (green).
+    ok &= check('each pixel takes the palette its interpolated row names',
+                [at(x, 1)[0] for x in range(4)] == [0, 0, 60, 60] and [at(x, 1)[1] for x in range(4, 8)] == [120, 120, 180, 180])
+    _, _, rgba, _ = render.render(lit_frame(lit(-5, -5)), {0: texture}, 1)
+    low = at(1, 1)
+    _, _, rgba, _ = render.render(lit_frame(lit(40, 40)), {0: texture}, 1)
+    ok &= check('a row outside the table is clamped to it', low == b'\0\0\0' and at(6, 1) == bytes((0, 180, 0)))
+
+    # A frame saved with seven numbers a vertex still renders.
+    old = {'width': 8, 'height': 8, 'textures': [], 'vertexLayout': ['x', 'y', 'z', 'w', 'u', 'v', 'color'],
+           'vertices': [0, 0, 0, 1, 0, 0, 0xFF00FF00, 8, 0, 0, 1, 0, 0, 0xFF00FF00, 0, 8, 0, 1, 0, 0, 0xFF00FF00],
+           'draws': [{'first': 0, 'count': 3, 'texture': -1, 'blend': 'none', 'depth': 'none'}]}
+    _, _, rgba, _ = render.render(old, {}, 1)
+    ok &= check('a frame of seven numbers a vertex is read as one', at(0, 0) == b'\0\xff\0')
 
     # Subtracting takes the colour from what is there and stops at black.
     grey = vertex(0, 0, 0xFF808080) + vertex(8, 0, 0xFF808080) + vertex(0, 8, 0xFF808080)

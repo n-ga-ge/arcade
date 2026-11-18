@@ -163,7 +163,7 @@ def main():
     dbg.write_png(out / 'render-1x.png', sw, sh, small)
     cover, diff = render.compare(small, guest, covered)
 
-    triangles = len(frame['vertices']) // 21
+    triangles = len(frame['vertices']) // (3 * render.stride_of(frame))
     faults = sum(hook['faults'] for hook in final['hooks'])
     print(f'{args.game}: frame {frame["frame"]}, {triangles} triangles in {len(frame["draws"])} draws, '
           f'{len(textures)}/{len(frame["textures"])} textures read, {faults} faults, '

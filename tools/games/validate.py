@@ -189,16 +189,25 @@ def main():
                     for field in set(hook) - allowed - {"at", "do", "note", "when", "skip", "return"}:
                         errors.append(f"{at}: {field} means nothing on a {kind} hook")
                     texture = hook.get("texture")
-                    if isinstance(texture, dict) and texture.get("format") == "p8" and not ("palette" in texture and "paletteFormat" in texture):
-                        errors.append(f"{at}: a p8 texture needs palette and paletteFormat")
+                    if isinstance(texture, dict) and texture.get("format") in ("p8", "p4") and not ("palette" in texture and "paletteFormat" in texture):
+                        errors.append(f"{at}: a {texture['format']} texture needs palette and paletteFormat")
                     if isinstance(texture, dict) and "paletteStride" in texture:
                         sizes = {"rgb444": 2, "argb4444": 2, "rgb565": 2, "rgb555": 2, "argb1555": 2,
                                  "rgb888": 3, "argb8888": 4, "xrgb8888": 4, "a8": 1, "l8": 1}
                         stride, size = texture["paletteStride"], sizes.get(texture.get("paletteFormat"))
-                        if texture.get("format") != "p8" or size is None:
-                            errors.append(f"{at}: paletteStride belongs to a p8 texture with a paletteFormat")
+                        if texture.get("format") not in ("p8", "p4") or size is None:
+                            errors.append(f"{at}: paletteStride belongs to a p8 or p4 texture with a paletteFormat")
                         elif isinstance(stride, int) and stride < size:
                             errors.append(f"{at}: paletteStride {stride} is less than a {texture['paletteFormat']} entry ({size} bytes)")
+                    rows = texture.get("paletteRows") if isinstance(texture, dict) else None
+                    if isinstance(texture, dict) and texture.get("format") not in ("p8", "p4") and (
+                            "paletteRows" in texture or "paletteRowStride" in texture):
+                        errors.append(f"{at}: paletteRows and paletteRowStride belong to a p8 or p4 texture")
+                    if isinstance(texture, dict) and "paletteRowStride" in texture and "paletteRows" not in texture:
+                        errors.append(f"{at}: paletteRowStride needs paletteRows")
+                    fields = hook.get("fields")
+                    if isinstance(fields, dict) and "row" in fields and not rows:
+                        errors.append(f"{at}: fields.row needs a texture with paletteRows")
     for error in errors:
         print(error, file=sys.stderr)
     print(f"{len(games)} entries" + (f" and {profiles} enhancement profiles" if profiles else "") + f" checked, {len(errors)} problems")
