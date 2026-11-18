@@ -76,7 +76,7 @@ async function head(url, headers = {}) {
 
 // --- 1. pages and headers -------------------------------------------------------
 
-async function checkPages() {
+async function checkPages(catalog) {
   for (const address of ['/', '/play/', '/docs/', '/catalog/index.json', '/catalog/assets.json']) {
     const response = await head(base + address);
     if (response.status !== 200) fail(`${address} answers ${response.status}`);
@@ -133,6 +133,20 @@ async function checkPages() {
   if (served.status !== 200) fail(`/assets/NGAGE.ROM answers ${served.status} to the site itself`);
   if (refused && refused.status !== 403) fail(`/assets/NGAGE.ROM answers ${refused.status} to a request that is not from the site (expected 403)`);
   if (served.status === 200 && (!refused || refused.status === 403)) ok(local ? 'game files: served (a dev server has no access rule to check)' : 'game files: served to the site, refused to others');
+
+  // An N-Gage 2.0 game runs on a phone: its device zip and the N-Gage
+  // application, at the paths the player's config.json names.
+  if (catalog.games.some((game) => game.platform === 'ngage2')) {
+    const config = await fetch(`${base}/play/config.json`).then((response) => response.json()).catch(() => ({}));
+    const files = [config.ngage2Device, config.ngage2App];
+    if (files.some((file) => typeof file !== 'string' || !file.startsWith('/assets/'))) fail(`/play/config.json does not name the N-Gage 2.0 files below /assets/ (ngage2Device, ngage2App)`);
+    else {
+      const answers = await Promise.all(files.map((file) => head(base + file, { 'Sec-Fetch-Site': 'same-origin' })));
+      const missing = files.filter((file, index) => answers[index].status !== 200);
+      if (missing.length) fail(`the N-Gage 2.0 files are not served: ${missing.map((file) => `${file} (${answers[files.indexOf(file)].status})`).join(', ')}`);
+      else ok('N-Gage 2.0 files: the device zip and the N-Gage application are served');
+    }
+  }
 }
 
 // --- 1b. icons and share tags -------------------------------------------------------
@@ -326,7 +340,13 @@ async function checkGame(browser, entry) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('response', (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${new URL(response.url()).pathname}`); });
+  // A game that crashes its emulator after its first frame leaves a question
+  // to the page unanswered for good: the whole look is bounded.
+  let watchdog;
+  const stuck = new Promise((_, reject) => { watchdog = setTimeout(() => reject(new Error('the page stopped answering (the emulator may have crashed)')), startTimeout + 90000); });
+  stuck.catch(() => {});
   try {
+    await Promise.race([stuck, (async () => {
     const opened = Date.now();
     await page.goto(`${base}/play/?g=${encodeURIComponent(entry.slug)}`);
     await page.waitForFunction(() => window.eka2l1Page && window.eka2l1Page.app && window.eka2l1Page.emu.frames() > 0, null, { timeout: startTimeout });
@@ -334,7 +354,9 @@ async function checkGame(browser, entry) {
     result.firstFrameMs = Date.now() - opened;
     // Give it time to put a picture up, then look a few times: a fade or a
     // blank moment between two logos is not a fault.
-    for (let attempt = 0; attempt < 6 && !(result.drawn && result.likeness !== null && result.likeness >= SHOWN_AT); attempt++) {
+    // An N-Gage 2.0 game starts slower: Asphalt 3 shows nothing for its first half minute.
+    const attempts = entry.platform === 'ngage2' ? 25 : 6;
+    for (let attempt = 0; attempt < attempts && !(result.drawn && result.likeness !== null && result.likeness >= SHOWN_AT); attempt++) {
       await pause(attempt ? 2000 : 4000);
       // Paused for the two pictures, so that a game that is moving is compared
       // with itself and not with its next frame.
@@ -356,10 +378,12 @@ async function checkGame(browser, entry) {
         fs.writeFileSync(path.join(outDir, `${entry.slug}.png`), shown);
       }
     }
+    })()]);
   } catch (error) {
     const status = await page.evaluate(() => document.getElementById('status')?.textContent || '').catch(() => '');
     result.note = `${String(error.message).split('\n')[0]}${status ? ` (page says: ${status})` : ''}`;
   }
+  clearTimeout(watchdog);
   if (errors.length && !result.note) result.note = errors.slice(0, 2).join('; ');
   await checkEnhancement(result.started ? page : null, entry.slug).catch((error) => fail(`${entry.slug}: its enhancement profile could not be checked: ${String(error.message).split('\n')[0]}`));
   await context.close();
@@ -445,7 +469,7 @@ async function checkReturn(slug) {
 
 console.log(`checking ${base} with ${mode}`);
 const catalog = await (await fetch(`${base}/catalog/index.json`)).json();
-await checkPages();
+await checkPages(catalog);
 await checkShareTags(catalog);
 await checkRelay();
 const browser = await launch();

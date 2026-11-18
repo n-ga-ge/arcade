@@ -103,6 +103,13 @@ def main():
                     mine.append(f"{slug}.multiplayer: status {played} is about Bluetooth play, but modes has no bluetooth")
                 if "players" in multiplayer:
                     mine.append(f"{slug}.multiplayer: players is the most over Bluetooth, but modes has no bluetooth")
+        # A card dump and a .n-gage file are packed differently (tools/games/pack.py).
+        pack = game.get("pack") if isinstance(game.get("pack"), dict) else {}
+        if game.get("platform") == "ngage2":
+            for name in sorted(set(pack) - {"file"}):
+                mine.append(f"{slug}.pack.{name}: is for a card dump; an N-Gage 2.0 entry packs a .n-gage file and takes only pack.file")
+        elif "file" in pack:
+            mine.append(f"{slug}.pack.file: is for an N-Gage 2.0 entry (\"platform\": \"ngage2\")")
         test = game.get("test") if isinstance(game.get("test"), dict) else None
         if test and status != "untested":
             order = ["broken", "boots", "menu", "ingame"]
@@ -143,6 +150,8 @@ def main():
         missing = object()
         if isinstance(other, dict) and game.get("multiplayer", missing) != other.get("multiplayer", missing):
             errors.append(f"{slug}: multiplayer differs from that of {base}, the game it is a variant of")
+        if isinstance(other, dict) and game.get("platform", "ngage") != other.get("platform", "ngage"):
+            errors.append(f"{slug}: platform differs from that of {base}, the game it is a variant of")
     # Enhancement profiles: each against its schema, and each entry's engine must have one.
     profiles_folder = os.path.join(ROOT, "catalog", "enhance")
     profile_names = sorted(name[:-5] for name in os.listdir(profiles_folder) if name.endswith(".json")) if os.path.isdir(profiles_folder) else []
