@@ -181,6 +181,11 @@
       "Third-person layout: move on WASD or the arrows, camera on I, J, K and L, jump on Space, interact on E, weapon on F, crouch on C, vision on V, binoculars on B. On a gamepad the left stick moves, the right stick moves the camera, A jumps, B crouches, X interacts, Y draws the weapon, the bumpers are vision and binoculars, and Start opens the game menu."
     ]
   },
+  "enhance": {
+    "engine": "gameloft",
+    "status": "experimental",
+    "note": "Walls, floors and models (Sam, doors, lamps) are drawn at the higher resolution in the training mission, where it was tried. The radar's translucent disc shows pink over the 3D. Night and thermal vision fall back to the game's own picture. Light is smoothed between corners where the game steps it."
+  },
   "test": {
     "expect": "ingame",
     "script": [
