@@ -66,7 +66,7 @@ def main():
 
     # Textures repeat below zero too: u and v moved by a whole texture give the same picture.
     shifted = list(square)
-    for corner in range(0, len(shifted), 7):
+    for corner in range(0, len(shifted), len(vertex(0, 0))):
         shifted[corner + 4] -= 2
         shifted[corner + 5] -= 2
     moved = dict(frame, vertices=shifted)
