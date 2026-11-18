@@ -19,6 +19,11 @@
     "menu": "Iniciar juego > Juego en red",
     "status": "untested"
   },
+  "enhance": {
+    "engine": "stormvm",
+    "status": "experimental",
+    "note": "The table, the balls with their shadows, the aiming dots and the cue are captured with their textures. The background and the panel at the bottom stay the game's own 2D. Only free play was seen."
+  },
   "controls": {
     "source": "The game's Ayuda (help) screens for aiming and power; the direction keys when placing the cue ball, OK acting like 5, and the soft keys were observed in play.",
     "actions": {
