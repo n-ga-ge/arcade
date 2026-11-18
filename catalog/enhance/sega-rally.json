@@ -54,32 +54,8 @@
         {
           "at": "0x1d39c",
           "do": "draw",
-          "when": "r9 == 5 && u32(r10 + 0x88) == 3",
-          "note": "A clipped polygon in screen space, about to be cut into edges: 16-bit texture, 0xFFFF transparent (trees, signs, the car's shadow). r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
-          "mode": "fan",
-          "count": "u32(sp)",
-          "vertex": "r6 + 32 * i",
-          "fields": {
-            "x": "fx(s32(p), 10) - 0.5",
-            "y": "fx(s32(p + 4), 10) - 0.5",
-            "u": "fx(s32(p + 16), 10)",
-            "v": "fx(s32(p + 20), 10)"
-          },
-          "texture": {
-            "pixels": "u32(r7 + 0x2c)",
-            "width": "u32(r7 + 0x1c)",
-            "height": "u32(r7 + 0x20)",
-            "format": "rgb444",
-            "key": "0xFFFF"
-          },
-          "blend": "key",
-          "depth": "none"
-        },
-        {
-          "at": "0x1d39c",
-          "do": "draw",
           "when": "r9 == 2 && u32(r10 + 0x88) == 3",
-          "note": "A clipped polygon in screen space, about to be cut into edges: 8-bit texture with a palette of 12-bit colours, opaque. r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
+          "note": "A clipped polygon in screen space, about to be cut into edges: 8-bit texture with a palette of 12-bit colours, opaque (not seen). r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
           "mode": "fan",
           "count": "u32(sp)",
           "vertex": "r6 + 32 * i",
@@ -98,32 +74,6 @@
             "paletteFormat": "rgb444"
           },
           "blend": "none",
-          "depth": "none"
-        },
-        {
-          "at": "0x1d39c",
-          "do": "draw",
-          "when": "r9 == 6 && u32(r10 + 0x88) == 3",
-          "note": "A clipped polygon in screen space, about to be cut into edges: 8-bit texture with a transparent palette entry (bit 15), not seen: index 0 is a guess. r6 the u32(sp) corners, 32 bytes each (x, y in 22.10 pixels; u, v at +16, +20 in 22.10 texels). The game samples at a pixel's lower right corner.",
-          "mode": "fan",
-          "count": "u32(sp)",
-          "vertex": "r6 + 32 * i",
-          "fields": {
-            "x": "fx(s32(p), 10) - 0.5",
-            "y": "fx(s32(p + 4), 10) - 0.5",
-            "u": "fx(s32(p + 16), 10)",
-            "v": "fx(s32(p + 20), 10)"
-          },
-          "texture": {
-            "pixels": "u32(r7 + 0x2c)",
-            "width": "u32(r7 + 0x1c)",
-            "height": "u32(r7 + 0x20)",
-            "format": "p8",
-            "palette": "u32(r7 + 0x30)",
-            "paletteFormat": "rgb444",
-            "key": "0"
-          },
-          "blend": "key",
           "depth": "none"
         },
         {
@@ -162,32 +112,8 @@
         {
           "at": "0x1d39c",
           "do": "draw",
-          "when": "r9 == 5 && u32(r10 + 0x88) != 3",
-          "note": "The rectangle, 16-bit texture, 0xFFFF transparent (trees, signs, the car's shadow), as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
-          "mode": "fan",
-          "count": 4,
-          "vertex": "sel(i == 0 || i == 3, $A, $B)",
-          "fields": {
-            "x": "fx(s32(p), 10) - 0.5",
-            "y": "fx(s32(sel(i < 2, $A, $B) + 4), 10) - 0.5",
-            "u": "fx(s32(p + 16), 10)",
-            "v": "fx(s32(sel(i < 2, $A, $B) + 20), 10)"
-          },
-          "texture": {
-            "pixels": "u32(r7 + 0x2c)",
-            "width": "u32(r7 + 0x1c)",
-            "height": "u32(r7 + 0x20)",
-            "format": "rgb444",
-            "key": "0xFFFF"
-          },
-          "blend": "key",
-          "depth": "none"
-        },
-        {
-          "at": "0x1d39c",
-          "do": "draw",
           "when": "r9 == 2 && u32(r10 + 0x88) != 3",
-          "note": "The rectangle, 8-bit texture with a palette of 12-bit colours, opaque, as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
+          "note": "The rectangle, 8-bit texture with a palette of 12-bit colours, opaque (not seen), as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
           "mode": "fan",
           "count": 4,
           "vertex": "sel(i == 0 || i == 3, $A, $B)",
@@ -209,44 +135,20 @@
           "depth": "none"
         },
         {
-          "at": "0x1d39c",
-          "do": "draw",
-          "when": "r9 == 6 && u32(r10 + 0x88) != 3",
-          "note": "The rectangle, 8-bit texture with a transparent palette entry (bit 15), not seen: index 0 is a guess, as a fan of four corners: A, (B.x, A.y), B, (A.x, B.y).",
-          "mode": "fan",
-          "count": 4,
-          "vertex": "sel(i == 0 || i == 3, $A, $B)",
-          "fields": {
-            "x": "fx(s32(p), 10) - 0.5",
-            "y": "fx(s32(sel(i < 2, $A, $B) + 4), 10) - 0.5",
-            "u": "fx(s32(p + 16), 10)",
-            "v": "fx(s32(sel(i < 2, $A, $B) + 20), 10)"
-          },
-          "texture": {
-            "pixels": "u32(r7 + 0x2c)",
-            "width": "u32(r7 + 0x1c)",
-            "height": "u32(r7 + 0x20)",
-            "format": "p8",
-            "palette": "u32(r7 + 0x30)",
-            "paletteFormat": "rgb444",
-            "key": "0"
-          },
-          "blend": "key",
-          "depth": "none"
-        },
-        {
           "at": "0x1d7e8",
           "do": "set",
+          "when": "r3 == 1 || r3 == 2",
           "skip": true,
           "vars": {},
-          "note": "When replacing: one edge of a polygon, which on the second edge of a row fills the span between them. Not run."
+          "note": "When replacing: one edge of an opaque polygon (r3 the mode), which on the second edge of a row fills the span between them. Not run. Modes 5 and 6 (transparent texels: trees, signs, barriers) are left to the game: the key colour would cover the panorama behind their see-through texels."
         },
         {
           "at": "0x1d458",
           "do": "set",
+          "when": "r3 == 1 || r3 == 2",
           "skip": true,
           "vars": {},
-          "note": "When replacing: fills a rectangle. Not run."
+          "note": "When replacing: fills an opaque rectangle (r3 the mode). Not run."
         }
       ]
     }

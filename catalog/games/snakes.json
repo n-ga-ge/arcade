@@ -64,6 +64,6 @@
   "enhance": {
     "engine": "snakes",
     "status": "experimental",
-    "note": "The board, the snake, the blocks, the lines and the vector digits of level 1 are captured and drawn sharper; the HUD's images and the menus stay the game's own. Lines that run off the screen, and the trail at the start of a level, are left to the game at its own resolution. Shaded triangles were never seen in play and are not captured."
+    "note": "The board, the snake, the blocks, the lines and the vector digits of level 1 are captured and drawn sharper; the HUD's images and the menus stay the game's own. Lines that run off the screen, and frames with a trail or a fade (the start of a level) are left to the game. Shaded triangles were never seen in play and are not captured."
   }
 }

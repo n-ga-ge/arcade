@@ -26,7 +26,7 @@
         {
           "at": "0x6de24",
           "do": "draw",
-          "when": "u32(r0 + 0x2a4) == 1 && u32(r0 + 0x29c) == 0",
+          "when": "u32(r0 + 0x29c) == 0 && u32(r0 + 0x2a4) == 1",
           "note": "The frame's background: the buffer filled with black (white when the byte at r0 + 0x299 is set), as a rectangle over the whole screen, so that every edge of the 3D lies on captured pixels.",
           "mode": "fan",
           "count": 4,
@@ -44,7 +44,7 @@
         {
           "at": "0x6de24",
           "do": "set",
-          "when": "u32(r0 + 0x2a4) == 1 && u32(r0 + 0x29c) == 0",
+          "when": "u32(r0 + 0x29c) == 0 && u32(r0 + 0x2a4) == 1",
           "skip": true,
           "vars": {},
           "note": "When replacing: the fill of the buffer captured above. Not run; the key colour takes its place."
@@ -103,17 +103,17 @@
         {
           "at": "0x7be08",
           "do": "set",
-          "when": "(lr - pc == 0x740 || lr - pc == 0xc08) && u32(r0 + 0x29c) == 0 && (u32(r0 + 0x2a4) == 1 || u32(r0 + 0x2a4) >= 4)",
+          "when": "(lr - pc == 0x740 || lr - pc == 0xc08) && u32(r0 + 0x29c) == 0 && u32(r0 + 0x2a4) == 1",
           "skip": true,
           "vars": {},
-          "note": "When replacing: the span filler, when the triangle (returning to 0x7c548) or the quad function (0x7ca10) calls it, after the corners were captured above, while the frame started from a filled buffer (r0 + 0x2a4) and no fade is on (r0 + 0x29c): both would carry the key colour on. Not run."
+          "note": "When replacing: the span filler, called by the triangle (returning to 0x7c548) or the quad function (0x7ca10) after their corners were captured, in a frame whose buffer was cleared to black or white (r0 + 0x2a4 is 1) and without a fade (r0 + 0x29c). Not run."
         },
         {
           "at": "0x7b7e8",
           "do": "set",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
-          "note": "A line (command 0x70000001) that needs no clipping: u32(r1) and u32(r1) + 20 are its ends (x, y in 20.12 pixels at +0 and +4, the colour at +12, clip flags at +16). The game rounds them to whole pixels and draws one pixel wide, both ends included.",
+          "note": "A line (command 0x70000001): u32(r1) and u32(r1) + 20 are its ends (x, y in 20.12 pixels at +0 and +4, the colour at +12, clip flags at +16). Only a line that needs no clipping is captured. The game rounds the ends to whole pixels and draws one pixel wide, both ends included.",
           "vars": {
+            "ok": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
             "X0": "sar(s32(u32(r1)) + 2048, 12)",
             "Y0": "sar(s32(u32(r1) + 4) + 2048, 12)",
             "X1": "sar(s32(u32(r1) + 20) + 2048, 12)",
@@ -123,20 +123,28 @@
         {
           "at": "0x7b7e8",
           "do": "set",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "when": "$ok",
+          "note": "Along which axis the line runs.",
+          "vars": {
+            "xm": "abs($X1 - $X0) >= abs($Y1 - $Y0)"
+          }
+        },
+        {
+          "at": "0x7b7e8",
+          "do": "set",
+          "when": "$ok",
           "note": "The line as a quad one pixel wide: from the start S to the end E along its longer axis, and one pixel across.",
           "vars": {
-            "xm": "abs($X1 - $X0) >= abs($Y1 - $Y0)",
-            "sx": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), min($X0, $X1), sel($Y0 <= $Y1, $X0, $X1))",
-            "sy": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y0, $Y1), min($Y0, $Y1))",
-            "ex": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), max($X0, $X1), sel($Y0 <= $Y1, $X1, $X0))",
-            "ey": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y1, $Y0), max($Y0, $Y1))"
+            "sx": "sel($xm, min($X0, $X1), sel($Y0 <= $Y1, $X0, $X1))",
+            "sy": "sel($xm, sel($X0 <= $X1, $Y0, $Y1), min($Y0, $Y1))",
+            "ex": "sel($xm, max($X0, $X1), sel($Y0 <= $Y1, $X1, $X0))",
+            "ey": "sel($xm, sel($X0 <= $X1, $Y1, $Y0), max($Y0, $Y1))"
           }
         },
         {
           "at": "0x7b7e8",
           "do": "draw",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "when": "$ok",
           "note": "A line (command 0x70000001), opaque in one colour.",
           "mode": "fan",
           "count": 4,
@@ -154,17 +162,17 @@
         {
           "at": "0x7b7e8",
           "do": "set",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0 && u32(r0 + 0x29c) == 0 && (u32(r0 + 0x2a4) == 1 || u32(r0 + 0x2a4) >= 4)",
+          "when": "$ok && u32(r0 + 0x29c) == 0 && u32(r0 + 0x2a4) == 1",
           "skip": true,
           "vars": {},
-          "note": "When replacing: a line (command 0x70000001) that needs no clipping, captured above. Not drawn by the game; one that needs clipping, or drawn in a frame with a fade or a trail, is left to it."
+          "note": "When replacing: a line (command 0x70000001) captured above. Not drawn by the game; one that needs clipping, or drawn in a frame with a fade or a buffer not cleared to black or white, is left to it."
         },
         {
           "at": "0x7d35c",
           "do": "set",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
-          "note": "A smoothed line (command 0x70000011) that needs no clipping: u32(r1) and u32(r1) + 20 are its ends (x, y in 20.12 pixels at +0 and +4, the colour at +12, clip flags at +16). The game rounds them to whole pixels and draws one pixel wide, both ends included.",
+          "note": "A smoothed line (command 0x70000011): u32(r1) and u32(r1) + 20 are its ends (x, y in 20.12 pixels at +0 and +4, the colour at +12, clip flags at +16). Only a line that needs no clipping is captured. The game rounds the ends to whole pixels and draws one pixel wide, both ends included.",
           "vars": {
+            "ok": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
             "X0": "sar(s32(u32(r1)) + 2048, 12)",
             "Y0": "sar(s32(u32(r1) + 4) + 2048, 12)",
             "X1": "sar(s32(u32(r1) + 20) + 2048, 12)",
@@ -174,20 +182,28 @@
         {
           "at": "0x7d35c",
           "do": "set",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "when": "$ok",
+          "note": "Along which axis the line runs.",
+          "vars": {
+            "xm": "abs($X1 - $X0) >= abs($Y1 - $Y0)"
+          }
+        },
+        {
+          "at": "0x7d35c",
+          "do": "set",
+          "when": "$ok",
           "note": "The line as a quad one pixel wide: from the start S to the end E along its longer axis, and one pixel across.",
           "vars": {
-            "xm": "abs($X1 - $X0) >= abs($Y1 - $Y0)",
-            "sx": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), min($X0, $X1), sel($Y0 <= $Y1, $X0, $X1))",
-            "sy": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y0, $Y1), min($Y0, $Y1))",
-            "ex": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), max($X0, $X1), sel($Y0 <= $Y1, $X1, $X0))",
-            "ey": "sel(abs($X1 - $X0) >= abs($Y1 - $Y0), sel($X0 <= $X1, $Y1, $Y0), max($Y0, $Y1))"
+            "sx": "sel($xm, min($X0, $X1), sel($Y0 <= $Y1, $X0, $X1))",
+            "sy": "sel($xm, sel($X0 <= $X1, $Y0, $Y1), min($Y0, $Y1))",
+            "ex": "sel($xm, max($X0, $X1), sel($Y0 <= $Y1, $X1, $X0))",
+            "ey": "sel($xm, sel($X0 <= $X1, $Y1, $Y0), max($Y0, $Y1))"
           }
         },
         {
           "at": "0x7d35c",
           "do": "draw",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0",
+          "when": "$ok",
           "note": "A smoothed line (command 0x70000011), which the game mixes into what is under it by how near each pixel is; captured opaque.",
           "mode": "fan",
           "count": 4,
@@ -205,10 +221,10 @@
         {
           "at": "0x7d35c",
           "do": "set",
-          "when": "(u32(u32(r1) + 16) | u32(u32(r1) + 36)) == 0 && u32(r0 + 0x29c) == 0 && (u32(r0 + 0x2a4) == 1 || u32(r0 + 0x2a4) >= 4)",
+          "when": "$ok && u32(r0 + 0x29c) == 0 && u32(r0 + 0x2a4) == 1",
           "skip": true,
           "vars": {},
-          "note": "When replacing: a smoothed line (command 0x70000011) that needs no clipping, captured above. Not drawn by the game; one that needs clipping, or drawn in a frame with a fade or a trail, is left to it."
+          "note": "When replacing: a smoothed line (command 0x70000011) captured above. Not drawn by the game; one that needs clipping, or drawn in a frame with a fade or a buffer not cleared to black or white, is left to it."
         }
       ]
     }

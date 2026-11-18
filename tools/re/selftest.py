@@ -63,6 +63,15 @@ def main():
     ok &= check('texels land in their quarters', at(1, 1) == b'\xff\0\0' and at(6, 1) == b'\0\xff\0' and at(1, 6) == b'\0\0\xff')
     ok &= check('a keyed texel is not drawn', at(6, 6) == b'\0\0\0' and coverage[6 * 8 + 6] == 0)
 
+    # Textures repeat below zero too: u and v moved by a whole texture give the same picture.
+    shifted = list(square)
+    for corner in range(0, len(shifted), 7):
+        shifted[corner + 4] -= 2
+        shifted[corner + 5] -= 2
+    moved = dict(frame, vertices=shifted)
+    _, _, rgba, _ = render.render(moved, {0: texture}, 1)
+    ok &= check('negative texture coordinates wrap downwards', at(1, 1) == b'\xff\0\0' and at(6, 1) == b'\0\xff\0' and at(1, 6) == b'\0\0\xff')
+
     width, height, rgba, coverage = render.render(frame, {0: texture}, 4)
     sw, sh, small, covered = render.shrink(width, height, rgba, coverage, 4)
     _, _, once, _ = render.render(frame, {0: texture}, 1)
