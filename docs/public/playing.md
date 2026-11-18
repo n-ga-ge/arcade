@@ -73,6 +73,21 @@ it. Add a binding with **+**, remove one by clicking it, and go back to the
 defaults with **Reset this layout**. Your changes are remembered in this
 browser.
 
+## N-Gage 2.0 games
+
+A few games in the list are marked **N-Gage 2.0**. They are from Nokia's
+later games service for phones (2008 to 2010), not cards for the N-Gage, and
+the player runs them on an emulated Nokia 5320 phone.
+
+- The first start downloads more: about 115 MB for the phone and the N-Gage
+  application, once, and then the game.
+- They need more memory. A browser that cannot give the emulator 2 GB cannot
+  start them.
+- They turn the screen sideways, to 320×240.
+- The phone's keys are laid out like the N-Gage's: the same keyboard and
+  gamepad layout works, and **Menu → Guide** says what each key does.
+- Most of them have no sound yet.
+
 ## The menu
 
 **Pause** and **Menu** are above the picture. The game also pauses by itself

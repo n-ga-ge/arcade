@@ -13,7 +13,10 @@
 //   --bin DIR          web build to test (default: eka2l1/build/web/bin of this
 //                      checkout, else of $ARCADE_MAIN)
 //   --assets DIR       folder with NGAGE.ROM and games/<slug>.zip (default:
-//                      testdata/ of this checkout, else of $ARCADE_MAIN)
+//                      testdata/ of this checkout, else of $ARCADE_MAIN); an
+//                      N-Gage 2.0 game ("platform": "ngage2") needs
+//                      devices/rm-409.zip and ngage2/ngage-1.40.1557.sis
+//                      there instead of NGAGE.ROM
 //   --entry FILE       read the catalogue entry from FILE instead (to try a
 //                      changed script without editing the catalogue)
 //   --time-limit SEC   give up after this long (default: start-up timeout +
@@ -53,7 +56,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SHOWN_AT, checkScript, difference, likeness, picture, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
+import { PLATFORM_FILES, SHOWN_AT, checkScript, difference, gameQuery, likeness, picture, platformOf, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OPTIONS = { game: 'value', out: 'value', browser: 'value', port: 'value', bin: 'value', assets: 'value', entry: 'value', 'time-limit': 'value', verbose: 'flag', enhance: 'value' };
@@ -570,7 +573,7 @@ async function test() {
   }, limitMs).unref();
 
   for (const [file, hint] of [[path.join(binDir, 'eka2l1_web.wasm'), 'build it with tools/ci/build-web.sh or pass --bin'],
-    [path.join(assetsDir, 'NGAGE.ROM'), 'fetch it with tools/assets/fetch.py or pass --assets'],
+    ...Object.values(PLATFORM_FILES[platformOf(entry)]).map((firmware) => [path.join(assetsDir, ...firmware.split('/')), 'fetch it with tools/assets/fetch.py --fw <slug> or pass --assets']),
     [path.join(assetsDir, 'games', `${run.slug}.zip`), 'fetch it with tools/assets/fetch.py, pack it with tools/games/pack.py, or pass --assets']]) {
     if (!fs.existsSync(file)) throw setupProblem(`missing ${file}: ${hint}`);
   }
@@ -626,7 +629,9 @@ async function test() {
   });
 
   run.phase = 'loading the player';
-  const url = `http://127.0.0.1:${port}/?fw=/local/NGAGE.ROM&game=${gamePath}&persist=0`;
+  // An N-Gage 2.0 game names the phone's files instead of the ROM; the page
+  // then starts with the memory a phone needs.
+  const url = `http://127.0.0.1:${port}/${gameQuery(entry, run.slug)}`;
   const response = await guard(page.goto(url, { timeout: 60000 })).catch((error) => {
     throw error instanceof Problem ? error : setupProblem(`the player page did not load: ${firstLine(error)}`);
   });

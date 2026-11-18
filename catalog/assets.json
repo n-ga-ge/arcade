@@ -1,8 +1,11 @@
 {
   "fw": {"bytes": 18612224, "sha256": "afc1cc8b693f2b68d23ca203aa4d4eb4266baad4ab718f013a33b915d39574ef"},
+  "ngage2Device": {"bytes": 104013321, "sha256": "7849e1677b45acfa398934d3003caa1adc0ce9156b1a30bdd248f934e7fd76c8"},
+  "ngage2App": {"bytes": 9638872, "sha256": "b863df8303c2de113147cda7324139f93bdd77a0433edfb3ef878085356e15fb"},
   "games": {
     "alien-front": {"bytes": 6032533, "sha256": "cf17adc80820243f27ceca88352dd402c1aeae8bb2a15953bcc4cf0e2115ca07"},
     "ashen": {"bytes": 13711315, "sha256": "bd3d32c905c3fc0f7c3824f71bdce49410abfc6b538d99085713d44a0ddebbe8"},
+    "asphalt-3": {"bytes": 12107989, "sha256": "62036713b66b27deb50bccbc5d0516d424e2ebd7d32536174b401bd9a07105f9"},
     "atari-masterpieces-vol-1": {"bytes": 22037509, "sha256": "b09a39910a682ff88c32df218f958ef833ff4c9bf64c45e6e2ecd9d9bd76fe9c"},
     "atari-masterpieces-vol-2": {"bytes": 21742915, "sha256": "0fa05613d81114a799c5ed9f674b077bb3b2d770c269eca93fcac6a786546779"},
     "barakel": {"bytes": 6167083, "sha256": "6aa0e1fc93a1696111061c616bd585ee5250976e042075561a5a6cd1df01c77c"},
@@ -25,7 +28,9 @@
     "mile-high-pinball": {"bytes": 14270267, "sha256": "5a47e2767ef81a2c0d2386b89620194f1d4829c3ce02b3cf6f40922ce3de83af"},
     "ncaa-football-2004": {"bytes": 3457936, "sha256": "7d20135a12fe36a47fead09df6a40da03ee1809dd9346c4235164ba58b8cbe32"},
     "one": {"bytes": 19472881, "sha256": "459fa247dab67faafb262d34777c8497178f1d0e268359ff6c3f0783a87ce1cb"},
+    "one-ngage2": {"bytes": 13572975, "sha256": "9851cef305d478397e07a98c764c8811ef982809a380b3eef249d5342e9acc8f"},
     "operation-shadow": {"bytes": 12556228, "sha256": "1db4c585ef3b357e8c8c2ec0a78d0626e36f710bc50ee5c347859fa331d1d47b"},
+    "pandemonium-ngage2": {"bytes": 19766323, "sha256": "22be923ff59f563fb7c9a671bc0a6df7e969a7fd7a349d170aa2d254af5aa98c"},
     "pathway-to-glory": {"bytes": 13810279, "sha256": "83f762b29a27eda5cf20b1f93542123f4c39dbbda568114675bed0b55c3ddfeb"},
     "pathway-to-glory-ikusa-islands": {"bytes": 53850839, "sha256": "1216301a6409689dd496fda59c05b8c91097e5075813fd66296201ecbb62a119"},
     "payload": {"bytes": 16362188, "sha256": "2d5268338394609429441d333d0e38b3889826ede2df14e923067a0c12f70084"},

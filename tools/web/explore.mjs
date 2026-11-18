@@ -31,6 +31,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { PLATFORM_FILES, platformOf } from './gamecheck.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, value, i, all) => {
   if (value.startsWith('--')) acc.push([value.slice(2), all[i + 1] && !all[i + 1].startsWith('--') ? all[i + 1] : true]);
@@ -55,7 +56,11 @@ const page = await browser.newPage({ viewport: { width: viewWidth || 1280, heigh
 const consoleLog = fs.createWriteStream(path.join(outDir, 'console.log'));
 page.on('console', (message) => consoleLog.write(`[${message.type()}] ${message.text()}\n`));
 page.on('pageerror', (error) => { console.log('[pageerror]', error.message); consoleLog.write(`[pageerror] ${error.message}\n`); });
-const defaultQuery = `fw=/local/NGAGE.ROM&game=/local/${slug ? `games/${slug}.zip` : 'shadowkey.zip'}${args.log ? `&log=${encodeURIComponent(args.log)}` : ''}`;
+// The firmware of the game's platform: for an N-Gage 2.0 entry the phone's
+// device zip and the N-Gage application instead of the ROM (gamecheck.mjs).
+const entryPlatform = catalogFile && fs.existsSync(catalogFile) ? platformOf(JSON.parse(fs.readFileSync(catalogFile, 'utf8'))) : 'ngage';
+const firmware = Object.entries(PLATFORM_FILES[entryPlatform]).map(([name, file]) => `${name}=/local/${file}`).join('&');
+const defaultQuery = `${firmware}&game=/local/${slug ? `games/${slug}.zip` : 'shadowkey.zip'}${args.log ? `&log=${encodeURIComponent(args.log)}` : ''}`;
 await page.goto(`http://127.0.0.1:${port}/?${args.query !== undefined ? args.query : defaultQuery}`);
 const pageStatus = () => page.evaluate(() => ({
   status: document.getElementById('status')?.textContent || '',

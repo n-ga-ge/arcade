@@ -173,3 +173,22 @@ export function likeness(page, guest) {
   if (Math.sqrt(spreadShown / shown.length) < 0.5) return 0;
   return Number((cross / Math.sqrt(spreadShown * spreadDrawn)).toFixed(3));
 }
+
+// What a game of each platform needs below the assets folder, by the page
+// parameter that names it: the N-Gage ROM for the original N-Gage, the
+// phone's device zip and the N-Gage application for N-Gage 2.0. The same
+// paths as FIRMWARE in tools/assets/common.py.
+export const PLATFORM_FILES = {
+  ngage: { fw: 'NGAGE.ROM' },
+  ngage2: { device: 'devices/rm-409.zip', app: 'ngage2/ngage-1.40.1557.sis' },
+};
+
+export const platformOf = (entry) => (entry && entry.platform === 'ngage2' ? 'ngage2' : 'ngage');
+
+// The bare player's query string that starts `slug` from files served at
+// `base` (`/local/`), without keeping anything between visits.
+export function gameQuery(entry, slug, base = '/local/') {
+  const files = PLATFORM_FILES[platformOf(entry)];
+  const query = Object.entries(files).map(([name, file]) => `${name}=${base}${file}`);
+  return `?${[...query, `game=${base}games/${slug}.zip`, 'persist=0'].join('&')}`;
+}

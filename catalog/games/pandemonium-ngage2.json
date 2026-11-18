@@ -1,0 +1,19 @@
+{
+  "slug": "pandemonium-ngage2",
+  "title": "Pandemonium",
+  "platform": "ngage2",
+  "publisher": "Eidos",
+  "year": 2009,
+  "genre": "Platformer",
+  "uid": "0x2001AD92",
+  "variantOf": null,
+  "dump": "N-Gage 2.0",
+  "pack": {
+    "file": "Games/Fixes and cracks/Pandemonium.zip/pandemonium.n-gage"
+  },
+  "status": "broken",
+  "statusNote": "The N-Gage 2.0 game of 2009, not the original N-Gage card Pandemonium! (2003). It installs and starts; the screen turns to landscape and white, and within a few seconds the emulator stops: RuntimeError: table index is out of bounds, in an HLE dispatch call, after unimplemented system calls 0x2C and 0x2D. The same through the N-Gage application, on Start Game.",
+  "notes": [],
+  "controls": null,
+  "test": null
+}
