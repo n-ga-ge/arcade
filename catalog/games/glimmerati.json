@@ -170,5 +170,10 @@
         "repeat": 3
       }
     ]
+  },
+  "enhance": {
+    "engine": "bugbear",
+    "status": "experimental",
+    "note": "Streets, buildings, cars, crowds, shadows, head-light glows and tail lights are drawn at the higher resolution; the radar and the dashboard stay as the game draws them. Tried only in the first race, in Milan."
   }
 }
