@@ -21,8 +21,7 @@
   "statusNote": "The card starts the Nokia Game launcher: splash, registration prompts (declined), a menu with Flo, Chat, Flo Boarding and Ranking. Flo Boarding loads from there: title, main menu, level and board selection, and the qualification race rides in 3D with timer, position, speed and pause menu. Needs the zip packed with an options folder: the dump's own is empty, the pack tool drops empty folders, and without it the launcher exits at start with a System error (\"Base directory of file e:\\System\\Apps\\Nokia_Game\\Options\\config.txt not found\").",
   "notes": [
     "The card opens on the Nokia Game launcher. Press a soft key on the first picture, answer No (right soft key) to registration and to logging in, then choose Flo Boarding in the menu.",
-    "Chat, Ranking, registration and the Bluetooth Duel need the Nokia Game online service or Bluetooth and cannot work here. Flo opens but her animations do not show.",
-    "Some letters are missing from the launcher's text in this build; the game's own screens are fine."
+    "Chat, Ranking, registration and the Bluetooth Duel need the Nokia Game online service or Bluetooth and cannot work here. Flo opens but her animations do not show."
   ],
   "multiplayer": {
     "modes": [

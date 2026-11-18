@@ -8,7 +8,7 @@
   "variantOf": null,
   "dump": "Ashen",
   "status": "ingame",
-  "statusNote": "Logos, menus, the story pages and the 3D opening cutscene all run, and Chapter 1 (Seven River City) plays: moving, looking, jumping, shooting and reloading work. Some of the menu and story lettering is drawn with pixels missing but stays readable.",
+  "statusNote": "Logos, menus, the story pages and the 3D opening cutscene all run, and Chapter 1 (Seven River City) plays: moving, looking, jumping, shooting and reloading work.",
   "notes": [
     "A new game opens with story pages and a cutscene that run on their own for a minute or two before the first level starts; OK turns the story pages sooner.",
     "Either soft key pauses (Continue, Restart, Options, Quit). 0 shows the current objectives; press 0 again to close them.",

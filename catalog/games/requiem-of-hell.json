@@ -8,7 +8,7 @@
   "variantOf": null,
   "dump": "Requiem Of Hell",
   "status": "ingame",
-  "statusNote": "Logos, intro movie, main menu and options work; a new game plays its opening scenes, hero choice, name entry and dialogue and then the first fight, where the hero moves and attacks and the inventory, map and pause menu open. The small yellow text (dialogue, options, inventory) is drawn with rows of pixels missing and is hard to read.",
+  "statusNote": "Logos, intro movie, main menu and options work; a new game plays its opening scenes, hero choice, name entry and dialogue and then the first fight, where the hero moves and attacks and the inventory, map and pause menu open.",
   "notes": [
     "A new game starts with a long story. Hold 7 for a second or two to skip the intro movie and the opening scene (the movie sometimes needs a second press). Then highlight a hero with left or right before confirming with 5, press 5 to advance the dialogue, and confirm your name with the star key (5 and the other digits type letters there).",
     "The keys can be changed in the game under Options > Control Options.",
@@ -22,7 +22,7 @@
     "status": "untested"
   },
   "controls": {
-    "source": "The game's Options > Control Options screen (its defaults; the text there is damaged, so the tenth function, on 7, could not be read). Moving, attacking, the inventory, the map, the pause menu and the keys used in the story screens were observed in play.",
+    "source": "The game's Options > Control Options screen (its defaults). Moving, attacking, the inventory, the map, the pause menu and the keys used in the story screens were observed in play.",
     "actions": {
       "up": "Move up",
       "down": "Move down",
@@ -38,7 +38,7 @@
       "9": "Throw item",
       "0": "Inventory",
       "hash": "Mini map (press again to close)",
-      "7": "Skip a movie (hold it)",
+      "7": "Call Gigi; skip a movie (hold it)",
       "star": "Confirm the name you typed",
       "rsk": "Pause menu; back; close the inventory"
     },
