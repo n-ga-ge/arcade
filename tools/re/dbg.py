@@ -53,6 +53,12 @@ sys.path.insert(0, str(HERE))
 import e32  # noqa: E402
 
 
+def stride_of(frame):
+    """Numbers a vertex of a captured frame: x, y, z, w, u, v, colour, row; a
+    frame saved before the row was added has seven, and its vertexLayout says so."""
+    return len(frame.get('vertexLayout') or ()) or 8
+
+
 class Session:
     def __init__(self, port):
         self.base = f'http://127.0.0.1:{port}'
@@ -280,10 +286,12 @@ def cmd_enhance(session, args):
         frame = session.call('GET', '/v1/enhance/frame')
         if args.out:
             Path(args.out).write_text(json.dumps(frame))
-        print(f'frame {frame["frame"]}: {len(frame["vertices"]) // 21} triangles in {len(frame["draws"])} draws, '
+        print(f'frame {frame["frame"]}: {len(frame["vertices"]) // (3 * stride_of(frame))} triangles in {len(frame["draws"])} draws, '
               f'{len(frame["textures"])} textures' + (f', written to {args.out}' if args.out else ''))
         for n, texture in enumerate(frame['textures']):
-            print(f'  texture {n}: {texture["width"]}x{texture["height"]} {texture["format"]} at {texture["pixels"]}')
+            rows = texture.get('paletteRows') or 0
+            print(f'  texture {n}: {texture["width"]}x{texture["height"]} {texture["format"]} at {texture["pixels"]}'
+                  + (f', {rows} palettes from {texture["palette"]}' if rows else ''))
     elif args.action in ('texture', 'target'):
         if not args.out:
             raise SystemExit('--out FILE.png is required')

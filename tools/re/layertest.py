@@ -9,7 +9,8 @@ tool pauses the emulator, and for each scale:
 
   - switches the layer on (`PATCH /v1/enhance {"scale": N}`);
   - posts a frame (`POST /v1/enhance/test-frame`) with triangles in every
-    blend mode, with depth, with a texture seen in perspective, and with a
+    blend mode, with depth, with a texture seen in perspective, a wall whose
+    palette is chosen per pixel from eight (palette rows), and with a
     picture that stands in for the guest's screen: a sky, an overlay, and the
     key colour where the triangles belong;
   - reads the screen back at that scale (`GET /v1/screenshot?scale=N`) and
@@ -62,11 +63,11 @@ def scene():
     """(frame, textures) of the test scene; textures as {index: (width, height, RGBA bytes)}."""
     vertices, draws = [], []
 
-    def vertex(x, y, z=0.0, w=1.0, u=0.0, v=0.0, colour=0xFFFFFFFF):
-        return [x, y, z, w, u, v, colour]
+    def vertex(x, y, z=0.0, w=1.0, u=0.0, v=0.0, colour=0xFFFFFFFF, row=0.0):
+        return [x, y, z, w, u, v, colour, row]
 
     def add(corners, texture=-1, blend='none', depth='none'):
-        draws.append({'first': len(vertices) // 7, 'count': len(corners), 'texture': texture, 'blend': blend, 'depth': depth})
+        draws.append({'first': len(vertices) // render.STRIDE, 'count': len(corners), 'texture': texture, 'blend': blend, 'depth': depth})
         for corner in corners:
             vertices.extend(corner)
 
@@ -98,6 +99,22 @@ def scene():
     add([vertex(124, 76, u=0, v=0), vertex(164, 76, u=4, v=0), vertex(164, 116, u=4, v=4),
          vertex(124, 76, u=0, v=0), vertex(164, 116, u=4, v=4), vertex(124, 116, u=0, v=4)], texture=1, blend='key')
 
+    # A wall in perspective whose texels are indices into a table of eight
+    # palettes, the palette chosen per pixel by a row running from 0 at the
+    # near edge to almost 8 at the far one (the light across a wall).
+    add([vertex(4, 2, 0, 1, 0, 0, row=0), vertex(60, 10, 0, 3, 16, 0, row=7.99), vertex(60, 26, 0, 3, 16, 8, row=7.99),
+         vertex(4, 2, 0, 1, 0, 0, row=0), vertex(60, 26, 0, 3, 16, 8, row=7.99), vertex(4, 34, 0, 1, 0, 8, row=0)], texture=2)
+
+    rows = 8
+    indices = bytes((x + y) % 3 for y in range(8) for x in range(8))
+    table = bytearray()
+    for r in range(rows):
+        entries = [(r * 30, 40, 40, 255), (40, r * 30, 40, 255), (200, 200, r * 30, 255)] + [(0, 0, 0, 255)] * 253
+        table += b''.join(bytes(e) for e in entries)
+    # The reference reads it as the emulator's texture route gives it: the
+    # picture through each palette, one under the other.
+    stacked = b''.join(bytes(table[(r * 256 + i) * 4:(r * 256 + i) * 4 + 4]) for r in range(rows) for i in indices)
+
     checker = bytearray()
     for y in range(8):
         for x in range(8):
@@ -108,8 +125,10 @@ def scene():
             holes += bytes((250, 240, 60, 255)) if (x + y) % 2 else bytes((0, 0, 0, 0))
 
     frame = {'width': WIDTH, 'height': HEIGHT, 'vertices': vertices, 'draws': draws,
-             'textures': [{'width': 8, 'height': 8}, {'width': 4, 'height': 4}]}
-    return frame, {0: (8, 8, bytes(checker)), 1: (4, 4, bytes(holes))}
+             'vertexLayout': ['x', 'y', 'z', 'w', 'u', 'v', 'color', 'row'],
+             'textures': [{'width': 8, 'height': 8}, {'width': 4, 'height': 4},
+                          {'width': 8, 'height': 8, 'paletteRows': rows, 'indices': indices, 'table': bytes(table)}]}
+    return frame, {0: (8, 8, bytes(checker)), 1: (4, 4, bytes(holes)), 2: (8, 8 * rows, stacked)}
 
 
 def picture(frame):
@@ -157,7 +176,14 @@ def picture(frame):
 def body_of(frame, textures, screen):
     """The JSON to post: the frame with its textures' pixels and the picture inline."""
     body = dict(frame)
-    body['textures'] = [dict(t, data=base64.b64encode(textures[n][2]).decode()) for n, t in enumerate(frame['textures'])]
+    body['textures'] = []
+    for n, t in enumerate(frame['textures']):
+        if 'indices' in t:
+            # Palette rows: the texel indices and the table, as they are.
+            body['textures'].append(dict(t, indices=base64.b64encode(t['indices']).decode(),
+                                         table=base64.b64encode(t['table']).decode()))
+        else:
+            body['textures'].append(dict(t, data=base64.b64encode(textures[n][2]).decode()))
     body['screen'] = {'width': WIDTH, 'height': HEIGHT, 'data': base64.b64encode(screen).decode()}
     return body
 
@@ -286,7 +312,7 @@ def main():
 
     if args.write:
         Path(args.write).write_text(json.dumps(body))
-        print(f'{len(frame["vertices"]) // 21} triangles written to {args.write}')
+        print(f'{len(frame["vertices"]) // (3 * render.STRIDE)} triangles written to {args.write}')
         return 0
 
     out = Path(args.out)

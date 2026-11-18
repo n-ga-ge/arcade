@@ -222,6 +222,10 @@
                     },
                     "a": {
                       "$ref": "#/definitions/expr"
+                    },
+                    "row": {
+                      "$ref": "#/definitions/expr",
+                      "description": "Which palette of a texture with paletteRows a pixel takes: interpolated across the triangle like u and v, floor(row) clamped to the rows. Only with such a texture."
                     }
                   }
                 },
@@ -264,6 +268,18 @@
                       "minimum": 1,
                       "maximum": 16,
                       "description": "Bytes from one palette entry to the next, when the entries are wider than their format (a 12-bit colour in a 32-bit word). Default: the size of the format."
+                    },
+                    "paletteRows": {
+                      "type": "integer",
+                      "minimum": 2,
+                      "maximum": 256,
+                      "description": "A paletted texture whose palette is chosen per pixel from a table of this many, by the vertices' interpolated row. The first is at palette."
+                    },
+                    "paletteRowStride": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65536,
+                      "description": "Bytes from one palette of the table to the next. Default: the entries (256, or 16 for p4) times paletteStride."
                     },
                     "key": {
                       "$ref": "#/definitions/expr"
