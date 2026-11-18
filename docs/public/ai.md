@@ -24,14 +24,14 @@ No other AI models or services were used.
 
 ## Tokens and cost
 
-From 2026-11-16 to 2026-11-18, in 85 conversations with the agents:
+From 2026-11-16 to 2026-11-18, in 90 conversations with the agents:
 
 | Model | Requests | Input tokens | Cache writes | Cache reads | Output tokens | At API prices |
 |---|---:|---:|---:|---:|---:|---:|
 | Claude Fable 5.2 | 9,450 | 19,484 | 26,249,722 | 2,132,303,493 | 9,719,822 | $1,211 |
-| Claude Opus 5.5 | 3,243 | 6,558 | 9,924,159 | 843,374,992 | 2,183,406 | $282 |
+| Claude Opus 5.5 | 3,919 | 7,960 | 11,314,992 | 1,008,788,183 | 2,808,492 | $338 |
 | Claude Sonnet 5.5 | 6 | 18 | 32,793 | 303,181 | 4,532 | $0 |
-| **Total** | 12,699 | 26,060 | 36,206,674 | 2,975,981,666 | 11,907,760 | $1,493 |
+| **Total** | 13,375 | 27,462 | 37,597,507 | 3,141,394,857 | 12,532,846 | $1,550 |
 
 A request is one reply from the model, and an agent makes hundreds of
 them in a task. Each request sends the conversation so far. Most of it
