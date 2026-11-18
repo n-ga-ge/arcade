@@ -1,0 +1,28 @@
+// The share Worker: gives a link to one game (/play/?g=<slug>, /?game=<slug>)
+// that game's preview in chats and social posts. README.md explains it.
+// tools/ci/deploy.sh publishes it with every production deployment (by hand:
+// `npx wrangler deploy`); when CLOUDFLARE_ZONE_ID is set it deploys from a
+// copy of this file in which each "zone_name" is replaced by "zone_id".
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "n-ga-ge-share",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+
+  // Exactly the two pages a link to a game opens; a pattern without "*"
+  // matches that path alone, and the query string is not part of the match.
+  // Every other address, the player's files included, never reaches the
+  // Worker. On these two the Worker passes the request on to the Pages site
+  // (a Worker's request to its own route goes to the origin, not to itself).
+  "routes": [
+    { "pattern": "n-ga.ge/", "zone_name": "n-ga.ge" },
+    { "pattern": "n-ga.ge/play/", "zone_name": "n-ga.ge" },
+    { "pattern": "dev.n-ga.ge/", "zone_name": "n-ga.ge" },
+    { "pattern": "dev.n-ga.ge/play/", "zone_name": "n-ga.ge" }
+  ],
+
+  "workers_dev": false,
+  "preview_urls": false,
+
+  "observability": { "enabled": true }
+}

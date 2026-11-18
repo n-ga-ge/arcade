@@ -24,6 +24,11 @@
 // profile: the site must publish it, and the page must have handed it to the
 // emulator.
 //
+// Every page must carry the site's icons and share tags (tools/site/steps/
+// 70-head.py), and the files they name must be served. A link to one game
+// must keep the player's headers, and on a host with the share Worker
+// (cloudflare/share-worker/) preview that game.
+//
 // The relay (/net/, docs/deployment.md) is checked without a browser: its
 // health address must answer, and two connections must meet in a room made
 // for the purpose and pass a frame each way. The room is not public, so it
@@ -128,6 +133,59 @@ async function checkPages() {
   if (served.status !== 200) fail(`/assets/NGAGE.ROM answers ${served.status} to the site itself`);
   if (refused && refused.status !== 403) fail(`/assets/NGAGE.ROM answers ${refused.status} to a request that is not from the site (expected 403)`);
   if (served.status === 200 && (!refused || refused.status === 403)) ok(local ? 'game files: served (a dev server has no access rule to check)' : 'game files: served to the site, refused to others');
+}
+
+// --- 1b. icons and share tags -------------------------------------------------------
+
+const metaContent = (html, key) => (html.match(new RegExp(`<meta [^>]*${key}[^>]*>`)) || [''])[0].match(/content="([^"]*)"/)?.[1];
+const decode = (text) => text && text.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+async function checkShareTags(catalog) {
+  const before = problems.length;
+  const named = new Set();
+  // The dev server has no 404 page and does not apply _headers.
+  const local = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(new URL(base).hostname);
+  for (const address of ['/', '/play/', '/docs/', '/docs/playing/', ...(local ? [] : ['/no-such-page-sitecheck'])]) {
+    const html = await (await fetch(base + address)).text();
+    for (const rel of ['icon', 'apple-touch-icon', 'manifest']) {
+      const link = html.match(new RegExp(`<link rel="${rel}" href="([^"]+)"`));
+      if (!link || !link[1].startsWith('/')) fail(`${address} has no <link rel="${rel}"> naming a file of the site`);
+      else named.add(link[1]);
+    }
+    for (const key of ['property="og:title"', 'property="og:image"', 'name="twitter:card"']) {
+      if (!metaContent(html, key)) fail(`${address} has no <meta ${key}>`);
+    }
+    const image = metaContent(html, 'property="og:image"');
+    if (image && URL.canParse(decode(image))) named.add(new URL(decode(image)).pathname);
+  }
+  named.add('/favicon.ico');
+  for (const file of named) {
+    const response = await head(base + file);
+    const type = response.headers.get('content-type') || '';
+    if (response.status !== 200) fail(`${file} (an icon or share picture) answers ${response.status}`);
+    else if (!/^image\/|manifest\+json|application\/json/.test(type)) fail(`${file} is served as "${type}"`);
+  }
+  if (problems.length === before) ok(`icons and share tags on every page; ${named.size} files they name are served`);
+
+  const game = catalog.games.find((entry) => entry.ci && entry.ci.shot && entry.status !== 'untested') || catalog.games[0];
+  if (!game) return;
+  const response = await fetch(`${base}/play/?g=${game.slug}`);
+  const html = await response.text();
+  const lacking = [['cross-origin-opener-policy', 'same-origin'], ['cross-origin-embedder-policy', 'require-corp']]
+    .filter(([name, value]) => response.headers.get(name) !== value).map(([name]) => name);
+  if (lacking.length) fail(`/play/?g=${game.slug} lacks ${lacking.join(' and ')}: the player cannot use threads`);
+  if (!local && !/script-src 'self' 'wasm-unsafe-eval';/.test(response.headers.get('content-security-policy') || '')) fail(`/play/?g=${game.slug} lacks the player's Content-Security-Policy`);
+  const title = decode(metaContent(html, 'property="og:title"') || '');
+  if (title.startsWith(game.title)) {
+    const image = decode(metaContent(html, 'property="og:image"') || '');
+    const shot = image && await head(image);
+    if (!shot || shot.status !== 200) fail(`the preview of /play/?g=${game.slug} names a picture that answers ${shot ? shot.status : 'nothing'}`);
+    else ok(`a link to one game previews it ("${title}", ${new URL(image).pathname})`);
+  } else if (new URL(base).hostname === 'n-ga.ge') {
+    fail(`/play/?g=${game.slug} previews as "${title}", not as the game: is the share Worker deployed?`);
+  } else {
+    notes.push(`a link to one game previews as the site ("${title}"): ${new URL(base).hostname} has no share Worker in front of it`);
+  }
 }
 
 // --- 2. the multiplayer relay -----------------------------------------------------
@@ -386,6 +444,7 @@ async function checkReturn(slug) {
 console.log(`checking ${base} with ${mode}`);
 const catalog = await (await fetch(`${base}/catalog/index.json`)).json();
 await checkPages();
+await checkShareTags(catalog);
 await checkRelay();
 const browser = await launch();
 const listed = await checkFrontPage(browser, catalog);

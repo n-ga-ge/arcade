@@ -7,7 +7,8 @@
 # set by two rules is joined with a comma, so a narrower rule first detaches
 # ("! Name") what it replaces. Pages does not apply this file to responses
 # from Pages Functions (the site has none) or from the assets Worker, which
-# sets its own headers on /assets/.
+# sets its own headers on /assets/. The share Worker on / and /play/ passes
+# on the headers Pages gave the page, so these rules hold there too.
 
 /*
   # Cross-origin isolation. The player runs the emulator on threads, which
