@@ -191,6 +191,14 @@ def main():
                     texture = hook.get("texture")
                     if isinstance(texture, dict) and texture.get("format") == "p8" and not ("palette" in texture and "paletteFormat" in texture):
                         errors.append(f"{at}: a p8 texture needs palette and paletteFormat")
+                    if isinstance(texture, dict) and "paletteStride" in texture:
+                        sizes = {"rgb444": 2, "argb4444": 2, "rgb565": 2, "rgb555": 2, "argb1555": 2,
+                                 "rgb888": 3, "argb8888": 4, "xrgb8888": 4, "a8": 1, "l8": 1}
+                        stride, size = texture["paletteStride"], sizes.get(texture.get("paletteFormat"))
+                        if texture.get("format") != "p8" or size is None:
+                            errors.append(f"{at}: paletteStride belongs to a p8 texture with a paletteFormat")
+                        elif isinstance(stride, int) and stride < size:
+                            errors.append(f"{at}: paletteStride {stride} is less than a {texture['paletteFormat']} entry ({size} bytes)")
     for error in errors:
         print(error, file=sys.stderr)
     print(f"{len(games)} entries" + (f" and {profiles} enhancement profiles" if profiles else "") + f" checked, {len(errors)} problems")

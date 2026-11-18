@@ -1,0 +1,775 @@
+{
+  "engine": "torus",
+  "about": "The 3D engine of Torus Games. Ashen: a level of flat faces, each with a texture and up to four light maps, drawn front to back as spans, plus models. Operation Shadow: the same rasteriser with an outdoor ground of textured, lit triangles, plus models. Needs paletteStride (emulator branch enhance-torus).",
+  "viewport": {
+    "width": 176,
+    "height": 208
+  },
+  "images": [
+    {
+      "name": "6r21.app",
+      "hash": "0x5EF10702",
+      "game": "ashen",
+      "hooks": [
+        {
+          "at": "0x17070",
+          "do": "begin",
+          "note": "The call that starts the 3D view of a frame: r1 the pixels, r2 and r3 the size of the view (176 by 190, above the status bar).",
+          "target": {
+            "pixels": "r1",
+            "width": "r2",
+            "height": "r3",
+            "pitch": "r2 * 2",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x95914",
+          "do": "set",
+          "note": "A world face is about to be cut into spans. The renderer object, the face index and the 2D polygon are in the scan converter's frame.",
+          "vars": {
+            "R": "u32(sp + 0x2c)",
+            "n": "u32(sp + 0x28)",
+            "verts": "u32(sp)"
+          }
+        },
+        {
+          "at": "0x95914",
+          "do": "set",
+          "vars": {
+            "face": "u32($R + 0x380) + 76 * r5",
+            "hw": "u32($R + 0x1c) >> 1",
+            "hh": "u32($R + 0x20) >> 1",
+            "F": "s32($R + 0x68)",
+            "m0": "s32($R + 0x70)",
+            "m1": "s32($R + 0x74)",
+            "m2": "s32($R + 0x78)",
+            "m3": "s32($R + 0x7c)",
+            "m4": "s32($R + 0x80)",
+            "m5": "s32($R + 0x84)",
+            "m6": "s32($R + 0x88)",
+            "m7": "s32($R + 0x8c)",
+            "m8": "s32($R + 0x90)"
+          }
+        },
+        {
+          "at": "0x95914",
+          "do": "set",
+          "vars": {
+            "tex": "u32($R + 0x17c) + 64 * (u16($face + 0x1e) & 0x3fff)",
+            "kind": "u16($face + 0x1e) >> 14",
+            "ent": "u32($R + 0xbbc) + 64 * u16($face + 0x3e)",
+            "zo": "s32($face + 0x40)",
+            "zx": "s32($face + 0x44) / 256",
+            "zy": "s32($face + 0x48) / 256",
+            "lm": "u32($face + 0x34)",
+            "lw": "(u16($face + 0x28) >> 4) + 1",
+            "lh": "(u16($face + 0x2a) >> 4) + 1",
+            "ls": "s16($face + 0x20)",
+            "lt": "s16($face + 0x22)"
+          }
+        },
+        {
+          "at": "0x95914",
+          "do": "set",
+          "vars": {
+            "ox": "s32($ent + 0x18) - s32($R + 0x58)",
+            "oy": "s32($ent + 0x1c) - s32($R + 0x5c)",
+            "oz": "s32($ent + 0x20) - s32($R + 0x60)",
+            "sx": "s32($tex + 0x08)",
+            "sy": "s32($tex + 0x0c)",
+            "sz": "s32($tex + 0x10)",
+            "tx": "s32($tex + 0x18)",
+            "ty": "s32($tex + 0x1c)",
+            "tz": "s32($tex + 0x20)",
+            "lit": "$kind == 0 && $lm != 0xffffffff",
+            "lbase": "u32($R + 0xbcc) + $lm",
+            "style0": "u8($face + 0x2c)",
+            "style1": "u8($face + 0x2d)",
+            "style2": "u8($face + 0x2e)",
+            "style3": "u8($face + 0x2f)"
+          }
+        },
+        {
+          "at": "0x95914",
+          "do": "set",
+          "vars": {
+            "sdx": "($sx * $m0 + $sy * $m3 + $sz * $m6) / $F",
+            "sdy": "0 - ($sx * $m2 + $sy * $m5 + $sz * $m8) / $F",
+            "sb": "$sx * $m1 + $sy * $m4 + $sz * $m7",
+            "tdx": "($tx * $m0 + $ty * $m3 + $tz * $m6) / $F",
+            "tdy": "0 - ($tx * $m2 + $ty * $m5 + $tz * $m8) / $F",
+            "tb": "$tx * $m1 + $ty * $m4 + $tz * $m7",
+            "sadj": "s32($tex + 0x14) / 256 - ($ox * $sx + $oy * $sy + $oz * $sz) / 65536",
+            "tadj": "s32($tex + 0x24) / 256 - ($ox * $tx + $oy * $ty + $oz * $tz) / 65536",
+            "c0": "min(255, u32($R + 0x26d0 + 4 * $style0) * 255 / 256)",
+            "c1": "min(255, u32($R + 0x26d0 + 4 * $style1) * 255 / 256)",
+            "c2": "min(255, u32($R + 0x26d0 + 4 * $style2) * 255 / 256)",
+            "c3": "min(255, u32($R + 0x26d0 + 4 * $style3) * 255 / 256)"
+          }
+        },
+        {
+          "at": "0x95914",
+          "do": "draw",
+          "note": "The face's light map, one byte a sample, a sample every 16 texels: the first of up to four, each scaled by its light style.",
+          "when": "$lit && $style0 != 255",
+          "mode": "fan",
+          "count": "$n",
+          "vertex": "$verts + 4 * i",
+          "fields": {
+            "x": "s16(p)",
+            "y": "s16(p + 2)",
+            "z": "($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "w": "1 / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "u": "max(0.01, (($sadj + ($sb + (s16(p) - 0.5 - $hw) * $sdx + (s16(p + 2) - 0.5 - $hh) * $sdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $ls) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj + ($tb + (s16(p) - 0.5 - $hw) * $tdx + (s16(p + 2) - 0.5 - $hh) * $tdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $lt) / 16 - 0.25)",
+            "r": "$c0",
+            "g": "$c0",
+            "b": "$c0"
+          },
+          "texture": {
+            "pixels": "$lbase",
+            "width": "$lw",
+            "height": "$lh",
+            "format": "l8"
+          },
+          "blend": "none",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x95914",
+          "do": "draw",
+          "note": "Light map 2 of the face, added.",
+          "when": "$lit && $style0 != 255 && $style1 != 255",
+          "mode": "fan",
+          "count": "$n",
+          "vertex": "$verts + 4 * i",
+          "fields": {
+            "x": "s16(p)",
+            "y": "s16(p + 2)",
+            "z": "($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "w": "1 / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "u": "max(0.01, (($sadj + ($sb + (s16(p) - 0.5 - $hw) * $sdx + (s16(p + 2) - 0.5 - $hh) * $sdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $ls) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj + ($tb + (s16(p) - 0.5 - $hw) * $tdx + (s16(p + 2) - 0.5 - $hh) * $tdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $lt) / 16 - 0.25)",
+            "r": "$c1",
+            "g": "$c1",
+            "b": "$c1"
+          },
+          "texture": {
+            "pixels": "$lbase + 1 * $lw * $lh",
+            "width": "$lw",
+            "height": "$lh",
+            "format": "l8"
+          },
+          "blend": "add",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x95914",
+          "do": "draw",
+          "note": "Light map 3 of the face, added.",
+          "when": "$lit && $style0 != 255 && $style1 != 255 && $style2 != 255",
+          "mode": "fan",
+          "count": "$n",
+          "vertex": "$verts + 4 * i",
+          "fields": {
+            "x": "s16(p)",
+            "y": "s16(p + 2)",
+            "z": "($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "w": "1 / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "u": "max(0.01, (($sadj + ($sb + (s16(p) - 0.5 - $hw) * $sdx + (s16(p + 2) - 0.5 - $hh) * $sdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $ls) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj + ($tb + (s16(p) - 0.5 - $hw) * $tdx + (s16(p + 2) - 0.5 - $hh) * $tdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $lt) / 16 - 0.25)",
+            "r": "$c2",
+            "g": "$c2",
+            "b": "$c2"
+          },
+          "texture": {
+            "pixels": "$lbase + 2 * $lw * $lh",
+            "width": "$lw",
+            "height": "$lh",
+            "format": "l8"
+          },
+          "blend": "add",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x95914",
+          "do": "draw",
+          "note": "Light map 4 of the face, added.",
+          "when": "$lit && $style0 != 255 && $style1 != 255 && $style2 != 255 && $style3 != 255",
+          "mode": "fan",
+          "count": "$n",
+          "vertex": "$verts + 4 * i",
+          "fields": {
+            "x": "s16(p)",
+            "y": "s16(p + 2)",
+            "z": "($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "w": "1 / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "u": "max(0.01, (($sadj + ($sb + (s16(p) - 0.5 - $hw) * $sdx + (s16(p + 2) - 0.5 - $hh) * $sdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $ls) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj + ($tb + (s16(p) - 0.5 - $hw) * $tdx + (s16(p + 2) - 0.5 - $hh) * $tdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)) - $lt) / 16 - 0.25)",
+            "r": "$c3",
+            "g": "$c3",
+            "b": "$c3"
+          },
+          "texture": {
+            "pixels": "$lbase + 3 * $lw * $lh",
+            "width": "$lw",
+            "height": "$lh",
+            "format": "l8"
+          },
+          "blend": "add",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x95914",
+          "do": "draw",
+          "note": "The face's texture, multiplied onto its light.",
+          "when": "$lit && $style0 != 255",
+          "mode": "fan",
+          "count": "$n",
+          "vertex": "$verts + 4 * i",
+          "fields": {
+            "x": "s16(p)",
+            "y": "s16(p + 2)",
+            "z": "($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "w": "1 / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "u": "($sadj + ($sb + (s16(p) - 0.5 - $hw) * $sdx + (s16(p + 2) - 0.5 - $hh) * $sdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy))",
+            "v": "($tadj + ($tb + (s16(p) - 0.5 - $hw) * $tdx + (s16(p + 2) - 0.5 - $hh) * $tdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy))"
+          },
+          "texture": {
+            "pixels": "u32($tex + 0x28)",
+            "width": "u16($tex)",
+            "height": "u16($tex + 2)",
+            "format": "p8",
+            "palette": "u32($R + 0x258) + 16384 * ($kind >= 2)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "multiply",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x95914",
+          "do": "draw",
+          "note": "A face without a light map: its texture as it is.",
+          "when": "$kind != 1 && !($lit && $style0 != 255)",
+          "mode": "fan",
+          "count": "$n",
+          "vertex": "$verts + 4 * i",
+          "fields": {
+            "x": "s16(p)",
+            "y": "s16(p + 2)",
+            "z": "($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "w": "1 / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy)",
+            "u": "($sadj + ($sb + (s16(p) - 0.5 - $hw) * $sdx + (s16(p + 2) - 0.5 - $hh) * $sdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy))",
+            "v": "($tadj + ($tb + (s16(p) - 0.5 - $hw) * $tdx + (s16(p + 2) - 0.5 - $hh) * $tdy) / ($zo + (s16(p) - 0.5) * $zx + (s16(p + 2) - 0.5) * $zy))"
+          },
+          "texture": {
+            "pixels": "u32($tex + 0x28)",
+            "width": "u16($tex)",
+            "height": "u16($tex + 2)",
+            "format": "p8",
+            "palette": "u32($R + 0x258) + 16384 * ($kind >= 2)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x94478",
+          "do": "set",
+          "vars": {},
+          "skip": true,
+          "note": "Lights the spans of one face (a value every fourth pixel, into the depth buffer's memory). Not needed when the faces are drawn elsewhere."
+        },
+        {
+          "at": "0x943e4",
+          "do": "set",
+          "note": "Textures the spans of one face: r0 the renderer, r1 the face. Its texture gradients are in the renderer by now.",
+          "vars": {
+            "R2": "r0",
+            "face2": "r1"
+          }
+        },
+        {
+          "at": "0x943e4",
+          "do": "set",
+          "vars": {
+            "bm": "u16($face2 + 0x3e) != 0",
+            "tex2": "u32($R2 + 0x17c) + 64 * (u16($face2 + 0x1e) & 0x3fff)",
+            "kind2": "u16($face2 + 0x1e) >> 14",
+            "zo2": "s32($face2 + 0x40)",
+            "zx2": "s32($face2 + 0x44) / 256",
+            "zy2": "s32($face2 + 0x48) / 256",
+            "s0": "s32($R2 + 0x2cc)",
+            "sx2": "s32($R2 + 0x2d0)",
+            "sy2": "s32($R2 + 0x2d4)",
+            "t0": "s32($R2 + 0x2d8)",
+            "tx2": "s32($R2 + 0x2dc)",
+            "ty2": "s32($R2 + 0x2e0)",
+            "sadj2": "s32($R2 + 0x2f4) / 4096",
+            "tadj2": "s32($R2 + 0x2f8) / 4096",
+            "lm2": "u32($face2 + 0x34)",
+            "lw2": "(u16($face2 + 0x28) >> 4) + 1",
+            "lh2": "(u16($face2 + 0x2a) >> 4) + 1",
+            "ls2": "s16($face2 + 0x20)",
+            "lt2": "s16($face2 + 0x22)",
+            "st0": "u8($face2 + 0x2c)",
+            "st1": "u8($face2 + 0x2d)",
+            "st2": "u8($face2 + 0x2e)",
+            "st3": "u8($face2 + 0x2f)"
+          }
+        },
+        {
+          "at": "0x943e4",
+          "do": "set",
+          "vars": {
+            "lit2": "$kind2 == 0 && $lm2 != 0xffffffff && $st0 != 255",
+            "lbase2": "u32($R2 + 0xbcc) + $lm2",
+            "d0": "min(255, u32($R2 + 0x26d0 + 4 * $st0) * 255 / 256)",
+            "d1": "min(255, u32($R2 + 0x26d0 + 4 * $st1) * 255 / 256)",
+            "d2": "min(255, u32($R2 + 0x26d0 + 4 * $st2) * 255 / 256)",
+            "d3": "min(255, u32($R2 + 0x26d0 + 4 * $st3) * 255 / 256)"
+          }
+        },
+        {
+          "at": "0x943e4",
+          "do": "set",
+          "vars": {},
+          "when": "!$bm",
+          "skip": true,
+          "note": "A face of the level itself was captured as a polygon: its spans need no texturing."
+        },
+        {
+          "at": "0x8f01c",
+          "do": "draw",
+          "note": "One span of a brush entity's face, as a quad: its light map.",
+          "when": "$bm && $lit2",
+          "mode": "strip",
+          "count": 4,
+          "vertex": "u32(r12 + 0x1c4)",
+          "fields": {
+            "x": "(u16(p + 6) + (i & 1) * u16(p + 4))",
+            "y": "(u16(p + 8) + (i >> 1))",
+            "z": "($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "w": "1 / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "u": "max(0.01, (($sadj2 + ($s0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $sx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $sy2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $ls2) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj2 + ($t0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $tx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $ty2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $lt2) / 16 - 0.25)",
+            "r": "$d0",
+            "g": "$d0",
+            "b": "$d0"
+          },
+          "texture": {
+            "pixels": "$lbase2",
+            "width": "$lw2",
+            "height": "$lh2",
+            "format": "l8"
+          },
+          "blend": "none",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x8f01c",
+          "do": "draw",
+          "note": "Light map 2, added.",
+          "when": "$bm && $lit2 && $st1 != 255",
+          "mode": "strip",
+          "count": 4,
+          "vertex": "u32(r12 + 0x1c4)",
+          "fields": {
+            "x": "(u16(p + 6) + (i & 1) * u16(p + 4))",
+            "y": "(u16(p + 8) + (i >> 1))",
+            "z": "($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "w": "1 / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "u": "max(0.01, (($sadj2 + ($s0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $sx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $sy2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $ls2) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj2 + ($t0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $tx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $ty2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $lt2) / 16 - 0.25)",
+            "r": "$d1",
+            "g": "$d1",
+            "b": "$d1"
+          },
+          "texture": {
+            "pixels": "$lbase2 + 1 * $lw2 * $lh2",
+            "width": "$lw2",
+            "height": "$lh2",
+            "format": "l8"
+          },
+          "blend": "add",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x8f01c",
+          "do": "draw",
+          "note": "Light map 3, added.",
+          "when": "$bm && $lit2 && $st1 != 255 && $st2 != 255",
+          "mode": "strip",
+          "count": 4,
+          "vertex": "u32(r12 + 0x1c4)",
+          "fields": {
+            "x": "(u16(p + 6) + (i & 1) * u16(p + 4))",
+            "y": "(u16(p + 8) + (i >> 1))",
+            "z": "($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "w": "1 / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "u": "max(0.01, (($sadj2 + ($s0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $sx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $sy2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $ls2) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj2 + ($t0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $tx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $ty2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $lt2) / 16 - 0.25)",
+            "r": "$d2",
+            "g": "$d2",
+            "b": "$d2"
+          },
+          "texture": {
+            "pixels": "$lbase2 + 2 * $lw2 * $lh2",
+            "width": "$lw2",
+            "height": "$lh2",
+            "format": "l8"
+          },
+          "blend": "add",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x8f01c",
+          "do": "draw",
+          "note": "Light map 4, added.",
+          "when": "$bm && $lit2 && $st1 != 255 && $st2 != 255 && $st3 != 255",
+          "mode": "strip",
+          "count": 4,
+          "vertex": "u32(r12 + 0x1c4)",
+          "fields": {
+            "x": "(u16(p + 6) + (i & 1) * u16(p + 4))",
+            "y": "(u16(p + 8) + (i >> 1))",
+            "z": "($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "w": "1 / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "u": "max(0.01, (($sadj2 + ($s0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $sx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $sy2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $ls2) / 16 - 0.25)",
+            "v": "max(0.01, (($tadj2 + ($t0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $tx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $ty2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)) - $lt2) / 16 - 0.25)",
+            "r": "$d3",
+            "g": "$d3",
+            "b": "$d3"
+          },
+          "texture": {
+            "pixels": "$lbase2 + 3 * $lw2 * $lh2",
+            "width": "$lw2",
+            "height": "$lh2",
+            "format": "l8"
+          },
+          "blend": "add",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x8f01c",
+          "do": "draw",
+          "note": "The span's texture, multiplied onto its light.",
+          "when": "$bm && $lit2",
+          "mode": "strip",
+          "count": 4,
+          "vertex": "u32(r12 + 0x1c4)",
+          "fields": {
+            "x": "(u16(p + 6) + (i & 1) * u16(p + 4))",
+            "y": "(u16(p + 8) + (i >> 1))",
+            "z": "($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "w": "1 / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "u": "($sadj2 + ($s0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $sx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $sy2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2))",
+            "v": "($tadj2 + ($t0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $tx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $ty2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2))"
+          },
+          "texture": {
+            "pixels": "u32($tex2 + 0x28)",
+            "width": "u16($tex2)",
+            "height": "u16($tex2 + 2)",
+            "format": "p8",
+            "palette": "u32($R2 + 0x258) + 16384 * ($kind2 >= 2)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "multiply",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x8f01c",
+          "do": "draw",
+          "note": "A span of a face without a light map.",
+          "when": "$bm && !$lit2",
+          "mode": "strip",
+          "count": 4,
+          "vertex": "u32(r12 + 0x1c4)",
+          "fields": {
+            "x": "(u16(p + 6) + (i & 1) * u16(p + 4))",
+            "y": "(u16(p + 8) + (i >> 1))",
+            "z": "($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "w": "1 / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2)",
+            "u": "($sadj2 + ($s0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $sx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $sy2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2))",
+            "v": "($tadj2 + ($t0 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $tx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $ty2) / ($zo2 + ((u16(p + 6) + (i & 1) * u16(p + 4)) - 0.5) * $zx2 + ((u16(p + 8) + (i >> 1)) - 0.5) * $zy2))"
+          },
+          "texture": {
+            "pixels": "u32($tex2 + 0x28)",
+            "width": "u16($tex2)",
+            "height": "u16($tex2 + 2)",
+            "format": "p8",
+            "palette": "u32($R2 + 0x258) + 16384 * ($kind2 >= 2)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x8893c",
+          "do": "set",
+          "vars": {},
+          "skip": true,
+          "note": "Inner loop of the texturing pass (the largest size of a texture); reached only for the spans captured above."
+        },
+        {
+          "at": "0x890cc",
+          "do": "set",
+          "vars": {},
+          "skip": true,
+          "note": "Inner loop of the texturing pass (the second size); reached only for the spans captured above."
+        },
+        {
+          "at": "0x89864",
+          "do": "set",
+          "vars": {},
+          "skip": true,
+          "note": "Inner loop of the texturing pass (the third size); reached only for the spans captured above."
+        },
+        {
+          "at": "0x89ffc",
+          "do": "set",
+          "vars": {},
+          "skip": true,
+          "note": "Inner loop of the texturing pass (the smallest size); reached only for the spans captured above."
+        },
+        {
+          "at": "0x87b24",
+          "do": "set",
+          "vars": {},
+          "skip": true,
+          "note": "Inner loop of the texturing pass (liquids); reached only for the spans captured above."
+        },
+        {
+          "at": "0x901a8",
+          "do": "draw",
+          "skip": true,
+          "note": "Draws one triangle of a model: r0 the renderer, r1 three indices into its array of projected corners (u, v as 16-bit texels, then x, y and depth as words). The palette is the row of the light table the model is lit with.",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "u32(r0 + 0xa0) + 16 * u32(r1 + 4 * i)",
+          "fields": {
+            "x": "s32(p + 4) + 0.5",
+            "y": "s32(p + 8) + 0.5",
+            "z": "s32(p + 12)",
+            "u": "s16(p) + 0.02",
+            "v": "s16(p + 2) + 0.02"
+          },
+          "texture": {
+            "pixels": "u32(r0 + 0xa4)",
+            "width": "1 << u32(r0 + 0xac)",
+            "height": "(u32(r0 + 0xb0) + 1) >> u32(r0 + 0xac)",
+            "format": "p8",
+            "palette": "u32(r0 + 0x28)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "greater"
+        },
+        {
+          "at": "0x17184",
+          "do": "end",
+          "note": "The 3D view is complete; the status bar and menus follow."
+        }
+      ]
+    },
+    {
+      "name": "6r22.app",
+      "hash": "0x3E49E6DE",
+      "game": "operation-shadow",
+      "hooks": [
+        {
+          "at": "0x3f98c",
+          "do": "begin",
+          "note": "The call that starts the 3D view of a frame: r1 the pixels, r2 and r3 the size (the whole 176 by 208 screen bitmap; the HUD is drawn into it afterwards).",
+          "target": {
+            "pixels": "r1",
+            "width": "r2",
+            "height": "r3",
+            "pitch": "r2 * 2",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x9534c",
+          "do": "set",
+          "when": "sar((s32(u32(r1 + 4) + 0x10) - s32(u32(r1) + 0x10)) * (s32(u32(r1 + 8) + 0xc) - s32(u32(r1 + 4) + 0xc)) + (s32(u32(r1) + 0xc) - s32(u32(r1 + 4) + 0xc)) * (s32(u32(r1 + 8) + 0x10) - s32(u32(r1 + 4) + 0x10)), 0) >= 0",
+          "vars": {
+            "row3": "min(31, (max(max(u16(u32(r1) + 0x20), u16(u32(r1 + 4) + 0x20)), u16(u32(r1 + 8) + 0x20)) >> 7) + 1)"
+          }
+        },
+        {
+          "at": "0x9534c",
+          "do": "draw",
+          "note": "Draws a triangle of the ground: r0 the renderer, r1 three pointers to corners. Triangles that face away are not drawn. The ground is a row of 32 textures, 64 by 64, leading from one kind of ground to the next; this draws the one the first corner is at.",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "u32(r1 + 4 * i)",
+          "fields": {
+            "x": "fx(s32(p + 0xc), 4) + 0.5",
+            "y": "fx(s32(p + 0x10), 4) + 0.5",
+            "z": "s32(p + 0x14)",
+            "u": "s16(p + 0x18)",
+            "v": "s16(p + 0x1a)",
+            "r": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row3))",
+            "g": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row3))",
+            "b": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row3))"
+          },
+          "texture": {
+            "pixels": "u32(u32(r0 + 0x38) + 0x64) + 4096 * min(31, (u16(u32(r1) + 0x26) >> 7))",
+            "width": 64,
+            "height": 64,
+            "format": "p8",
+            "palette": "u32(u32(r0 + 0x38) + 0x5c) + 1024 * $row3",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "gequal",
+          "when": "sar((s32(u32(r1 + 4) + 0x10) - s32(u32(r1) + 0x10)) * (s32(u32(r1 + 8) + 0xc) - s32(u32(r1 + 4) + 0xc)) + (s32(u32(r1) + 0xc) - s32(u32(r1 + 4) + 0xc)) * (s32(u32(r1 + 8) + 0x10) - s32(u32(r1 + 4) + 0x10)), 0) >= 0"
+        },
+        {
+          "at": "0x9534c",
+          "do": "draw",
+          "note": "The same corners with the next ground texture, as opaque as each corner is far along.",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "u32(r1 + 4 * i)",
+          "fields": {
+            "x": "fx(s32(p + 0xc), 4) + 0.5",
+            "y": "fx(s32(p + 0x10), 4) + 0.5",
+            "z": "s32(p + 0x14)",
+            "u": "s16(p + 0x18)",
+            "v": "s16(p + 0x1a)",
+            "r": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row3))",
+            "g": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row3))",
+            "b": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row3))",
+            "a": "min(255, max(0, 255 * (u16(p + 0x26) / 128 - (u16(u32(r1) + 0x26) >> 7))))"
+          },
+          "texture": {
+            "pixels": "u32(u32(r0 + 0x38) + 0x64) + 4096 * min(31, (u16(u32(r1) + 0x26) >> 7) + 1)",
+            "width": 64,
+            "height": 64,
+            "format": "p8",
+            "palette": "u32(u32(r0 + 0x38) + 0x5c) + 1024 * $row3",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "alpha",
+          "depth": "gequal",
+          "when": "sar((s32(u32(r1 + 4) + 0x10) - s32(u32(r1) + 0x10)) * (s32(u32(r1 + 8) + 0xc) - s32(u32(r1 + 4) + 0xc)) + (s32(u32(r1) + 0xc) - s32(u32(r1 + 4) + 0xc)) * (s32(u32(r1 + 8) + 0x10) - s32(u32(r1 + 4) + 0x10)), 0) >= 0"
+        },
+        {
+          "at": "0x95568",
+          "do": "set",
+          "vars": {
+            "row4": "min(31, (max(max(max(u16(u32(r1) + 0x20), u16(u32(r1 + 4) + 0x20)), u16(u32(r1 + 8) + 0x20)), u16(u32(r1 + 12) + 0x20)) >> 7) + 1)"
+          }
+        },
+        {
+          "at": "0x95568",
+          "do": "draw",
+          "note": "Draws a quad of the ground (r1: four corners), past the tests that send a folded quad to the triangle function. The ground is a row of 32 textures, 64 by 64, leading from one kind of ground to the next; this draws the one the first corner is at.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "u32(r1 + 4 * i)",
+          "fields": {
+            "x": "fx(s32(p + 0xc), 4) + 0.5",
+            "y": "fx(s32(p + 0x10), 4) + 0.5",
+            "z": "s32(p + 0x14)",
+            "u": "s16(p + 0x18)",
+            "v": "s16(p + 0x1a)",
+            "r": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row4))",
+            "g": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row4))",
+            "b": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row4))"
+          },
+          "texture": {
+            "pixels": "u32(u32(r0 + 0x38) + 0x64) + 4096 * min(31, (u16(u32(r1) + 0x26) >> 7))",
+            "width": 64,
+            "height": 64,
+            "format": "p8",
+            "palette": "u32(u32(r0 + 0x38) + 0x5c) + 1024 * $row4",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x95568",
+          "do": "draw",
+          "note": "The same corners with the next ground texture, as opaque as each corner is far along.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "u32(r1 + 4 * i)",
+          "fields": {
+            "x": "fx(s32(p + 0xc), 4) + 0.5",
+            "y": "fx(s32(p + 0x10), 4) + 0.5",
+            "z": "s32(p + 0x14)",
+            "u": "s16(p + 0x18)",
+            "v": "s16(p + 0x1a)",
+            "r": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row4))",
+            "g": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row4))",
+            "b": "min(255, 255 * (1 + 0.0637 * u16(p + 0x20) / 128) / (1 + 0.0637 * $row4))",
+            "a": "min(255, max(0, 255 * (u16(p + 0x26) / 128 - (u16(u32(r1) + 0x26) >> 7))))"
+          },
+          "texture": {
+            "pixels": "u32(u32(r0 + 0x38) + 0x64) + 4096 * min(31, (u16(u32(r1) + 0x26) >> 7) + 1)",
+            "width": 64,
+            "height": 64,
+            "format": "p8",
+            "palette": "u32(u32(r0 + 0x38) + 0x5c) + 1024 * $row4",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "alpha",
+          "depth": "gequal"
+        },
+        {
+          "at": "0x8eed8",
+          "do": "set",
+          "vars": {},
+          "skip": true,
+          "note": "Fills one line of a ground polygon. The caller still writes the depth buffer, which what the game draws itself is tested against."
+        },
+        {
+          "at": "0x938f0",
+          "do": "draw",
+          "skip": true,
+          "note": "Draws one triangle of a model: r0 the renderer, r1 three indices into its array of projected corners (u, v as 16-bit texels, then x, y and depth as words). The palette is the row of the light table the model is lit with.",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "u32(r0 + 0xd8) + 16 * u32(r1 + 4 * i)",
+          "fields": {
+            "x": "s32(p + 4) + 0.5",
+            "y": "s32(p + 8) + 0.5",
+            "z": "s32(p + 12)",
+            "u": "s16(p) + 0.02",
+            "v": "s16(p + 2) + 0.02"
+          },
+          "texture": {
+            "pixels": "u32(r0 + 0xdc)",
+            "width": "1 << u32(r0 + 0xe4)",
+            "height": "(u32(r0 + 0xe8) + 1) >> u32(r0 + 0xe4)",
+            "format": "p8",
+            "palette": "u32(r0 + 0x28)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3fe3c",
+          "do": "end",
+          "note": "The 3D view is complete; the status bar and menus follow."
+        }
+      ]
+    }
+  ]
+}
