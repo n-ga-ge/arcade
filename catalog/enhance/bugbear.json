@@ -1,0 +1,204 @@
+{
+  "engine": "bugbear",
+  "about": "The 3D renderer of Glimmerati (Bugbear Entertainment): textured, keyed, tinted, flat and shadow triangles without depth, drawn far to near into a 256 by 256 buffer whose middle 176 by 208 is the screen, and the additive sprites of the head-light glows and tail lights. The minimap, radar and dashboard are 2D and left to the game.",
+  "viewport": {
+    "width": 176,
+    "height": 208
+  },
+  "images": [
+    {
+      "name": "main.dll",
+      "hash": "0x463FB37A",
+      "game": "glimmerati",
+      "hooks": [
+        {
+          "at": "0x70058",
+          "do": "begin",
+          "note": "Prepares the race's 3D view once a frame; r1 the view. Its picture is a 256 by 256 buffer of 12-bit pixels whose visible part starts at (40, 24): address at +0x22e0, pitch at +0x22dc. The 3D covers its top 170 rows.",
+          "target": {
+            "pixels": "u32(r1 + 0x22e0)",
+            "width": 176,
+            "height": 170,
+            "pitch": "u32(r1 + 0x22dc)",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x70058",
+          "do": "set",
+          "note": "The visible part's address, which the draws below check their buffer against, and that a frame's 3D is being drawn.",
+          "vars": {
+            "T": "u32(r1 + 0x22e0)",
+            "in": 1
+          }
+        },
+        {
+          "at": "0x7f85c",
+          "do": "end",
+          "note": "The 3D of the frame has been drawn (over several scheduler ticks, in batches from 0x7f81c); the radar and the dashboard come next (0x7f8dc)."
+        },
+        {
+          "at": "0x7f85c",
+          "do": "set",
+          "note": "What the minimap and the dashboard draw after this, through the same functions, is left to the game.",
+          "vars": {
+            "in": 0
+          }
+        },
+        {
+          "at": "0x20168",
+          "do": "set",
+          "note": "Which span filler this triangle goes to, relative to pc; 0 outside a frame's 3D or when not drawn into the race's buffer ([sp] is the span state, its first word the buffer).",
+          "vars": {
+            "f": "sel($in && u32(u32(sp)) + 0x3050 == $T, u32(sp + 4) - pc, 0)"
+          }
+        },
+        {
+          "at": "0x20168",
+          "do": "draw",
+          "skip": true,
+          "note": "Triangle setup: r1 to r3 the corners (16.16 words: y, x in the 256-wide buffer, then u, v in texels), [sp] the span state, [sp + 4] the span filler. This filler copies texels: any power-of-two size, repeating.",
+          "when": "$f == 0x780",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r1, sel(i == 1, r2, r3))",
+          "fields": {
+            "x": "fx(s32(p + 4), 16) - 39.5",
+            "y": "fx(s32(p), 16) - 23.5",
+            "u": "fx(s32(p + 8), 16)",
+            "v": "fx(s32(p + 12), 16)"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 0x10)",
+            "width": "1 << (8 - u32(u32(sp) + 0x1c))",
+            "height": "(u32(u32(sp) + 0x18) >> (8 - u32(u32(sp) + 0x1c))) + 1",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x20168",
+          "do": "draw",
+          "skip": true,
+          "note": "Texels with bit 15 set are drawn, the others are holes (signs, railings, trees).",
+          "when": "$f == 0x1674",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r1, sel(i == 1, r2, r3))",
+          "fields": {
+            "x": "fx(s32(p + 4), 16) - 39.5",
+            "y": "fx(s32(p), 16) - 23.5",
+            "u": "fx(s32(p + 8), 16)",
+            "v": "fx(s32(p + 12), 16)"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 0x10)",
+            "width": "1 << (8 - u32(u32(sp) + 0x1c))",
+            "height": "(u32(u32(sp) + 0x18) >> (8 - u32(u32(sp) + 0x1c))) + 1",
+            "format": "argb4444"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x20168",
+          "do": "draw",
+          "skip": true,
+          "note": "A 64 by 64 texture tinted by the 12-bit colour at [sp]+4, each channel times (n + 1) / 16 (the cars).",
+          "when": "$f == 0x2134",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r1, sel(i == 1, r2, r3))",
+          "fields": {
+            "x": "fx(s32(p + 4), 16) - 39.5",
+            "y": "fx(s32(p), 16) - 23.5",
+            "u": "fx(s32(p + 8), 16)",
+            "v": "fx(s32(p + 12), 16)",
+            "r": "(((u32(u32(sp) + 4) >> 8) & 15) + 1) * 255 / 16",
+            "g": "(((u32(u32(sp) + 4) >> 4) & 15) + 1) * 255 / 16",
+            "b": "(((u32(u32(sp) + 4) >> 0) & 15) + 1) * 255 / 16"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 0x10)",
+            "width": 64,
+            "height": 64,
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x20168",
+          "do": "draw",
+          "skip": true,
+          "note": "One colour, the 12-bit value at [sp]+4.",
+          "when": "$f == 0 - 0x1fc",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r1, sel(i == 1, r2, r3))",
+          "fields": {
+            "x": "fx(s32(p + 4), 16) - 39.5",
+            "y": "fx(s32(p), 16) - 23.5",
+            "r": "((u32(u32(sp) + 4) >> 8) & 15) * 17",
+            "g": "((u32(u32(sp) + 4) >> 4) & 15) * 17",
+            "b": "((u32(u32(sp) + 4) >> 0) & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x20168",
+          "do": "draw",
+          "skip": true,
+          "note": "Shadow: halves what is under it.",
+          "when": "$f == 0xcd8",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r1, sel(i == 1, r2, r3))",
+          "fields": {
+            "x": "fx(s32(p + 4), 16) - 39.5",
+            "y": "fx(s32(p), 16) - 23.5",
+            "r": 128,
+            "g": 128,
+            "b": 128
+          },
+          "blend": "multiply",
+          "depth": "none"
+        },
+        {
+          "at": "0x1fcbc",
+          "do": "set",
+          "note": "Whether this sprite belongs to a frame's 3D and is drawn into the race's buffer (r2's first word).",
+          "vars": {
+            "s": "$in && u32(r2) + 0x3050 == $T"
+          }
+        },
+        {
+          "at": "0x1fcbc",
+          "do": "draw",
+          "skip": true,
+          "note": "A screen-aligned sprite added to the picture, each 4-bit channel saturating (head-light glows, tail lights): r0 and r1 two opposite corners, each x, y, u, v as 16.16 words, r2 the sprite state (+0xc the 12-bit texels, +0x10 the texture's width).",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "0",
+          "fields": {
+            "x": "fx(s32(sel(i == 1 || i == 2, r1, r0)), 16) - 39.5",
+            "y": "fx(s32(sel(i >= 2, r1, r0) + 4), 16) - 23.5",
+            "u": "fx(s32(sel(i == 1 || i == 2, r1, r0) + 8), 16)",
+            "v": "fx(s32(sel(i >= 2, r1, r0) + 12), 16)"
+          },
+          "texture": {
+            "pixels": "u32(r2 + 0xc)",
+            "width": "u32(r2 + 0x10)",
+            "height": "(max(s32(r0 + 12), s32(r1 + 12)) + 0xffff) >> 16",
+            "format": "rgb444"
+          },
+          "blend": "add",
+          "depth": "none",
+          "when": "$s"
+        }
+      ]
+    }
+  ]
+}
