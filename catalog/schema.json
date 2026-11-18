@@ -51,6 +51,17 @@
         "statusNote": { "type": "string", "maxLength": 400, "description": "What was seen. Required when status is broken." }
       }
     },
+    "enhance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "status"],
+      "description": "Drawing the game's 3D above its own resolution (docs/enhancements.md). Left out: the game has no enhancement profile.",
+      "properties": {
+        "engine": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "maxLength": 64, "description": "The profile that reads this game's rasteriser: catalog/enhance/<engine>.json." },
+        "status": { "enum": ["experimental", "verified"], "description": "experimental (the capture passes tools/re/enhancetest.py; the picture on the GPU layer was not looked at in play), verified (played at a higher resolution and the picture is right)." },
+        "note": { "type": "string", "maxLength": 400, "description": "What is not right yet, or what a player should know." }
+      }
+    },
     "controls": {
       "type": ["object", "null"],
       "additionalProperties": false,

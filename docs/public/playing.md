@@ -142,8 +142,14 @@ Good to know:
 ## Display
 
 **Menu → Display** changes how the small N-Gage picture is enlarged: sharp
-pixels (the default), smooth, or one of several filters. These change only the
-look, not the speed of the game.
+pixels (the default), smooth, or one of several filters, grouped by what they
+suit. For 2D games, which most N-Gage games are, **xBRZ** and **MMPX** redraw
+pixel art with smoother edges; for 3D games **FSR** is the one to try. These
+change only the look, not the speed of the game.
+
+For pixels that are all the same size, set **Resolution** to **Largest whole
+multiple** (it leaves a margin), or keep the picture large and choose
+**Sharp pixels, evened**.
 
 The N-Gage's screen is taller than it is wide, so on a monitor there is empty
 space beside the picture. **Fill the screen (beta)** uses it: **Stretch**
@@ -151,6 +157,13 @@ widens the picture over the whole area, and **Ambient fill** keeps the
 picture's shape and fills the space beside it with a soft, blurred copy of
 what is on screen. Neither makes the game show more of its world: a game
 always draws the same picture.
+
+For a few games the dialog will also offer **3D resolution (beta)**: the
+game's 3D drawn again by your graphics card at two, three or four times the
+phone's resolution, with **3D textures** sharp or smooth, while menus and text
+stay as they are. This is being built. The two settings show only for a game
+it has been prepared for, and where the dialog says it is not available, your
+choice is kept and changes nothing yet.
 
 ## Playing your own copy
 

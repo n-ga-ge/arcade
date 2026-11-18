@@ -17,7 +17,8 @@
 //   gamepad   a (mocked) standard gamepad drives the game into 3D
 //   touch     on-screen controls drive the game into 3D; layout fits the viewport
 //   controls  game layout picked automatically, rebinding by keyboard and gamepad, reset
-//   display   every scaling filter renders, resolutions resize the canvas, speed holds
+//   display   every scaling filter renders, resolutions resize the canvas, speed holds;
+//             the 3D resolution settings of a game with an enhancement profile
 //   urlload   "Load from URL" and the site's one-click Play button
 //   saves     an in-game save is exported, deleted, imported back and survives a reload
 import { chromium, firefox, devices } from 'playwright';
@@ -110,6 +111,24 @@ async function open(browser, { device = 'desktop', url = `${base}/?${query}`, in
   const started = Date.now();
   await page.goto(url);
   return { context, page, log, started };
+}
+
+// Share of the n by n blocks of a screenshot that are one colour: 1 when the
+// picture is game pixels enlarged n times and shown pixel for pixel. 0 when
+// the screenshot is not a whole number of such blocks.
+function evenBlocks(png, n) {
+  if (!Number.isInteger(n) || n < 1 || png.width % n || png.height % n) return 0;
+  let even = 0;
+  const at = (x, y) => png.data.readUInt32LE((y * png.width + x) * 4);
+  for (let y = 0; y < png.height; y += n) {
+    for (let x = 0; x < png.width; x += n) {
+      const first = at(x, y);
+      let same = true;
+      for (let j = 0; j < n && same; j++) for (let i = 0; i < n && same; i++) same = at(x + i, y + j) === first;
+      if (same) even++;
+    }
+  }
+  return even / ((png.width / n) * (png.height / n));
 }
 
 const state = (page) => page.evaluate(() => {
@@ -542,6 +561,8 @@ const TESTS = {
     const difference = (x, y) => { let sum = 0; const n = Math.min(x.data.length, y.data.length); for (let i = 0; i < n; i += 4) sum += Math.abs(x.data[i] - y.data[i]) + Math.abs(x.data[i + 1] - y.data[i + 1]) + Math.abs(x.data[i + 2] - y.data[i + 2]); return sum / (n / 4) / 3; };
 
     await page.click('#btn-menu'); await page.click('#m-display');
+    // No catalogue here, so no enhancement profile: its settings are not shown.
+    const bare = await page.evaluate(() => ({ hidden: document.getElementById('enhance-settings').hidden, state: window.eka2l1Page.enhance }));
     const filters = await page.evaluate(() => [...document.querySelectorAll('#filter-select option')].map((option) => option.value));
     const resolutions = await page.evaluate(() => [...document.querySelectorAll('#resolution-select option')].map((option) => option.value));
 
@@ -550,7 +571,10 @@ const TESTS = {
     const results = {};
     let reference = null;
     let smooth = null;
+    let previous = null;
     const failed = [];
+    // At a whole-number scale "Sharp pixels, evened" is sharp pixels.
+    const evenScale = await page.evaluate(() => Number.isInteger(window.eka2l1Page.surface.width / 176));
     for (const filter of filters) {
       await page.selectOption('#filter-select', filter);
       await page.evaluate(() => document.getElementById('display').close());
@@ -564,7 +588,10 @@ const TESTS = {
       // shader filter must differ from that too.
       const versusSmooth = smooth && filter !== 'linear' && filter !== 'nearest' ? difference(smooth, png) : 1;
       results[filter] = `${lit.toFixed(0)}/${diff.toFixed(1)}/${versusSmooth.toFixed(2)}`;
-      if (lit < 15 || (filter !== 'nearest' && diff < 0.05) || versusSmooth < 0.02) failed.push(filter);
+      // A shader that does not compile leaves the one before it in place.
+      const versusPrevious = previous ? difference(previous, png) : 1;
+      previous = png;
+      if (lit < 15 || (filter !== 'nearest' && diff < 0.05 && !(filter === 'sharp_bilinear' && evenScale)) || versusSmooth < 0.02 || versusPrevious < 0.02) failed.push(filter);
       if (filter === 'fsr' || filter === 'fsr_sharp' || filter === 'nearest') fs.writeFileSync(path.join(outDir, `${name}-display-${filter}.png`), PNG.sync.write(png));
       await page.click('#btn-menu'); await page.click('#m-display');
     }
@@ -584,8 +611,26 @@ const TESTS = {
       const size = await page.evaluate(() => ({ want: window.eka2l1Page.surface, got: [document.getElementById('canvas').width, document.getElementById('canvas').height] }));
       sizes[resolution] = `${size.got[0]}x${size.got[1]}`;
       if (size.got[0] !== size.want.width || size.got[1] !== size.want.height) sizesOk = false;
-      if (resolution !== 'auto' && size.got[0] !== 176 * Number(resolution)) sizesOk = false;
+      if (/^\d+$/.test(resolution) && size.got[0] !== 176 * Number(resolution)) sizesOk = false;
     }
+
+    // The largest whole multiple, with sharp pixels: the page shows the canvas
+    // pixel for pixel, so every game pixel is a square block of one size.
+    await page.selectOption('#filter-select', 'nearest');
+    await page.selectOption('#resolution-select', 'fit');
+    await page.evaluate(() => document.getElementById('display').close());
+    await sleep(1500);
+    const whole = await page.evaluate(() => {
+      const element = document.getElementById('canvas');
+      const box = element.getBoundingClientRect();
+      const ratio = window.devicePixelRatio;
+      return { multiple: element.width / 176, rows: element.height / 208, shown: [box.width * ratio, box.height * ratio], backing: [element.width, element.height] };
+    });
+    const blocks = evenBlocks(await shot(), whole.multiple);
+    sizes.fitShown = `${whole.multiple}x, shown ${whole.shown.map((n) => Number(n.toFixed(2))).join('x')}, even blocks ${blocks}`;
+    if (!(Number.isInteger(whole.multiple) && whole.multiple >= 1 && whole.rows === whole.multiple
+      && Math.abs(whole.shown[0] - whole.backing[0]) < 0.01 && Math.abs(whole.shown[1] - whole.backing[1]) < 0.01 && blocks === 1)) sizesOk = false;
+    await page.click('#btn-menu'); await page.click('#m-display');
 
     // The choice is kept for the next visit.
     await page.selectOption('#filter-select', 'fsr');
@@ -597,9 +642,116 @@ const TESTS = {
     await page.evaluate(() => { localStorage.removeItem('eka2l1.settings.v1'); });
     await context.close();
 
-    const pass = failed.length === 0 && sizesOk && heavy.fps >= 15 && kept.filter === 'fsr' && kept.width === 704;
+    // 3D resolution: two settings that exist only for a game whose catalogue
+    // entry names an enhancement profile. The game of this suite has none and
+    // the bare player has no catalogue, so the page is given one here: its
+    // config.json, the index, an entry for the running game and the profile
+    // are answered by this test. The profile names a program that does not
+    // exist, so the emulator, which is the real one, takes it and hooks
+    // nothing. What the page then does with the emulator's answers is what a
+    // site's page does.
+    const entry = { slug: 'suite-game', title: 'Suite game', uid: '0x101FD3F6', variantOf: null, status: 'ingame',
+      enhance: { engine: 'suite', status: 'experimental', note: 'A note from the suite.' } };
+    const catalogue = {
+      'index.json': { games: [entry] },
+      'games/suite-game.json': entry,
+      'enhance/suite.json': { engine: 'suite', images: [{ name: 'no-such-program.app', hash: '0x00000000', hooks: [{ at: '0x0', do: 'begin' }] }] },
+      'assets.json': {},
+    };
+    const site = await open(browser, { url: 'about:blank' });
+    const json = (route, value) => route.fulfill({ status: value ? 200 : 404, contentType: 'application/json', body: JSON.stringify(value || {}) });
+    await site.page.route('**/config.json', (route) => json(route, { catalog: '/suite-catalog/' }));
+    await site.page.route('**/suite-catalog/**', (route) => json(route, catalogue[new URL(route.request().url()).pathname.replace('/suite-catalog/', '')]));
+    await site.page.goto(`${base}/?${query}`);
+    await waitRunning(site.page);
+    const settled = () => site.page.waitForFunction(() => window.eka2l1Page.enhance && window.eka2l1Page.enhance.state !== 'loading', null, { timeout: 30000 });
+    await settled();
+
+    // Every request the page makes about it from here on.
+    await site.page.evaluate(() => {
+      window.__enhance = [];
+      const original = window.eka2l1.request.bind(window.eka2l1);
+      window.eka2l1.request = (method, target, body = null) => {
+        if (target.startsWith('/v1/enhance')) window.__enhance.push(`${method} ${target}${method === 'PATCH' ? ` ${JSON.stringify(body)}` : ''}`);
+        return original(method, target, body);
+      };
+    });
+    const sent = () => site.page.evaluate(() => window.__enhance.splice(0).join(' | '));
+    const offered = () => site.page.evaluate(() => ({
+      shown: !document.getElementById('enhance-settings').hidden,
+      beta: !document.getElementById('enhance-beta').hidden,
+      scale: document.getElementById('enhance-select').value,
+      filter: document.getElementById('enhance-filter-select').value,
+      scales: [...document.querySelectorAll('#enhance-select option')].map((option) => option.value).join(','),
+      filters: [...document.querySelectorAll('#enhance-filter-select option')].map((option) => option.value).join(','),
+      note: document.getElementById('enhance-note').textContent,
+      notice: document.getElementById('enhance-state').textContent,
+    }));
+    const emulator = await site.page.evaluate(async () => {
+      const response = await window.eka2l1.request('GET', '/v1/enhance');
+      const status = response.ok ? response.json() : {};
+      return { http: response.status, available: status.available, engine: status.engine, active: status.active, layer: status.scale !== undefined };
+    });
+
+    await site.page.click('#btn-menu'); await site.page.click('#m-display');
+    await sleep(500);
+    const first = await offered();
+    await sent(); // what the page asked so far, the dialog's own question included
+    await site.page.selectOption('#enhance-select', '4');
+    await sleep(500);
+    const chose4 = await sent();
+    await site.page.selectOption('#enhance-filter-select', 'linear');
+    await sleep(500);
+    const choseSmooth = await sent();
+    await site.page.locator('#display').screenshot({ path: path.join(outDir, `${name}-display-3d.png`) });
+
+    // Kept for the next visit, and sent to the emulator again there.
+    await site.page.reload();
+    await waitRunning(site.page);
+    await settled();
+    await site.page.click('#btn-menu'); await site.page.click('#m-display');
+    await sleep(500);
+    const again = await offered();
+    const againSent = await site.page.evaluate(() => JSON.stringify(window.eka2l1Page.enhance.sent));
+    await site.page.evaluate(() => document.getElementById('display').close());
+
+    // An emulator from before these routes existed answers 404: the page
+    // carries on and says so.
+    await site.page.evaluate(() => {
+      const original = window.eka2l1.request.bind(window.eka2l1);
+      window.eka2l1.request = (method, target, body = null) => (target.startsWith('/v1/enhance')
+        ? Promise.resolve({ ok: false, status: 404, type: 'application/json', text: () => '{}', json: () => ({}) }) : original(method, target, body));
+    });
+    await site.page.evaluate(() => window.eka2l1Page.restart());
+    await waitRunning(site.page);
+    await site.page.waitForFunction(() => window.eka2l1Page.enhance && window.eka2l1Page.enhance.launch === 2 && window.eka2l1Page.enhance.state !== 'loading', null, { timeout: 30000 });
+    await site.page.click('#btn-menu'); await site.page.click('#m-display');
+    await sleep(500);
+    const without = await offered();
+    const withoutAdvances = await framesAdvance(site.page);
+    await site.page.evaluate(() => { localStorage.removeItem('eka2l1.settings.v1'); });
+    await site.context.close();
+
+    // The emulator of this build may or may not draw the 3D yet (`scale` in
+    // its answer says which); the page has to say which it is.
+    const notAvailable = /^Not available in this version/;
+    const notice = emulator.layer ? !notAvailable.test(first.notice) : notAvailable.test(first.notice);
+    const enhanceOk = bare.hidden && bare.state === null
+      && emulator.http === 200 && emulator.available === true && emulator.engine === 'suite'
+      && first.shown && first.beta && first.scale === 'off' && first.filter === 'nearest' && first.scales === 'off,2,3,4,auto' && first.filters === 'nearest,linear'
+      && first.note.includes('A note from the suite.') && notice
+      && chose4 === 'PATCH /v1/enhance {"scale":4,"filter":"nearest"}' && choseSmooth === 'PATCH /v1/enhance {"scale":4,"filter":"linear"}'
+      && again.shown && again.scale === '4' && again.filter === 'linear' && againSent === '{"scale":4,"filter":"linear"}'
+      && without.shown && without.scale === '4' && notAvailable.test(without.notice) && withoutAdvances > 0
+      && !site.log.some((line) => line.startsWith('[pageerror]'));
+
+    const pass = failed.length === 0 && sizesOk && heavy.fps >= 15 && kept.filter === 'fsr' && kept.width === 704 && enhanceOk;
     return { pass, filters: filters.length, broken: failed.join(',') || 'none', brightnessVsNearestVsSmooth: JSON.stringify(results), sizes: JSON.stringify(sizes),
-      fpsFsrSharp: heavy.fps, graphicsMsFsrSharp: heavy.graphicsMsPerFrame, keptAfterReload: `${kept.filter} ${kept.width}x${kept.height}`, errors: log.length };
+      fpsFsrSharp: heavy.fps, graphicsMsFsrSharp: heavy.graphicsMsPerFrame, keptAfterReload: `${kept.filter} ${kept.width}x${kept.height}`,
+      enhanceHiddenWithoutProfile: bare.hidden && bare.state === null, enhanceEmulator: JSON.stringify(emulator),
+      enhanceOffered: `${first.shown ? 'shown' : 'hidden'}${first.beta ? ', beta' : ''}: ${first.scales} / ${first.filters}`, enhanceNotice: first.notice || 'none',
+      enhanceSent: `${chose4} | ${choseSmooth}`, enhanceKeptAfterReload: `${again.scale} ${again.filter}, sent ${againSent}`,
+      enhanceWithoutRoutes: `${without.notice || 'no notice'}; game ${withoutAdvances > 0 ? 'runs' : 'stopped'}`, enhanceOk, errors: log.length + site.log.length };
   },
 
   async urlload(browser, name) {

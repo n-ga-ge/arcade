@@ -222,5 +222,10 @@
         "repeat": 38
       }
     ]
+  },
+  "enhance": {
+    "engine": "torus",
+    "status": "experimental",
+    "note": "The level's faces with textures and light maps, liquids and moving parts (doors, lifts) are captured; the sky, the weapon and the status bar are left to the game. Models were never on screen in the scenes tried. Needs the emulator's paletteStride."
   }
 }

@@ -20,6 +20,11 @@
     "menu": "Multi Player",
     "status": "untested"
   },
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "The level's buildings, crates and enemies, and the aiming ring, are captured. The sky, the bullet holes and the HUD are 2D and stay at 176x208. Proven in the level's first position only."
+  },
   "controls": {
     "source": "The game's own Start Game > Instructions text (arrow keys, 5, 7). OK firing and the soft keys were seen by pressing them in play and in the menus.",
     "actions": {

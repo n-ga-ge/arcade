@@ -21,6 +21,11 @@
     "menu": "VS",
     "status": "untested"
   },
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "The mine, doors and effects are captured; the HUD and the gun are 2D. The game never clears its screen, so where no triangle is drawn the last picture stays."
+  },
   "controls": {
     "source": "The game's Help, page 4 (Game Controls). Forward, turn, fire, sidestep and the menu key were confirmed in play; the menu keys were observed. The OK key did nothing in menus or in play.",
     "actions": {

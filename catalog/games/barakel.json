@@ -170,5 +170,10 @@
         "wait": 150000
       }
     ]
+  },
+  "enhance": {
+    "engine": "stormvm",
+    "status": "experimental",
+    "note": "Ground, trees, plants, the knight and his shadow are drawn sharper. The game's own HUD panel, menus and text stay as the game draws them. The faint blue tint the game adds in the distance is missing."
   }
 }

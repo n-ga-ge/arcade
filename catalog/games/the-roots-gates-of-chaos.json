@@ -16,6 +16,11 @@
     "In play either soft key opens the game menu (Return, Options, Help, Save and Quit). Help has a long manual.",
     "Multiplayer (cooperative and competitive) needs Bluetooth or N-Gage Arena and cannot work here."
   ],
+  "enhance": {
+    "engine": "roots",
+    "status": "experimental",
+    "note": "Every 3D triangle and sprite is captured; the capture matched the game's picture in three scenes of the Tutorial's first area. Not right yet: the translucent message boxes are tinted pink where they lie over the 3D; soft shadows are drawn evenly (the character's lighter, those under dropped items solid black). Textures have about one texel a screen pixel, so Smooth looks better than Sharp."
+  },
   "multiplayer": {
     "modes": [
       "bluetooth",

@@ -14,6 +14,11 @@
     "In play either soft key opens the pause menu: Continue game, Save and Quit, Quit (no save).",
     "Each floor has a 60 second timer."
   ],
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "The floors, the ball and the bananas are captured. The background picture and the 2D text (floor names, score, goal) stay at 176x208."
+  },
   "controls": {
     "source": "Observed in the menus and on Floor 01; the title screen names the 5 key. The game has no controls screen.",
     "actions": {

@@ -19,6 +19,11 @@
     ],
     "status": "untested"
   },
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "Buildings, vehicles, aliens and explosions are captured. The sky picture, the ground plane (drawn by a renderer of its own) and the HUD stay at 176x208."
+  },
   "controls": {
     "source": "The game's Options > Controls screen (movement on the direction pad, 4 to 7); soft keys and the unused OK key observed in the menus and in play.",
     "actions": {
