@@ -177,6 +177,12 @@ jobs:
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
           npx playwright install --only-shell chromium
 
+      # The tests that need no browser (tools/web/*.test.mjs). The fork is not
+      # checked out yet, so its page tests run after the checkout below.
+      - name: Unit tests
+        if: steps.plan.outputs.game == 'true'
+        run: node tools/web/unit-tests.mjs
+
       # The player depends on the emulator commit and on the scripts that
       # build it, and on nothing else in this repository. Most pushes change
       # neither, and then the player of an earlier run is used as it is.
@@ -228,6 +234,13 @@ jobs:
       - name: Set up the toolchain
         if: steps.player.outputs.cached != 'true'
         run: tools/ci/setup-toolchain.sh
+
+      # The fork's page tests (eka2l1/src/emu/web/shell-tests), once per
+      # emulator commit: a cached player was built from a commit whose tests
+      # an earlier run passed.
+      - name: The page's own tests
+        if: steps.player.outputs.cached != 'true'
+        run: node tools/web/unit-tests.mjs
 
       # Saved once per emulator commit; any earlier one is a good start.
       - name: Compiler cache
