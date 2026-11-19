@@ -20,6 +20,8 @@
 //   display   every scaling filter renders, resolutions resize the canvas, speed holds
 //   urlload   "Load from URL" and the site's one-click Play button
 //   saves     an in-game save is exported, deleted, imported back and survives a reload
+//   diagnostics  the Diagnostics dialog in play: its sections, that it refreshes, the
+//             report's format, "Copy report" and "Download report"
 import { chromium, firefox, devices } from 'playwright';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -723,12 +725,121 @@ const TESTS = {
       deleted: gone === null, importMessage: importMessage.slice(0, 40), importRestores: same(saved, restored), outsidePathRefused: outside === 404,
       survivesReload: same(saved, afterReload), errors: log.length };
   },
+
+  async diagnostics(browser, name) {
+    const { context, page, log } = await open(browser);
+    // Chromium asks for these before a page may read the clipboard; Firefox
+    // has no such permission to grant and lets a page read what it wrote.
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
+    await waitRunning(page);
+    await page.mouse.click(5, 5);
+    await toGameplay(keyboardPress(page));
+
+    // Menu, Diagnostics: the dialog with the two sections every build has.
+    await page.click('#btn-menu'); await page.click('#m-info');
+    await page.waitForSelector('#info[open]');
+    const dialog = () => page.evaluate(() => {
+      const text = (selector) => { const node = document.querySelector(selector); return node ? node.textContent : null; };
+      return {
+        lead: text('#diag-lead'),
+        sections: [...document.querySelectorAll('#info .diag-section')].map((node) => node.id),
+        sessionTitle: text('#diag-session h3'),
+        browserTitle: text('#diag-browser h3'),
+        session: text('#diag-session .diag-body'),
+        browser: text('#diag-browser .diag-body'),
+        found: document.querySelectorAll('#diag-findings > *').length,
+        shown: [...document.querySelectorAll('#diag-findings [data-code]')].map((node) => node.getAttribute('data-code')),
+      };
+    });
+    const first = await dialog();
+    // It refreshes by itself: the time the emulator has been up and the
+    // frames it has drawn are in the session section.
+    await sleep(3000);
+    const second = await dialog();
+    await page.locator('#info').screenshot({ path: path.join(outDir, `${name}-diagnostics.png`) });
+
+    // The report, as docs/diagnostics.md describes it ("The report").
+    const report = await page.evaluate(() => window.eka2l1Page.diag.report());
+    const wrong = [];
+    const check = (fine, what) => { if (!fine) wrong.push(what); };
+    const isList = Array.isArray;
+    const isObject = (value) => Boolean(value) && typeof value === 'object' && !isList(value);
+    check(report.kind === 'eka2l1-web-diagnostics' && report.v === 1, 'kind and v');
+    check(typeof report.generated === 'string' && Math.abs(Date.parse(report.generated) - Date.now()) < 120000, 'generated');
+    check(isObject(report.page) && report.page.address === `${base}/` && report.page.hidden === false, 'page');
+    check(isObject(report.game) && Boolean(report.game.uid) && String(report.game.name).includes(GAME) && 'slug' in report.game, 'game');
+    const session = isObject(report.session) ? report.session : {};
+    check(session.upS > 60 && session.running === true && session.paused === false && typeof session.emulatorAnswers === 'boolean'
+      && session.samples > 10 && session.measuredS >= 10 && session.measuredS <= 31, 'session');
+    check(isList(report.findings) && report.findings.every((finding) => isObject(finding) && typeof finding.code === 'string'
+      && ['bad', 'warn', 'info'].includes(finding.level) && typeof finding.title === 'string' && typeof finding.section === 'string'), 'findings');
+    const sections = isObject(report.sections) ? report.sections : {};
+    check(isObject(sections.session) && isObject(sections.browser), 'sections session and browser');
+    check(Object.values(sections).every((section) => isObject(section) && typeof section.title === 'string' && 'data' in section && isList(section.findings)), 'the form of a section');
+    const listed = isList(report.findings) ? report.findings.map((finding) => `${finding.section}:${finding.code}`).sort().join() : null;
+    check(listed === Object.entries(sections).flatMap(([id, section]) => (isList(section.findings) ? section.findings.map((code) => `${id}:${code}`) : [])).sort().join(),
+      'the findings of the sections are the findings of the report');
+    const data = isObject(sections.session) && isObject(sections.session.data) ? sections.session.data : {};
+    check(data.state === 'running' && data.fpsAverage > 0 && data.fpsWorst >= 0 && data.frames > 0, 'the session section');
+    check(isObject(sections.browser) && isObject(sections.browser.data) && sections.browser.data.ok === true && isList(sections.browser.data.required), 'the browser section');
+    const series = isObject(report.series) ? report.series : {};
+    check(['t', 'fps', 'running', 'hidden'].every((key) => isList(series[key]) && series[key].length === session.samples), 'series');
+    check(JSON.stringify(JSON.parse(JSON.stringify(report))) === JSON.stringify(report), 'survives JSON');
+
+    // "Copy report": the text the page hands to the clipboard is recorded,
+    // and then read back from the clipboard itself.
+    await page.evaluate(() => {
+      window.__copied = null;
+      const original = navigator.clipboard.writeText.bind(navigator.clipboard);
+      navigator.clipboard.writeText = (text) => { window.__copied = text; return original(text); };
+    });
+    const note = () => page.evaluate(() => document.getElementById('info-note').textContent);
+    await page.click('#info-copy');
+    await page.waitForFunction(() => document.getElementById('info-note').textContent !== '', null, { timeout: 15000 }).catch(() => {});
+    const copyNote = await note();
+    const handed = await page.evaluate(() => window.__copied);
+    const clipboard = await page.evaluate(() => Promise.race([
+      navigator.clipboard.readText().catch((error) => `error: ${error.message}`),
+      new Promise((resolve) => setTimeout(() => resolve('error: the browser did not answer'), 5000)),
+    ]));
+
+    // "Download report": a JSON file that holds the same report.
+    const [download] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), page.click('#info-download')]);
+    const file = path.join(outDir, `${name}-diagnostics-report.json`);
+    await download.saveAs(file);
+    const downloadNote = await note();
+    let saved = null;
+    try {
+      saved = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (error) {
+      wrong.push(`the downloaded file is not JSON (${error.message})`);
+    }
+    await page.evaluate(() => document.getElementById('info').close());
+    const advancing = await framesAdvance(page);
+    await context.close();
+
+    const dialogOk = first.sections.includes('diag-session') && first.sections.includes('diag-browser') && first.sessionTitle === 'Session'
+      && first.browserTitle === 'Browser and device' && /^Measured over the last \d+ seconds of play\.$/.test(first.lead) && first.found > 0
+      && first.session.includes(GAME) && first.browser.length > 0;
+    const refreshes = second.session !== first.session;
+    const copied = /^Report copied/.test(copyNote) && typeof handed === 'string' && handed.length > 200 && clipboard === handed;
+    const downloaded = /^diagnostics-\d{8}-\d{4}\.json$/.test(download.suggestedFilename()) && /^Report saved/.test(downloadNote) && Boolean(saved)
+      && saved.kind === 'eka2l1-web-diagnostics' && saved.v === 1 && isObject(saved.game) && saved.game.uid === (report.game || {}).uid && isObject(saved.sections)
+      && isObject(saved.sections.session);
+    return { pass: dialogOk && refreshes && wrong.length === 0 && copied && downloaded && advancing > 0,
+      sections: first.sections.map((id) => id.replace(/^diag-/, '')).join(','), lead: first.lead, refreshes, findingsShown: first.shown.join(',') || 'none',
+      report: wrong.length ? `wrong: ${wrong.join(', ')}` : 'as documented', emulatorAnswers: session.emulatorAnswers, measuredS: session.measuredS,
+      fpsAverage: typeof data.fpsAverage === 'number' ? Number(data.fpsAverage.toFixed(1)) : null,
+      copy: copied ? `${handed.length} characters on the clipboard` : `note "${copyNote}", handed ${handed === null ? 'nothing' : `${handed.length} characters`}, clipboard ${String(clipboard).slice(0, 60)}`,
+      download: downloaded ? download.suggestedFilename() : `${download.suggestedFilename()}, note "${downloadNote}"`,
+      gameGoesOn: advancing > 0, errors: log.length };
+  },
 };
 
 // --- runner ------------------------------------------------------------------
 
 const browsers = String(args.browsers || 'chrome,firefox').split(',');
-const tests = String(args.tests || 'support,boot,gameplay,persist,session,gamepad,touch,controls,display,urlload,saves').split(',');
+const tests = String(args.tests || 'support,boot,gameplay,persist,session,gamepad,touch,controls,display,urlload,saves,diagnostics').split(',');
 const touchDevices = String(args.devices || 'phone,phone-landscape,iphone,tablet,tablet-landscape').split(',');
 
 const results = [];
