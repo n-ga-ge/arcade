@@ -18,6 +18,9 @@
 // "Findings"). To change what a scenario expects, change its lines here: the
 // test checks the table against the codes.
 
+// The levels of a finding, worst first, as codes.js has them.
+export const LEVELS = ['bad', 'warn', 'info'];
+
 // A finding code, as codes.js writes them.
 export const CODE = /^[a-z]+(-[a-z]+)*$/;
 
@@ -154,7 +157,7 @@ export function parseScenarios(value, table = SCENARIOS) {
 // What is wrong with a table of scenarios, as a list of sentences (empty when
 // it is sound). `codes` is the object of codes.js when it is at hand, and
 // `levels` its list of levels; without them only the form is checked.
-export function tableProblems(table, { codes = null, levels = null } = {}) {
+export function tableProblems(table, { codes = null, levels = LEVELS } = {}) {
   const problems = [];
   for (const [name, scenario] of Object.entries(table)) {
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name) || name === 'all') problems.push(`${name}: not a name for a scenario`);
@@ -173,8 +176,9 @@ export function tableProblems(table, { codes = null, levels = null } = {}) {
     for (const code of (Array.isArray(scenario.expect) ? scenario.expect : [])) {
       if (Array.isArray(scenario.absent) && scenario.absent.includes(code)) problems.push(`${name}: "${code}" is both expected and unwanted`);
     }
-    for (const level of scenario.absentLevels || []) {
-      if (levels && !levels.includes(level)) problems.push(`${name}: "${level}" is not a level`);
+    if (scenario.absentLevels !== undefined && !Array.isArray(scenario.absentLevels)) problems.push(`${name}: "absentLevels" is not a list`);
+    for (const level of (Array.isArray(scenario.absentLevels) ? scenario.absentLevels : [])) {
+      if (!levels.includes(level)) problems.push(`${name}: "${level}" is not a level`);
     }
     for (const option of Object.keys(scenario.options || {})) {
       if (!CONDITION_OPTIONS.includes(option)) problems.push(`${name}: "${option}" is not an option that makes a condition`);
@@ -183,6 +187,31 @@ export function tableProblems(table, { codes = null, levels = null } = {}) {
     if (problem) problems.push(`${name}: ${problem}`);
   }
   return problems;
+}
+
+// Why the page was not under the condition the options asked for, from what
+// the page showed after the play, or null when it was. Only the conditions
+// the tool makes inside the page can fail to take without anything else
+// failing: a hidden page and one without animation frames.
+//   seen  { hidden, visibility, animationFrames, paused, hiddenSamples,
+//           reportHidden }: the document's own words, the animation frames
+//           the page's thread got in a second, whether the page paused the
+//           game, how many of the last samples of the report say "hidden",
+//           and what the report says of the page
+export function conditionMissed(options, seen) {
+  if (options.hidden) {
+    const lacks = [];
+    // These two are what the tool set, read back: they catch a page that
+    // undid it, not a browser that drew the page all the same.
+    if (seen.hidden !== true || seen.visibility !== 'hidden') lacks.push('the document does not say "hidden"');
+    if (seen.animationFrames !== 0) lacks.push(`it got ${seen.animationFrames} animation frames in a second`);
+    // The page's answer to visibilitychange, and the diagnostics' own sampler.
+    if (!seen.paused) lacks.push('the page did not pause the game, so visibilitychange did not reach it');
+    if (!(seen.hiddenSamples > 0) || !seen.reportHidden) lacks.push('the report does not say it was hidden');
+    return lacks.length ? `the page was not hidden: ${lacks.join('; ')}` : null;
+  }
+  if (options.undrawn && seen.animationFrames !== 0) return `the page was not undrawn: it got ${seen.animationFrames} animation frames in a second`;
+  return null;
 }
 
 // A scenario's options as they are typed: { cpu: '30', hidden: true } is
@@ -261,9 +290,9 @@ export function seenText(result) {
     if (seen.renderer) parts.push(`WebGL is drawn by ${seen.renderer}${seen.softwareRenderer ? ' (on the processor)' : ''}`);
     if (typeof seen.hidden === 'boolean') parts.push(seen.hidden ? 'the page was told it is hidden' : 'the page was told it is visible');
     if (seen.paused) parts.push('the game was paused');
-    if (result.condition && (result.condition.hidden || result.condition.undrawn)) {
-      parts.push("the emulator's animation frames were switched off (the count above is of the page's own thread, which headless Chrome goes on drawing)");
-    }
+    if (seen.hiddenSamples > 0) parts.push(`the last ${seen.hiddenSamples} samples of the report say "hidden"`);
+    if (typeof seen.load === 'number') parts.push(`the machine's load was ${seen.load.toFixed(1)}${seen.threads ? ` on ${seen.threads} processor threads` : ''}`);
+    if (result.condition && (result.condition.hidden || result.condition.undrawn)) parts.push("the emulator's animation frames were switched off");
   }
   return parts.join('; ');
 }

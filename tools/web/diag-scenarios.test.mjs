@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { CODE, CONDITION_OPTIONS, DEVICES, SCENARIOS, conditionProblem, conditionText, exitCode, judge, list, parseScenarios, quotaApplied, seenText, speedText, summary,
+import { CODE, CONDITION_OPTIONS, DEVICES, LEVELS, SCENARIOS, conditionMissed, conditionProblem, conditionText, exitCode, judge, list, parseScenarios, quotaApplied, seenText, speedText, summary,
   tableProblems, verdictText } from './diag-scenarios.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -65,7 +65,11 @@ test('a broken table is told apart', () => {
   assert.match(problems({ expect: ['cpu-bound'], absent: ['cpu-bound'] })[0], /both expected and unwanted/);
   assert.match(problems({ absent: ['a-b', 'a-b'] })[0], /twice/);
   assert.match(problems({ expect: ['cpu-bund'] }, { codes: { 'cpu-bound': 'speed' } })[0], /not a code of codes\.js/);
-  assert.match(problems({ absentLevels: ['awful'] }, { levels: ['bad', 'warn', 'info'] })[0], /not a level/);
+  // The levels are checked without the player's list too.
+  assert.match(problems({ absentLevels: ['awful'] })[0], /not a level/);
+  assert.match(problems({ absentLevels: ['Bad'] })[0], /not a level/);
+  assert.match(problems({ absentLevels: 'bad' })[0], /"absentLevels" is not a list/);
+  if (player) assert.deepEqual(LEVELS, player.LEVELS);
   assert.match(problems({ options: { seconds: '5' } })[0], /not an option that makes a condition/);
   assert.match(problems({ options: { cpu: 'half' } })[0], /--cpu must be a positive number/);
   assert.match(problems({ what: '' })[0], /says nothing/);
@@ -111,6 +115,24 @@ test('a condition is checked as the command line gives it', () => {
   assert.equal(conditionProblem({ game: 'shadowkey', seconds: '-1' }), null);
   for (const name of Object.keys(DEVICES)) assert.equal(conditionProblem({ device: name }), null);
   assert.ok(CONDITION_OPTIONS.includes('cpu-from'));
+});
+
+test('a hidden page that was not hidden is told', () => {
+  const hidden = { hidden: true, visibility: 'hidden', animationFrames: 0, paused: true, hiddenSamples: 10, reportHidden: true };
+  assert.equal(conditionMissed({ hidden: true }, hidden), null);
+  // What the foundation's --hidden gave: another page in front, and nothing changed for this one.
+  assert.equal(conditionMissed({ hidden: true }, { hidden: false, visibility: 'visible', animationFrames: 61, paused: false, hiddenSamples: 0, reportHidden: false }),
+    'the page was not hidden: the document does not say "hidden"; it got 61 animation frames in a second; '
+    + 'the page did not pause the game, so visibilitychange did not reach it; the report does not say it was hidden');
+  assert.match(conditionMissed({ hidden: true }, { ...hidden, paused: false }), /^the page was not hidden: the page did not pause the game/);
+  assert.match(conditionMissed({ hidden: true }, { ...hidden, hiddenSamples: 0 }), /^the page was not hidden: the report does not say it was hidden$/);
+  assert.match(conditionMissed({ hidden: true }, { ...hidden, reportHidden: false }), /the report does not say it was hidden/);
+  assert.match(conditionMissed({ hidden: true }, { ...hidden, animationFrames: 3 }), /it got 3 animation frames in a second$/);
+  assert.equal(conditionMissed({ undrawn: true }, { hidden: false, animationFrames: 0 }), null);
+  assert.equal(conditionMissed({ undrawn: true }, { hidden: false, animationFrames: 58 }), 'the page was not undrawn: it got 58 animation frames in a second');
+  // Any other condition is not judged here.
+  assert.equal(conditionMissed({ cpu: '30' }, { hidden: false, animationFrames: 60 }), null);
+  assert.equal(conditionMissed({}, { hidden: false, animationFrames: 60 }), null);
 });
 
 test('a condition is written as it is typed', () => {
@@ -187,10 +209,11 @@ test('the speed and what was seen, in words', () => {
   assert.match(seenText(result('cpu30', { condition: { quota: '30000 100000' } })), /^the browser's cgroup has the quota "30000 100000"/);
   assert.match(seenText(result('software', { measured: { animationFrames: 0, sound: 'not started', renderer: 'SwiftShader', softwareRenderer: true, hidden: true } })),
     /0 animation frames.*sound was not started.*SwiftShader \(on the processor\).*told it is hidden$/);
-  assert.match(seenText(result('hidden', { measured: { animationFrames: 60, hidden: true, paused: true }, condition: { hidden: true } })),
-    /told it is hidden; the game was paused; the emulator's animation frames were switched off/);
-  assert.match(seenText(result('undrawn', { condition: { undrawn: true } })), /told it is visible; the emulator's animation frames were switched off/);
+  assert.match(seenText(result('hidden', { measured: { animationFrames: 0, hidden: true, paused: true, hiddenSamples: 10 }, condition: { hidden: true } })),
+    /0 animation frames in a second; the page was told it is hidden; the game was paused; the last 10 samples of the report say "hidden"; the emulator's animation frames were switched off$/);
+  assert.match(seenText(result('undrawn', { condition: { undrawn: true } })), /told it is visible; the emulator's animation frames were switched off$/);
   assert.equal(seenText({ measured: null }), '');
+  assert.match(seenText(result('baseline', { measured: { animationFrames: 60, load: 12.34, threads: 16 } })), /; the machine's load was 12\.3 on 16 processor threads$/);
 });
 
 test('the summary has a row and a line for every scenario', () => {

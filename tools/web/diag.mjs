@@ -12,8 +12,9 @@
 //   --keys a,b         N-Gage keys held in turn, a second each, while it is
 //                      played, so that the game keeps drawing (default: left)
 //   --idle             press nothing while it is played
-//   --stretch F        make every wait of the key script F times as long, for
-//                      a machine too busy to keep up with it (look at
+//   --stretch F        make every wait of the key script F times as long, and
+//                      give the browser and the game F times as long to
+//                      start, for a machine too busy to keep up (look at
 //                      page.png: it must show the game in play)
 //   --query STRING     more page parameters, e.g. "diag=1&log=*:info"
 //   --hook FILE        a module whose default export is called once the game
@@ -24,8 +25,10 @@
 //   --bin DIR          web build to use (default: eka2l1/build/web/bin of this
 //                      checkout, else of $ARCADE_MAIN)
 //   --shell DIR        page sources laid over that build (devserver.py --shell)
-//   --assets DIR       folder with NGAGE.ROM and games/<slug>.zip (default:
-//                      testdata/ of this checkout, else of $ARCADE_MAIN)
+//   --assets DIR       folder with the firmware (NGAGE.ROM; for an N-Gage 2.0
+//                      game the phone's device zip and the N-Gage
+//                      application) and games/<slug>.zip (default: testdata/
+//                      of this checkout, else of $ARCADE_MAIN)
 //   --verbose          print the page console while it runs
 //
 // The condition of one run:
@@ -41,7 +44,9 @@
 //                      none (a container) the run fails and says so
 //   --cpu-from WHEN    start (default): the quota holds from the moment the
 //                      browser starts, so loading, starting and the key script
-//                      are slow too (give --stretch); play: it is set once the
+//                      are slow too (give --stretch for the script; the start
+//                      gets 100/PERCENT times as long by itself); play: it is
+//                      set once the
 //                      game is in play, so only what is measured is slow
 //   --cores N          let the browser use only N processor cores (taskset)
 //   --throttle N       slow the page's own thread down N times (Chrome's CPU
@@ -52,13 +57,14 @@
 //                      later. Headless Chrome hides no page whatever is put
 //                      in front of it, so the page is shown what a hidden tab
 //                      sees: the document says "hidden", visibilitychange
-//                      fires, and the emulator gets no animation frames. The
-//                      page then pauses the game, as it does for a lone
-//                      player; the rates in the report are those of the play
-//                      before
-//   --undrawn          give the emulator no animation frames while the game
-//                      is played and let it go on (the emulator's own test
-//                      switch): a page the browser does not draw and still
+//                      fires, and neither the emulator nor the page's own
+//                      thread gets animation frames. The page then pauses the
+//                      game, as it does for a lone player; the rates in the
+//                      report are those of the play before. A run in which
+//                      that did not take fails: "the page was not hidden"
+//   --undrawn          give the emulator and the page no animation frames while
+//                      the game is played and let it go on (the emulator's own
+//                      test switch): a page the browser does not draw and still
 //                      calls visible, as some systems treat a covered window.
 //                      The emulator then draws by its timer. It is also what
 //                      a hidden tab in a multiplayer room gets
@@ -106,23 +112,32 @@
 //                     session section, and what the page itself showed of the
 //                     condition: animationFrames (of its own thread, in one
 //                     second), sound (the state of its audio), renderer,
-//                     softwareRenderer, hidden, paused,
+//                     softwareRenderer, hidden, visibility, paused,
+//                     hiddenSamples (how many of the report's last samples
+//                     say "hidden"); and load, the
+//                     machine's one-minute load average while it was played
+//                     (the browser's own work is about 1.5 of it), beside
+//                     threads, the processor threads it has,
 //                   findings: [codes], levels: { code: level },
 //                   expect, absent, absentLevels, strict,
 //                   missing: [codes], unwanted: [codes], warnings (a picture
-//                   that could not be taken), skipped, error }
+//                   that could not be taken, a play shorter than what is
+//                   measured), skipped, error }
 // and with --scenario, to --out itself:
 //   summary.md    a table: scenario, condition, frames per second, findings,
 //                 expected, verdict; then what each scenario stands for and
 //                 what the page showed of its condition
-//   results.json  { game, strict, planned: [names], complete, pass,
-//                   scenarios: [every result.json] }
+//   results.json  { game, strict, planned: [names], complete, passed,
+//                   failed, skipped (counts), pass (nothing failed and at
+//                   least one scenario passed), scenarios: [every result.json] }
 // Both are written anew after every scenario; until the last one they say
 // that the run is unfinished, and `pass` is false.
 //
 // Exit code 0 when the report was read and what was expected holds (with
-// --scenario: when no scenario failed), 1 when not, 2 when the command line
-// is wrong. Frame rates measured while other heavy programs run say little;
+// --scenario: when no scenario failed; skipped ones do not fail, so a run in
+// which all were skipped exits 0 too, says "Nothing was judged" and has
+// `pass: false` in results.json), 1 when not, 2 when the command line is
+// wrong. Frame rates measured while other heavy programs run say little;
 // provoke a condition with a wide margin.
 import { chromium, devices } from 'playwright';
 import { execFileSync, spawn } from 'node:child_process';
@@ -131,8 +146,8 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { checkScript, scriptMs, stepTiming } from './gamecheck.mjs';
-import { CODE, CONDITION_OPTIONS, DEVICES, SCENARIOS, conditionProblem, exitCode, judge, list, parseScenarios, quotaApplied, summary, tableProblems, verdictText }
+import { PLATFORM_FILES, checkScript, gameQuery, platformOf, scriptMs, stepTiming } from './gamecheck.mjs';
+import { CODE, CONDITION_OPTIONS, DEVICES, SCENARIOS, conditionMissed, conditionProblem, exitCode, judge, list, parseScenarios, quotaApplied, summary, tableProblems, verdictText }
   from './diag-scenarios.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -154,7 +169,7 @@ function usage(message) {
 const args = {};
 for (let i = 2; i < process.argv.length; i++) {
   const name = process.argv[i].replace(/^--/, '');
-  if (!process.argv[i].startsWith('--') || !OPTIONS[name]) usage(`unknown argument: ${process.argv[i]}`);
+  if (!process.argv[i].startsWith('--') || !Object.hasOwn(OPTIONS, name)) usage(`unknown argument: ${process.argv[i]}`);
   if (OPTIONS[name] === 'flag') { args[name] = true; continue; }
   if (i + 1 >= process.argv.length) usage(`--${name} needs a value`);
   args[name] = process.argv[++i];
@@ -319,10 +334,12 @@ function scopeQuota(unit) {
   return fs.readFileSync(path.join('/sys/fs/cgroup', group, 'cpu.max'), 'utf8').trim();
 }
 
-// Reads the quota back and fails when it is not the one asked for.
+// Reads the quota back and fails when it is not the one asked for. That is
+// a run that failed, not a machine that cannot do it: quotaProblem() has
+// shown by then that it can.
 function checkedQuota(unit, percent) {
   const seen = scopeQuota(unit);
-  if (!quotaApplied(seen, percent)) throw new Unavailable(`the quota of ${percent}% was not applied to the browser (cpu.max says "${seen}")`);
+  if (!quotaApplied(seen, percent)) throw new Error(`the quota of ${percent}% was not applied to the browser (cpu.max says "${seen}")`);
   return seen;
 }
 
@@ -379,7 +396,8 @@ async function prepare() {
 
     phase = 'looking for the files';
     for (const [file, hint] of [[path.join(binDir, 'eka2l1_web.wasm'), 'build it with tools/ci/build-web.sh or pass --bin'],
-      [path.join(assetsDir, 'NGAGE.ROM'), 'pass --assets'], [path.join(assetsDir, 'games', `${args.game}.zip`), 'pass --assets']]) {
+      ...Object.values(PLATFORM_FILES[platformOf(entry)]).map((firmware) => [path.join(assetsDir, ...firmware.split('/')), 'pass --assets']),
+      [path.join(assetsDir, 'games', `${args.game}.zip`), 'pass --assets']]) {
       if (!fs.existsSync(file)) throw new Error(`missing ${file}: ${hint}`);
     }
 
@@ -388,7 +406,7 @@ async function prepare() {
     // The longest a run may take: twice what it plans to, and five minutes
     // for the browser, the download and the pictures.
     const limitMs = 300000 + startTimeout + 2 * ((script ? scriptMs(script) * stretch : 0) + seconds * 1000);
-    return { script, hook, startTimeout, port, limitMs };
+    return { script, hook, startTimeout, port, limitMs, address: gameQuery(entry, args.game) };
   } catch (error) {
     throw new Error(`${firstLine(error)} (while ${phase})`);
   }
@@ -440,7 +458,7 @@ async function play(run, prepared) {
     strict: run.strict,
     missing: [],
     unwanted: [],
-    warnings: [], // what went wrong beside the verdict: a picture that could not be taken
+    warnings: [], // what went wrong beside the verdict: a picture that could not be taken, a play too short
     skipped: null,
     error: null,
   };
@@ -455,7 +473,12 @@ async function play(run, prepared) {
     for (const name of RUN_FILES) fs.rmSync(path.join(run.out, name), { force: true });
     if (prepared instanceof Error) throw prepared;
     if (interrupted) throw new Error(`interrupted by ${interrupted}`);
-    const { script, hook, startTimeout } = prepared;
+    const { script, hook, address } = prepared;
+    // How much longer the browser, the download and the start of the game
+    // may take: --stretch says the machine is that slow, and a quota that
+    // holds from the browser's start makes them that much slower again.
+    const slow = stretch * (options.cpu && options['cpu-from'] !== 'play' ? Math.max(1, 100 / Number(options.cpu)) : 1);
+    const startTimeout = prepared.startTimeout * slow;
     if (!server) {
       state.phase = 'starting the dev server again';
       prepared.port = await startServer();
@@ -467,7 +490,7 @@ async function play(run, prepared) {
     if (cannot) throw new Unavailable(cannot);
     const launching = BROWSERS[browserName]((executable) => limited(executable, options, run.out, state));
     try {
-      state.browser = await withTimeout(launching, 60000, 'browser launch');
+      state.browser = await withTimeout(launching, 60000 * slow, 'browser launch');
     } catch (error) {
       launching.then((late) => late.close()).catch(() => {});
       throw error;
@@ -501,7 +524,7 @@ async function play(run, prepared) {
 
     state.phase = 'loading the player';
     const query = args.query ? `&${args.query.replace(/^[?&]/, '')}` : '';
-    const response = await page.goto(`http://127.0.0.1:${port}/?fw=/local/NGAGE.ROM&game=/local/games/${args.game}.zip&persist=0${query}`, { timeout: 60000 });
+    const response = await page.goto(`http://127.0.0.1:${port}/${address}${query}`, { timeout: 60000 * slow });
     if (!response || !response.ok()) throw new Error(`the player page did not load (HTTP ${response ? response.status() : 'no response'})`);
 
     state.phase = 'starting the game';
@@ -560,16 +583,24 @@ async function play(run, prepared) {
     // drawn whatever is put in front of it (another page, a minimised
     // window: its own thread and its workers go on getting 60 animation
     // frames a second), so what a browser does to a page it does not show
-    // is done to the page here: the emulator's switch takes its animation
-    // frames away, and for a hidden tab the document says so and tells the
-    // page, which then does what it does in a background tab.
+    // is done to the page here: the animation frames are taken away, the
+    // emulator's by its own switch and the page's thread's by leaving its
+    // requests unanswered, and for a hidden tab the document says so and
+    // tells the page, which then does what it does in a background tab.
     // Like the quota and the throttling, both stay until the browser is
     // closed: the pictures show the page under the condition.
     const undraw = async () => {
       const done = await evaluate(() => {
         const set = window.eka2l1.module._eka2l1_web_debug_animation_frames;
-        if (set) set(1);
-        return Boolean(set);
+        if (!set) return false;
+        set(1);
+        // A request is taken and never answered. Handles of requests made
+        // before are still the browser's to cancel.
+        const cancel = window.cancelAnimationFrame.bind(window);
+        let handle = 0x40000000;
+        window.requestAnimationFrame = () => ++handle;
+        window.cancelAnimationFrame = (given) => { if (given < 0x40000000) cancel(given); };
+        return true;
       });
       if (!done) throw new Error('this build has no switch for its animation frames (_eka2l1_web_debug_animation_frames)');
     };
@@ -583,7 +614,16 @@ async function play(run, prepared) {
       await undraw();
     }
 
+    // The diagnostics measure the last 30 seconds of play. A condition that
+    // begins with the play and lasts less mixes with the play before it.
+    if (seconds < 30 && (options.throttle || options.undrawn || (options.cpu && options['cpu-from'] === 'play'))) {
+      result.warnings.push(`played ${seconds} s under the condition, and the diagnostics measure the last 30: the rates mix in the play before it`);
+    }
+
     state.phase = 'playing';
+    // What else the machine was doing: frame rates measured beside other
+    // heavy work say little, and this is how a reader tells.
+    const loadBefore = os.loadavg()[0];
     const end = Date.now() + seconds * 1000;
     for (let turn = 0; Date.now() < end; turn++) {
       if (keys.length) await press(keys[turn % keys.length], Math.min(1000, Math.max(100, end - Date.now())));
@@ -620,6 +660,7 @@ async function play(run, prepared) {
           renderer: webgl.renderer || null,
           softwareRenderer: Boolean(webgl.software),
           hidden: document.hidden,
+          visibility: document.visibilityState,
           paused: Boolean(window.eka2l1Page.paused),
         });
       }, 1000);
@@ -636,7 +677,17 @@ async function play(run, prepared) {
     found = (report.findings || []).map((finding) => ({ code: finding.code, level: finding.level }));
     const session = report.sections && report.sections.session && report.sections.session.data ? report.sections.session.data : {};
     const number = (value) => (typeof value === 'number' && Number.isFinite(value) ? Math.round(value * 10) / 10 : null);
-    result.measured = { fps: number(session.fpsAverage), fpsWorst: number(session.fpsWorst), seconds: number(session.measuredS), ...seen };
+    // How many of the last samples of the diagnostics themselves say "hidden".
+    const hiddenSeries = report.series && Array.isArray(report.series.hidden) ? report.series.hidden : [];
+    let hiddenSamples = 0;
+    while (hiddenSamples < hiddenSeries.length && hiddenSeries[hiddenSeries.length - 1 - hiddenSamples]) hiddenSamples++;
+    result.measured = { fps: number(session.fpsAverage), fpsWorst: number(session.fpsWorst), seconds: number(session.measuredS), ...seen, hiddenSamples,
+      load: number(Math.max(loadBefore, os.loadavg()[0])), threads: os.availableParallelism() };
+
+    // A condition that did not take is a run that could not be made: it must
+    // not pass, and must not look like a finding the diagnostics missed.
+    const not = conditionMissed(options, { ...seen, hiddenSamples, reportHidden: Boolean(report.page && report.page.hidden) });
+    if (not) throw new Error(not);
 
     // The report is read and the verdict rests on it. The pictures are for
     // the reader: one that cannot be taken (a page starved by the condition
@@ -666,7 +717,9 @@ async function play(run, prepared) {
   }
 
   current = state;
-  const limitMs = prepared instanceof Error ? 60000 : prepared.limitMs;
+  // A quota from the browser's start slows all of it; see `slow` in body().
+  const quotaFactor = options.cpu && options['cpu-from'] !== 'play' ? Math.max(1, 100 / Number(options.cpu)) : 1;
+  const limitMs = prepared instanceof Error ? 60000 : prepared.limitMs * quotaFactor;
   try {
     await withTimeout(Promise.race([body(), aborted]), limitMs, 'the run');
   } catch (error) {
@@ -758,12 +811,17 @@ async function main() {
     // what it had; until the last one it says so and does not say "pass".
     const version = (results.find((result) => result.version) || {}).version || null;
     const complete = results.length === scenarioNames.length;
+    const tally = Object.fromEntries(['pass', 'fail', 'skipped'].map((verdict) => [verdict, results.filter((result) => result.verdict === verdict).length]));
     fs.writeFileSync(path.join(outDir, 'results.json'), JSON.stringify({ game: args.game, strict, when, planned: scenarioNames, complete,
-      pass: complete && !interrupted && exitCode(results) === 0, scenarios: results }, null, 2) + '\n');
+      passed: tally.pass, failed: tally.fail, skipped: tally.skipped,
+      // Nothing failed and something was judged: a run in which every
+      // scenario was skipped has shown nothing.
+      pass: complete && !interrupted && tally.fail === 0 && tally.pass > 0, scenarios: results }, null, 2) + '\n');
     fs.writeFileSync(path.join(outDir, 'summary.md'), summary({ game: args.game, strict, when, version, planned: scenarioNames }, results));
   }
   const count = (verdict) => results.filter((result) => result.verdict === verdict).length;
-  console.log(`\n${count('pass')} passed, ${count('fail')} failed, ${count('skipped')} skipped; ${path.join(outDir, 'summary.md')}`);
+  console.log(`\n${count('pass')} passed, ${count('fail')} failed, ${count('skipped')} skipped; ${path.join(outDir, 'summary.md')}`
+    + (count('pass') + count('fail') === 0 ? '\nNothing was judged: every scenario was skipped.' : ''));
   for (const result of results) {
     if (result.verdict !== 'pass' || result.missing.length) console.log(`  ${result.scenario}: ${verdictText(result)}`);
   }
