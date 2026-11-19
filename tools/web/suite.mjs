@@ -10,8 +10,8 @@
 // Tests:
 //   support   capability detection, including the WebGPU probe; no-isolation page
 //   boot      cold load by URL: time to emulator ready and to the game running
-//   gameplay  scripted keys into in-world 3D, then frame rate and pacing while turning
-//   audio     worklet attached and the mixer producing signal at the context's rate
+//   gameplay  scripted keys into in-world 3D, then frame rate and pacing while turning;
+//             sound: worklet attached and the mixer producing signal at the context's rate
 //   persist   guest C: file + installed game survive a reload, with no downloads
 //   session   pause/resume, hidden-tab pause, restart, heap growth across restarts
 //   gamepad   a (mocked) standard gamepad drives the game into 3D

@@ -19,8 +19,8 @@
 //                      there instead of NGAGE.ROM
 //   --entry FILE       read the catalogue entry from FILE instead (to try a
 //                      changed script without editing the catalogue)
-//   --time-limit SEC   give up after this long (default: start-up timeout +
-//                      script length + a margin)
+//   --time-limit SEC   give up after this long, in each attempt (default:
+//                      start-up timeout + script length + a margin)
 //   --verbose          print the page console while it runs
 //   --enhance FILE     load this enhancement profile (catalog/enhance/<engine>.json)
 //                      as soon as the game runs, with replacing off, and record
@@ -47,6 +47,18 @@
 // that could not be carried out (no browser, missing files, the emulator or
 // the firmware did not come up, the browser or its page process died) has
 // "reached": null and fails whatever the entry says.
+//
+// A game that quits by itself now and then can be given more than one try
+// ("test.attempts", at most 3): when an attempt ends because the game exited
+// or crashed before it reached its level, the test starts again in a new
+// browser context, with a fresh page and emulator. No other failure is tried
+// again. The result says how many attempts there were ("attempts") and why the
+// earlier ones failed ("earlierAttempts"); the screenshot and the console are
+// those of the last one. To try this path without waiting for a game to quit,
+// GAMETEST_END_ATTEMPTS=N ends each of the first N attempts as if the game had
+// exited, as soon as it runs (for testing this script only). A later attempt is
+// started only when it fits, with its whole time limit, in 14 minutes from the
+// start (ATTEMPTS_WITHIN_MS), so that the CI job's 20 minutes hold the run.
 //
 // Exit code 0 on pass, 1 on fail, 2 when the command line is wrong. It always
 // ends: every wait has a limit and the browser and the server are stopped.
@@ -127,17 +139,15 @@ const CONSOLE_TAIL = 40;
 // --- the result ----------------------------------------------------------------
 
 const started = Date.now();
-const run = {
-  slug: args.game,
-  entry: null,
-  phase: 'reading the catalogue entry',
+// What one attempt finds out; a new attempt starts from this again.
+const attemptState = () => ({
   gameLoaded: false, // the page has downloaded the game: from here on, failures are the game's
   reached: null,
   error: null,
+  ended: false, // the game exited or crashed by itself: the one failure tried again
   startMs: null,
   readyMs: null,
   frames: null,
-  version: null,
   renderer: null,
   checks: {},
   perf: null, // what the player's diagnostics said, when it has them
@@ -146,7 +156,24 @@ const run = {
   shotBlank: true,
   console: [],
   enhance: null, // with --enhance: the capture machine's counters after the script
+});
+const run = {
+  slug: args.game,
+  entry: null,
+  phase: 'reading the catalogue entry',
+  version: null,
+  attempt: 0, // the attempt under way, from 1
+  attemptStarted: started,
+  earlier: [], // why the attempts before this one failed: { reached, error, seconds }
+  ...attemptState(),
 };
+// Attempts of this run that end as if the game had exited (see the header).
+const FORCED_ENDS = Number(process.env.GAMETEST_END_ATTEMPTS) || 0;
+const MAX_ATTEMPTS = 3;
+// A later attempt is only started when it fits in this much time from the
+// start of the run, with its whole time limit: a CI job has 20 minutes, and
+// one stopped at its timeout writes no result.
+const ATTEMPTS_WITHIN_MS = 14 * 60000;
 let browser = null;
 let server = null;
 let finished = false;
@@ -168,10 +195,15 @@ const firstLine = (error) => String(error && error.message ? error.message : err
 const passing = (error) => error instanceof Problem && Boolean(error.cause) && !error.cause.timedOut;
 
 // Rejects as soon as something fatal happens (page crash, reported error,
-// game exit, ...), so that no wait outlives the game. See guard().
+// game exit, ...), so that no wait outlives the game. See guard(). Each
+// attempt has its own: arm() makes a new one.
 let failNow;
-const fatal = new Promise((_, reject) => { failNow = reject; });
-fatal.catch(() => {});
+let fatal;
+function arm() {
+  fatal = new Promise((_, reject) => { failNow = reject; });
+  fatal.catch(() => {});
+}
+arm();
 const guard = (promise) => Promise.race([promise, fatal]);
 const pause = (ms) => guard(sleep(ms));
 
@@ -217,7 +249,9 @@ async function finish() {
     renderer: run.renderer,
     commit: commit(),
     checks: run.checks,
+    attempts: run.attempt,
   };
+  if (run.earlier.length) result.earlierAttempts = run.earlier;
   if (run.enhance) result.enhance = run.enhance;
   if (run.perf) result.perf = run.perf;
   if (better) {
@@ -246,7 +280,7 @@ async function finish() {
     const { findings, ...numbers } = run.perf;
     console.log(`diagnostics  ${run.slug}  ${Object.entries(numbers).map(([name, value]) => `${name} ${value}`).join(', ')}; findings: ${findings.join(', ') || 'none'}`);
   }
-  console.log(`${result.pass ? 'PASS' : 'FAIL'}  ${run.slug}  ${level}${expect ? ` (expected ${expect})` : ''} in ${result.seconds} s${better ? '  BETTER than listed' : ''}${error ? `  ${error}` : ''}`);
+  console.log(`${result.pass ? 'PASS' : 'FAIL'}  ${run.slug}  ${level}${expect ? ` (expected ${expect})` : ''} in ${result.seconds} s${run.attempt > 1 ? ` after ${run.attempt} attempts` : ''}${better ? '  BETTER than listed' : ''}${error ? `  ${error}` : ''}`);
 
   // Closing can hang when the browser is stuck; exiting kills what is left
   // (Playwright ends its browsers when this process exits).
@@ -260,6 +294,7 @@ function failed(error) {
   const level = error instanceof Problem ? error.level : 'setup';
   run.error = firstLine(error);
   run.reached = level === 'broken' ? 'broken' : null;
+  run.ended = level === 'broken' && error instanceof Problem && error.ended === true;
 }
 
 process.on('exit', () => { if (server) server.kill('SIGKILL'); });
@@ -355,6 +390,9 @@ const probe = (session = false) => ask(async (wantSession) => {
     error: Boolean(status && status.classList.contains('error')),
     app: p && p.app ? p.app.name : null,
     frames: up ? p.emu.frames() : -1,
+    // The game the page launched has closed or crashed by itself (the page's
+    // own record; an emulator that stopped is not counted here).
+    gameEnded: Boolean(p && p.launched && p.ended && !p.ended.stopped),
     session: null,
   };
   if (wantSession && up) {
@@ -448,24 +486,36 @@ async function shownOnPage() {
   return best;
 }
 
-const watch = { running: false, sawFrames: false, sawPicture: false, lastFrames: -1 };
+const watchState = () => ({ running: false, sawFrames: false, sawPicture: false, lastFrames: -1 });
+let watch = watchState();
 
 // Runs for the whole test, beside the script: notices when the page reports an
 // error or the game exits, and whether the game ever drew a picture.
+// One watcher per attempt: it stops when its attempt is over. A game that
+// ended by itself is told apart from other errors (it is marked `ended`, the
+// one failure tried again), so that is looked at first: the page then also
+// reports an error when the game crashed.
 async function watcher() {
+  const mine = run.attempt;
+  const fail = failNow;
   let lastShotAt = 0;
   let misses = 0;
-  while (!finished) {
+  while (!finished && run.attempt === mine) {
     try {
       const state = await probe(watch.running);
+      if (run.attempt !== mine) return;
       misses = 0;
+      const ended = (message) => Object.assign(problem(message), { ended: true });
+      const session = state.session;
+      if (watch.running && run.attempt <= FORCED_ENDS) throw ended(`the game ended (exited, forced by GAMETEST_END_ATTEMPTS) while ${run.phase}`);
+      if (session && session.state && !['running', 'launching'].includes(session.state)) {
+        const exit = session.lastExit && session.lastExit.fatal ? ` (${session.lastExit.fatal})` : '';
+        throw ended(`the game ${session.state === 'crashed' ? 'crashed' : `ended (${session.state})`}${exit} while ${run.phase}`);
+      }
+      // Before the game runs the session is not asked: the page's record says it.
+      if (state.gameEnded) throw ended(`the game ended by itself while ${run.phase}${state.status ? `: ${state.status}` : ''}`);
       if (state.error) throw problem(`the page reported: ${state.status}`);
       if (watch.running) {
-        const session = state.session;
-        if (session && session.state && !['running', 'launching'].includes(session.state)) {
-          const exit = session.lastExit && session.lastExit.fatal ? ` (${session.lastExit.fatal})` : '';
-          throw problem(`the game ${session.state === 'crashed' ? 'crashed' : `ended (${session.state})`}${exit} while ${run.phase}`);
-        }
         if (watch.lastFrames >= 0 && state.frames > watch.lastFrames) watch.sawFrames = true;
         watch.lastFrames = state.frames;
         run.frames = state.frames;
@@ -478,7 +528,7 @@ async function watcher() {
     } catch (error) {
       // The page can fail to answer once (mid-load); it must not stay silent.
       if (!passing(error) || ++misses >= 5) {
-        failNow(error instanceof Problem ? error : setupProblem(firstLine(error)));
+        fail(error instanceof Problem ? error : setupProblem(firstLine(error)));
         return;
       }
     }
@@ -579,7 +629,7 @@ async function askPerf() {
 }
 
 // The read at the end of the run. A run that got to the end of its script has
-// its numbers from there (see test()); when it then ended with an error, it is
+// its numbers from there (see attempt()); when it then ended with an error, it is
 // asked again for what was found since: the crash, the lost picture. A run
 // that never got that far is asked here for the first time.
 async function lastPerf() {
@@ -591,7 +641,9 @@ async function lastPerf() {
 
 // --- the test --------------------------------------------------------------------
 
-async function test() {
+// What every attempt shares: the entry, the files, the dev server and the
+// browser. Returns what an attempt needs.
+async function prepare() {
   // The catalogue entry.
   const entryFile = path.resolve(args.entry || path.join(ROOT, 'catalog', 'games', `${args.game}.json`));
   let entry;
@@ -609,18 +661,20 @@ async function test() {
     try {
       checkScript(script, keys);
       if (rank(entry.test.expect) < 0) throw new Error(`test.expect is "${entry.test.expect}"`);
+      const tries = entry.test.attempts;
+      if (tries !== undefined && !(Number.isInteger(tries) && tries >= 1 && tries <= MAX_ATTEMPTS)) {
+        throw new Error(`test.attempts must be a whole number from 1 to ${MAX_ATTEMPTS}`);
+      }
     } catch (error) {
       throw setupProblem(`${entryFile}: ${error.message}`);
     }
   }
   const startTimeout = entry.test && entry.test.timeoutMs > 0 ? entry.test.timeoutMs : 90000;
+  const attempts = entry.test && entry.test.attempts ? entry.test.attempts : 1;
 
-  // The backstop behind every other limit.
+  // The backstop behind every other limit, armed again for each attempt
+  // (attempt() does). A run that reaches it ends there: it is not tried again.
   const limitMs = args['time-limit'] ? Number(args['time-limit']) * 1000 : startTimeout + (script ? Math.round(scriptMs(script) * 1.5) : BOOT_MAX_MS) + 150000;
-  setTimeout(() => {
-    failed(new Problem(`time limit of ${Math.round(limitMs / 1000)} s reached while ${run.phase}`, 'setup'));
-    finish();
-  }, limitMs).unref();
 
   for (const [file, hint] of [[path.join(binDir, 'eka2l1_web.wasm'), 'build it with tools/ci/build-web.sh or pass --bin'],
     ...Object.values(PLATFORM_FILES[platformOf(entry)]).map((firmware) => [path.join(assetsDir, ...firmware.split('/')), 'fetch it with tools/assets/fetch.py --fw <slug> or pass --assets']),
@@ -640,14 +694,36 @@ async function test() {
   run.version = browser.version();
   // A browser that goes away is not the game's doing.
   browser.on('disconnected', () => { if (!finished) failNow(setupProblem(`the browser went away while ${run.phase}`)); });
+  return { entry, script, startTimeout, attempts, limitMs, port };
+}
 
-  page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+// The backstop of the attempt under way.
+let limitTimer = null;
+
+// One try at the game, in a browser context of its own: nothing the page or
+// the emulator kept from an earlier attempt is there.
+async function attempt({ entry, script, startTimeout, limitMs, port }) {
+  clearTimeout(limitTimer);
+  limitTimer = setTimeout(() => {
+    failed(new Problem(`time limit of ${Math.round(limitMs / 1000)} s reached while ${run.phase}`, 'setup'));
+    finish();
+  }, limitMs);
+  limitTimer.unref();
+
+  // The page's events belong to this attempt only.
+  const mine = run.attempt;
+  const fail = failNow;
+  run.phase = 'opening a page';
+  page = await guard(withTimeout(browser.newPage({ viewport: { width: 1280, height: 800 } }), 60000, 'a new page')).catch((error) => {
+    throw error instanceof Problem ? error : setupProblem(`could not open a page: ${firstLine(error)}`);
+  });
   // The page console, for the result of a failed run. A line that repeats the
   // one before it except for its numbers (a periodic status line) replaces it,
   // so that the last lines kept are not all the same message.
   let lastShape = null;
   let repeats = 0;
   const record = (line) => {
+    if (run.attempt !== mine) return;
     if (args.verbose) console.log(`  ${line.slice(0, 400)}`);
     const text = line.length > 400 ? `${line.slice(0, 400)}…` : line;
     const shape = text.replace(/\d+/g, '#');
@@ -664,18 +740,18 @@ async function test() {
   page.on('console', (message) => record(`[${message.type()}] ${message.text()}`));
   page.on('pageerror', (error) => {
     record(`[pageerror] ${error.message}`);
-    failNow(problem(`uncaught error in the page while ${run.phase}: ${firstLine(error)}`));
+    if (run.attempt === mine) fail(problem(`uncaught error in the page while ${run.phase}: ${firstLine(error)}`));
   });
   // Nor is a page whose process dies: a game that fails traps inside the wasm
   // (an uncaught error, above). A dead renderer is a browser fault or a machine
   // out of memory, and must not pass for a game that is listed as broken.
-  page.on('crash', () => { record('[crash]'); failNow(setupProblem(`the page's process died while ${run.phase}`)); });
+  page.on('crash', () => { record('[crash]'); if (run.attempt === mine) fail(setupProblem(`the page's process died while ${run.phase}`)); });
   // Once the page has the game's bytes, the firmware is installed and the
   // emulator works: whatever fails after that is about this game.
   const gamePath = `/local/games/${run.slug}.zip`;
   page.on('response', (response) => {
     if (new URL(response.url()).pathname !== gamePath) return;
-    if (response.ok()) response.finished().then((error) => { if (!error) run.gameLoaded = true; }, () => {});
+    if (response.ok()) response.finished().then((error) => { if (!error && run.attempt === mine) run.gameLoaded = true; }, () => {});
   });
 
   run.phase = 'loading the player';
@@ -802,15 +878,47 @@ async function test() {
   else run.error = 'expected ingame: after the script the picture neither changed in 2 s nor after a direction key or one of the game\'s own keys';
 }
 
+// Closes the attempt's page and its context, and clears what the attempt
+// found out, for the next one.
+async function nextAttempt() {
+  const old = page;
+  page = null;
+  if (old) await Promise.race([old.context().close().catch(() => {}), sleep(10000)]);
+  Object.assign(run, attemptState());
+  watch = watchState();
+  enhanceLoaded = false;
+  arm();
+}
+
+let plan = null;
 try {
-  await test();
+  plan = await prepare();
 } catch (error) {
   failed(error);
 }
-// A run that failed on the way still says what the hooks did, if the page answers.
-if (enhanceLoaded && !run.enhance) await readEnhance().catch(() => {});
-// What the diagnostics found is worth the most on a run that failed (a crash,
-// an unsupported browser). A run that the time limit or a signal ends does
-// not come by here: it keeps what it had.
-await lastPerf();
+while (plan) {
+  run.attempt++;
+  run.attemptStarted = Date.now();
+  try {
+    await attempt(plan);
+  } catch (error) {
+    failed(error);
+  }
+  // A run that failed on the way still says what the hooks did, if the page answers.
+  if (enhanceLoaded && !run.enhance) await readEnhance().catch(() => {});
+  // What the diagnostics found is worth the most on a run that failed (a crash,
+  // an unsupported browser). A run that the time limit or a signal ends does
+  // not come by here: it keeps what it had.
+  await lastPerf();
+  // Only a game that quit by itself before its level is tried again.
+  if (finished || !run.ended || verdict(plan.entry, run.reached).pass || run.attempt >= plan.attempts) break;
+  const seconds = Math.round((Date.now() - run.attemptStarted) / 1000);
+  if (Date.now() - started + plan.limitMs > ATTEMPTS_WITHIN_MS) {
+    console.log(`no retry  ${run.slug}  attempt ${run.attempt} of ${plan.attempts} ended by itself, but another one could outlast ${ATTEMPTS_WITHIN_MS / 60000} minutes`);
+    break;
+  }
+  console.log(`retry  ${run.slug}  attempt ${run.attempt} of ${plan.attempts} reached ${run.reached} in ${seconds} s: ${run.error}`);
+  run.earlier.push({ reached: run.reached, error: run.error, seconds });
+  await nextAttempt();
+}
 await finish();

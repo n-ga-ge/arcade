@@ -9,7 +9,7 @@
   "variantOf": null,
   "dump": "Asphalt 3 (N-Gage 2.0)",
   "status": "ingame",
-  "statusNote": "Language menu, attract demo, menus and an Instant Play race in landscape, with correct 3D and with its music (MP3), at 11 to 13 fps on a fast laptop. In about one start in three it quits by itself within the first minute or while a race loads (a fault of the emulator, under investigation); starting it again works. The dump is a community release without signatures, which the N-Gage application refuses, so the player installs the game directly.",
+  "statusNote": "Language menu, attract demo, menus and an Instant Play race in landscape, with correct 3D and with its music (MP3), at 11 to 13 fps on a fast laptop. In about one start in three it quits by itself within the first minute or while a race loads (a fault of the emulator, under investigation); starting it again works, and its CI test starts it up to three times. The dump is a community release without signatures, which the N-Gage application refuses, so the player installs the game directly.",
   "notes": [
     "Sometimes quits by itself soon after starting: start it again.",
     "The phone is turned to landscape by the game, 320×240."
@@ -80,6 +80,7 @@
         "wait": 10000
       }
     ],
-    "timeoutMs": 150000
+    "timeoutMs": 150000,
+    "attempts": 3
   }
 }
