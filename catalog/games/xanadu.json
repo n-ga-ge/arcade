@@ -14,14 +14,15 @@
     "On the ability screen at the start, OK raises the selected ability; the screen closes once the bonus is spent (raise a second ability with down, then OK).",
     "Keys 1 and 3 open the status menu (Status, Guard, Item, Magic, Skill) and step through its tabs; 5 selects in it and 7 closes it.",
     "Either soft key opens the pause menu (Resume, Return to Main Menu, Audio, Exit Game).",
-    "Bluetooth and N-Gage Arena cannot work here."
+    "The game has no two-player game in its menus. Its Bluetooth (Options > Bluetooth shows the switch and the device's name) appears to be for trading cards with another player. That could not be tried: Cards on the title menu says \"No Cards\" and the priest's Consult card says you have none until a card is found in the game. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "status": "untested",
+    "statusNote": "No hosting or joining was reached. The title menu (Start Game, Continue, Cards, Options, N-Gage Arena) and the game's pause and status menus have no two-player game; Options > Bluetooth shows On and the name in the room. Cards says \"No Cards\" in a new game, so the card trade the program has over Bluetooth could not be started."
   },
   "controls": {
     "source": "The game's own Options > Controls screen (its defaults: Attack 5, Magic 7, Equip (L) 1, Equip (R) 3). Moving, attacking, the status menu and its keys, the pause menu and OK for dialogue were tried in play.",

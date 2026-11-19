@@ -13,15 +13,16 @@
     "In the menus 5 selects and 7 goes back. A new profile asks for a three-letter name: confirm each letter with 5.",
     "9 opens the inventory menu in play: vision mode, weapon, volume, Help (a drawing of the keys), Abort Mission and Exit. 9 closes it again.",
     "The mission starts with a radio message that holds the controls until it has finished or you press 5.",
-    "2 Players needs a Bluetooth link to a second N-Gage and cannot work here."
+    "2 Players: one player chooses Create Game, then Teamplay or Sniper and a mission, and waits at \"Waiting connection\"; the other chooses Join Game and presses 5 on the host's name under \"Devices found\". The mission then starts on both. In Teamplay the opening radio message is stepped through with 5."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
     "players": 2,
-    "menu": "2 Players",
-    "status": "untested"
+    "menu": "2 Players > Create Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Create Game, Teamplay or Sniper and a mission, the other Join Game and the host in the list. The Teamplay training mission and the first Sniper mission ran on both screens, and what one player did (running, a jump, a crouch, the Sniper crosshair) showed on the other's. One player's menu pauses the other; when the joiner aborted, both were back at the menu."
   },
   "controls": {
     "source": "The game's Help screen (inventory menu, 9): move and run, activate device / hide in shadows / climb, crouch / rappel, jump on 5, sticky camera on 4, menu on 9. The pistol on 7 and the soft keys are not on that screen and were observed in the first mission; the menus name 5 and 7 themselves.",

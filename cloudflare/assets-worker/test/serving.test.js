@@ -12,6 +12,10 @@ beforeAll(async () => {
   await bucket.put('NGAGE.ROM', ROM);
   etag = (await bucket.put('games/alpha.zip', ZIP)).httpEtag;
   await bucket.put('games/empty.zip', new Uint8Array(0));
+  await bucket.put('devices/rm-409.zip', ZIP);
+  await bucket.put('ngage2/ngage-1.40.1557.sis', ROM);
+  await bucket.put('devices/other.zip', ZIP);
+  await bucket.put('ngage2/other.sis', ROM);
   // In the bucket, but not keys the site uses.
   await bucket.put('manifest.json', '{}');
   await bucket.put('games/Bad_Name.zip', ZIP);
@@ -40,6 +44,13 @@ describe('GET', () => {
     expect(headers.get('Content-Length')).toBe('4096');
     expect(headers.get('Content-Type')).toBe('application/octet-stream');
   });
+
+  it.each([['/assets/devices/rm-409.zip', 'application/zip'], ['/assets/ngage2/ngage-1.40.1557.sis', 'application/octet-stream']])(
+    'returns the N-Gage 2.0 firmware %s', async (path, type) => {
+      const { status, headers } = await call(path);
+      expect(status).toBe(200);
+      expect(headers.get('Content-Type')).toBe(type);
+    });
 
   it('returns an empty object', async () => {
     const { status, headers, body } = await call('/assets/games/empty.zip');
@@ -234,6 +245,10 @@ describe('what is not served', () => {
     '/assets//games/alpha.zip',
     '/assets/NGAGE.ROM/',
     '/assets/ngage.rom',
+    // The N-Gage 2.0 firmware by its names only.
+    '/assets/devices/',
+    '/assets/devices/other.zip',
+    '/assets/ngage2/other.sis',
     // Outside /assets/, which the Worker sees on workers.dev.
     '/',
     '/assets',
