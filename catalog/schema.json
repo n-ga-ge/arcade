@@ -96,7 +96,8 @@
             }
           }
         },
-        "timeoutMs": { "type": "integer", "description": "How long the game may take to start running (default 90000)." }
+        "timeoutMs": { "type": "integer", "description": "How long the game may take to start running (default 90000)." },
+        "attempts": { "type": "integer", "minimum": 1, "maximum": 3, "description": "How many times the test may start the game afresh when it exits or crashes by itself before reaching its level (default 1). Only for a game known to quit at random: no other failure is tried again." }
       }
     }
   }

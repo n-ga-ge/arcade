@@ -11,7 +11,7 @@ and writes
   <dir>/status.json        { "generated": <ISO time>, "commit": <sha or null>,
                              "games": { "<slug>": { "pass", "expect", "reached",
                              "seconds", "shot", "error"?, "better"?,
-                             "perf"? } } }
+                             "attempts"?, "earlierAttempts"?, "perf"? } } }
   <dir>/shots/<slug>.png   the emulator's last screenshot of each game
 
 which is what tools/site/build.py --status <dir> publishes under /catalog/.
@@ -22,6 +22,9 @@ which is what tools/site/build.py --status <dir> publishes under /catalog/.
   "expect"   the level it had to reach; null when it was only looked at
   "shot"     "shots/<slug>.png", or null when no screenshot was taken
   "better"   true when the game got further than the catalogue says
+  "attempts" how many times the game was started, when more than once (an
+             entry with "test.attempts" whose game quit by itself); then
+  "earlierAttempts"  why each attempt before the last failed, as short texts
   "perf"     what the player's diagnostics measured during the run, as the
              result has it ("measuredS", "fps", "fpsWorst", ..., "findings":
              the codes; docs/diagnostics.md), with the "browser" and the
@@ -33,7 +36,7 @@ Games in the catalogue with no result are left out, and so are results for
 games the catalogue does not have. It prints one line per game and then a
 markdown table; --summary FILE also appends the table to FILE (the CI job
 summary). --self-test checks how a "perf" block is taken over and needs no
-results. The exit code is 0 whether games passed or not (each game's own job
+results, and how the attempts of a result are taken over. The exit code is 0 whether games passed or not (each game's own job
 reports that), and 1 when there is no result at all, unless --allow-empty.
 
   --commit   the commit the results are for (default: $GITHUB_SHA, else the
@@ -98,6 +101,25 @@ PERF_NAME = re.compile(r"[A-Za-z][A-Za-z0-9]{0,39}")
 PERF_TEXT = 200
 # Not numbers of the block: the codes, and what this script adds.
 PERF_OWN = ("findings", "browser", "renderer")
+# More attempts than this are not believed: a sanity limit well above what the
+# catalogue allows (test.attempts in catalog/schema.json, MAX_ATTEMPTS in
+# tools/web/gametest.mjs), so that raising that needs no change here. A reason
+# is cut at ATTEMPT_TEXT characters.
+ATTEMPTS = 10
+ATTEMPT_TEXT = 300
+
+
+def attempts_of(result):
+    """(attempts, earlier reasons) of a result when it took more than one, else None."""
+    count = result.get("attempts")
+    if isinstance(count, bool) or not isinstance(count, int) or not 1 < count <= ATTEMPTS:
+        return None
+    earlier = result.get("earlierAttempts")
+    reasons = []
+    for item in (earlier if isinstance(earlier, list) else [])[:count - 1]:
+        error = item.get("error") if isinstance(item, dict) else None
+        reasons.append(" ".join(error.split())[:ATTEMPT_TEXT] if isinstance(error, str) and error.strip() else "unknown")
+    return count, reasons
 
 
 def perf_block(result):
@@ -168,6 +190,15 @@ def self_test():
     # What is kept survives strict JSON.
     json.dumps(kept, allow_nan=False)
     json.dumps(many, allow_nan=False)
+    # Attempts: only a result that took more than one has them, and only texts pass.
+    for one in ({}, {"attempts": 1}, {"attempts": True}, {"attempts": 0}, {"attempts": 11}, {"attempts": "2"}, {"attempts": 2.0}):
+        assert attempts_of(one) is None, one
+    two = {"attempts": 2, "earlierAttempts": [{"reached": "broken", "error": "the game ended (exited)\nwhile x", "seconds": 24}]}
+    assert attempts_of(two) == (2, ["the game ended (exited) while x"]), attempts_of(two)
+    odd_attempts = {"attempts": 3, "earlierAttempts": [{"error": 7}, "text", {"error": "e" * 1000}, {"error": "one too many"}]}
+    assert attempts_of(odd_attempts) == (3, ["unknown", "unknown"]), attempts_of(odd_attempts)
+    assert attempts_of({"attempts": 3, "earlierAttempts": [{"error": "e" * 1000}]}) == (3, ["e" * ATTEMPT_TEXT])
+    assert attempts_of({"attempts": 2}) == (2, [])
     print("status.py self-test: ok")
 
 
@@ -220,6 +251,9 @@ def main():
             game["error"] = "the test did not run" if reached is None else f"expected {expect}, reached {reached}"
         if result.get("better"):
             game["better"] = True
+        tries = attempts_of(result)
+        if tries:
+            game["attempts"], game["earlierAttempts"] = tries
         perf = perf_block(result)
         if perf is not None:
             game["perf"] = perf
@@ -264,6 +298,8 @@ def main():
         note = game.get("error", "")
         if game.get("better"):
             note = f"better than listed ({game['expect']}); update the catalogue entry" + (f". {note}" if note else "")
+        if game.get("attempts"):
+            note = f"{game['attempts']} attempts" + (f" (before: {'; '.join(game['earlierAttempts'])})" if game["earlierAttempts"] else "") + (f". {note}" if note else "")
         seconds = "" if game["seconds"] is None else game["seconds"]
         print(f"{word}  {slug}  {reached}" + (f" (expected {game['expect']})" if game["expect"] else "") + (f"  {note}" if note else ""))
         table.append(f"| {cell(titles[slug])} | {word.lower() if game['pass'] else '**FAIL**'} | {game['expect'] or '–'} | {reached} | {seconds} | {cell(perf_words(game.get('perf')))[:300]} | {cell(note)[:300]} |")
