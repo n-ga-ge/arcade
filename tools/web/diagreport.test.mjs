@@ -31,7 +31,8 @@ function report(change) {
       session: { title: 'Session', data: { state: 'running', fps: 19.8349, fpsAverage: 18.5, canvas: { width: 352, height: 416, filter: 'nearest' } }, findings: [] },
       speed: {
         title: 'Speed',
-        data: { busyShare: 0.9876, late: [1, 2, 3, 6], threads: [{ name: 'os', busyMs: 1200 }, { name: 'graphics', busyMs: 300 }], note: 'a, b = c', mode: 'mode=fast', list: '1, 2', digits: '12', word: 'yes' },
+        data: { busyShare: 0.9876, late: [1, 2, 3, 6], threads: [{ name: 'os', busyMs: 1200 }, { name: 'graphics', busyMs: 300 }], note: 'a, b = c', mode: 'mode=fast', list: '1, 2', digits: '12', word: 'yes', counts: { 0: 5, 1: 7 }, byPeer: { '(name 1)': 4, b: 2 },
+          log: Array.from({ length: 20 }, (_, i) => `E files.cpp:1084 [Service.EFsrv]: Trying to open a non-existent file number ${i}`) },
         findings: ['cpu-bound', 'game-limited'],
       },
       browser: { title: 'Browser and device', data: { ok: true, cores: 8, userAgent: UA }, findings: [] },
@@ -160,16 +161,19 @@ test('the text read back holds what the file holds', () => {
   assert.deepEqual(text.findings, file.findings);
   assert.deepEqual(text.findings.map((finding) => finding.code), ['cpu-bound', 'game-limited']);
   assert.deepEqual(text.sections, file.sections);
-  assert.deepEqual([...text.values.keys()].sort(), [...file.values.keys()].sort());
-  for (const [name, value] of file.values) {
-    const read = text.values.get(name);
-    if (typeof value === 'number') assert.ok(Math.abs(read - value) <= Math.abs(value) * 0.01 + 1e-9, `${name}: ${read} for ${value}`);
-    else assert.equal(read, value, name);
-  }
-  assert.equal(file.values.get('speed.busyShare'), 0.9876);
+  // One set of rules reads both, so they hold the same under the same paths:
+  // the numbers as the text rounds them.
+  assert.deepEqual([...text.values], [...file.values]);
+  assert.equal(file.values.get('speed.busyShare'), 0.988);
+  assert.equal(file.values.get('speed.counts.0'), 5);
+  assert.equal(file.values.get('speed.byPeer.(name 1)'), 4);
   // A text that looks like something else is still one value.
   assert.equal(text.values.get('speed.mode'), 'mode=fast');
   assert.equal(text.values.get('speed.list'), '1, 2');
+  // A log is a line for each of its last lines, in the text and in what is read of the file.
+  assert.equal(text.values.get('speed.log[19]'), 'E files.cpp:1084 [Service.EFsrv]: Trying to open a non-existent file number 19');
+  assert.equal(file.values.get('speed.log[8]'), 'E files.cpp:1084 [Service.EFsrv]: Trying to open a non-existent file number 8');
+  assert.ok(!file.values.has('speed.log[7]') && !text.values.has('speed.log[7]'));
   // A part that failed is told on a line that is not a value.
   const failed = viewOfText(formatText(report((r) => { r.sections.audio = { title: 'Sound', data: null, findings: [], error: 'audio: undefined' }; })));
   assert.deepEqual([...failed.values.keys()].filter((name) => name.startsWith('audio.')), []);
@@ -193,8 +197,16 @@ test('the text read back: cut to fit, cut off, pasted with other lines around it
   const half = viewOfText(formatText(report()).split('\n').slice(0, 12).join('\n'));
   assert.equal(half.complete, false);
   assert.deepEqual(half.findings.map((finding) => finding.code), ['cpu-bound', 'game-limited']);
-  // As it comes out of a message: Windows line ends, a greeting before it is not read.
+  // As it comes out of a message: Windows line ends, a greeting before it,
+  // every line quoted, this tool's own verdict line above it.
   assert.equal(viewOfText(formatText(report()).replace(/\n/g, '\r\n')).values.get('speed.busyShare'), 0.988);
+  const whole = viewOfText(formatText(report()));
+  for (const pasted of [`Hi, here is my report:\n\n${formatText(report())}\nThanks!`, formatText(report()).replace(/^/gm, '> '), `VALID  report.json: a report\n\n${formatText(report())}`]) {
+    const view = viewOfText(pasted);
+    assert.deepEqual(view.findings, whole.findings);
+    assert.deepEqual([...view.values], [...whole.values]);
+    assert.equal(view.complete, true);
+  }
   assert.equal(viewOfText('Hello, here is my report'), null);
 });
 
@@ -225,7 +237,7 @@ test('compare: findings gained and lost, numbers changed by more than a share, o
   assert.deepEqual(result.onlyB, ['speed.extra', 'audio.underruns']);
   // A number that was 0 has no share to change by: it is told whatever it became.
   const zero = compare(b, a);
-  assert.deepEqual(zero.numbers.find((entry) => entry.path === 'speed.busyShare'), { path: 'speed.busyShare', a: 0, b: 0.9876, change: null });
+  assert.deepEqual(zero.numbers.find((entry) => entry.path === 'speed.busyShare'), { path: 'speed.busyShare', a: 0, b: 0.988, change: null });
   // The share decides.
   assert.ok(compare(a, b, 0.05).numbers.some((entry) => entry.path === 'session.fpsAverage'));
   assert.deepEqual(compare(a, b, 5).numbers, []);
@@ -253,6 +265,29 @@ test('compare: findings gained and lost, numbers changed by more than a share, o
   assert.ok(!text.includes('browser.cores'));
 });
 
+test('compare: the lines of a log are not compared', () => {
+  const log = (count) => (r) => { r.sections.speed.data.log = Array.from({ length: count }, (_, i) => `E files.cpp:1084 [Service.EFsrv]: Trying to open a non-existent file number ${i}`); };
+  const result = compare(viewOfReport(report(log(40))), viewOfReport(report(log(45))));
+  assert.deepEqual([result.numbers, result.others, result.onlyA, result.onlyB], [[], [], [], []]);
+});
+
+test('a report that redaction emptied is told as such', () => {
+  const empty = report((r) => {
+    r.findings = [];
+    r.sections = {};
+    r.series = { t: [], fps: [], running: [], hidden: [] };
+    r.session.samples = 0;
+    r.redacted = { failed: 'the report holds itself' };
+  });
+  assert.deepEqual(checkReport(empty, SCHEMA), []);
+  assert.equal(viewOfReport(empty).failed, 'the report holds itself');
+  assert.equal(viewOfText(formatText(empty)).failed, 'the report holds itself');
+  assert.equal(viewOfReport(report()).failed, null);
+  assert.equal(viewOfText(formatText(report())).failed, null);
+  const text = formatCompare(viewOfReport(report()), viewOfReport(empty), compare(viewOfReport(report()), viewOfReport(empty)));
+  assert.ok(text.includes('B is empty: what identifies the visitor could not be removed in the page (the report holds itself)'));
+});
+
 test('compare: two of the same', () => {
   const view = viewOfReport(report());
   const text = formatCompare(view, view, compare(view, view));
@@ -277,6 +312,8 @@ test('load: the file, the text, and what is neither', () => {
   assert.equal(load('a', JSON.stringify(report()), SCHEMA).view.source, 'file');
   assert.equal(load('a', formatText(report()), SCHEMA).view.source, 'text');
   assert.match(load('a', 'Hello', SCHEMA).problems[0].message, /is neither a report's JSON .* nor its text form/);
+  // A file an editor saved with a byte order mark.
+  assert.deepEqual(load('a', `\uFEFF${JSON.stringify(report())}`, SCHEMA).problems, []);
   assert.equal(load('a', JSON.stringify(report((r) => { r.v = 3; })), SCHEMA).view, null);
 });
 

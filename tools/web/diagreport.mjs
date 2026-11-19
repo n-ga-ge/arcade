@@ -206,6 +206,24 @@ function showList(list, detail) {
     + `; the last ${shown.length}: ${text}`;
 }
 
+// A list of plain values is one line, unless it holds texts that are too
+// long for that (the lines of a log): then each is a line of its own, and of
+// a long list the last ones, which are the newest.
+function listInLines(list, detail) {
+  return list.some((value) => typeof value === 'string' && value.length > 60)
+    || (list.some((value) => typeof value === 'string') && showList(list, detail).length > 200);
+}
+
+function listLines(name, list, detail, out) {
+  if (!listInLines(list, detail)) {
+    out.push(`${name}: ${showList(list, detail)}`);
+    return;
+  }
+  const from = Math.max(0, list.length - detail.items);
+  if (from > 0) out.push(`${name}: ${list.length} values; the last ${list.length - from}:`);
+  for (let i = from; i < list.length; i++) out.push(`${name}[${i}]: ${showLine(list[i], detail.strings)}`);
+}
+
 // The lines of one value of a section's data. `detail` is how much is shown:
 // { strings, values, items }, the longest text, the most values of a list of
 // plain values, the most items of a list of objects.
@@ -217,7 +235,7 @@ function dataLines(path, value, detail, out, depth = 0) {
     if (!value.length) {
       out.push(`${name}: (none)`);
     } else if (value.every(isLeaf)) {
-      out.push(`${name}: ${showList(value, detail)}`);
+      listLines(name, value, detail, out);
     } else {
       const head = value.length > detail.items ? Math.min(2, detail.items - 1) : value.length;
       const tail = value.length > detail.items ? detail.items - head : 0;
@@ -231,7 +249,7 @@ function dataLines(path, value, detail, out, depth = 0) {
       out.push(`${name}: (empty)`);
       return;
     }
-    if (path && entries.length <= 8 && entries.every(([, item]) => isLeaf(item))) {
+    if (path && entries.length <= 8 && entries.every(([key, item]) => isLeaf(item) && /^[A-Za-z_$][\w$-]*$/.test(key))) {
       const inline = entries.map(([key, item]) => `${key}=${showInline(item, detail.strings)}`).join(', ');
       if (inline.length <= 140) {
         out.push(`${path}: ${inline}`);
@@ -288,7 +306,7 @@ function headLines(report) {
   if (session.emulatorAnswers === false) lines.push("The emulator's own counters are missing: this build does not have them.");
   const taken = report.redacted !== null && typeof report.redacted === 'object' ? report.redacted : null;
   if (taken && taken.failed) {
-    lines.push('Everything but this head was taken out, because what identifies the visitor could not be removed.');
+    lines.push(`Everything but this head was taken out, because what identifies the visitor could not be removed (${showLeaf(taken.failed, 80)}).`);
   } else if (taken) {
     const parts = [[taken.roomCodes, 'room code', 'room codes'], [taken.names, 'name', 'names'], [taken.bluetoothAddresses, 'Bluetooth address', 'Bluetooth addresses'],
       [taken.addressQueries, 'address query', 'address queries'], [taken.homeFolders, 'home folder', 'home folders']]
@@ -432,10 +450,19 @@ const NUMBER = /^-?\d+(\.\d+)?(e[+-]?\d+)?$/;
 const HEAD_LINE = /^EKA2L1 web diagnostics v(\d+) \| (.*?) \| (.*) \| ([^|]*)$/;
 const FINDING_LINE = /^\[(bad|warn|info)\] ([a-z]+(?:-[a-z]+)*) \(([a-z]+)\): (.*)$/;
 const SECTION_LINE = /^== (.*) \[([a-z]+)\] ==$/;
-const SUMMED = /^(\d+) values(?:, min (\S+), mean (\S+), max (\S+))?(?:; the last \d+: .*)?$/;
+const SUMMED = /^(\d+) values(?:, min (\S+), mean (\S+), max (\S+))?(?:; the last \d+:.*)?$/;
 const PAIR = /([A-Za-z_$][\w$-]*)=("(?:[^"\\]|\\.)*"|[^,]*)(?:, |$)/y;
 
-export const isText = (text) => HEAD_LINE.test(String(text).trimStart().split(/\r?\n/, 1)[0].trim());
+// The lines of the text form in `text`, from its head on, or null when there
+// is none. What stands before the head (a greeting, this tool's own verdict
+// line) is skipped, and so is the mark of a quotation before every line.
+function textLines(text) {
+  const lines = String(text).replace(/^﻿/, '').split(/\r?\n/).map((line) => line.replace(/^(?:> ?)+/, ''));
+  const head = lines.findIndex((line) => HEAD_LINE.test(line.trim()));
+  return head < 0 ? null : lines.slice(head);
+}
+
+export const isText = (text) => textLines(text) !== null;
 
 function plain(text) {
   if (text === '-') return null;
@@ -454,7 +481,8 @@ function plain(text) {
 
 // The values one line of a section holds, as [path, value] pairs: one for a
 // plain value, one per field for a small object, the mean for a list of
-// numbers. Loose: a text that happens to look like one of these is taken for it.
+// numbers. Loose: a text that happens to look like one of these is taken for
+// it (the formatter quotes the texts that would).
 export function lineValues(name, text) {
   if (text === '(none)' || text === '(empty)' || /^\d+ items, \d+ left out here$/.test(text)) return [];
   const summed = SUMMED.exec(text);
@@ -475,18 +503,32 @@ export function lineValues(name, text) {
   return [[name, text]];
 }
 
+// The values of the lines of one section's data, as the text form has them.
+// A note of the formatter's own is not a value.
+function sectionValues(lines) {
+  const values = [];
+  for (const line of lines) {
+    const at = line.indexOf(': ');
+    if (at < 1 || /^\s/.test(line) || line.startsWith('(this part failed: ')) continue;
+    values.push(...lineValues(line.slice(0, at), line.slice(at + 2)));
+  }
+  return values;
+}
+
 // What a report shows, in the shape the comparison works on, whether it came
 // from the file or from the text:
-//   { source, v, generated, game, browser, complete, cut, findings: [{ code,
-//     level, section, title }], sections: [{ id, title }], values: Map }
+//   { source, v, generated, game, browser, complete, cut, failed,
+//     findings: [{ code, level, section, title }], sections: [{ id, title }],
+//     values: Map }
 // `values` maps "<section>.<path>" to a number, a boolean, a text or null,
 // with the paths the text form prints; the series is there as
-// "series.fps (mean)" and "series.fps (min)".
+// "series.fps (mean)" and "series.fps (min)". `failed` is why the report is
+// empty, when redaction failed in the page.
 export function viewOfText(text) {
-  const lines = String(text).replace(/^\s+/, '').split(/\r?\n/);
+  const lines = textLines(text);
+  if (!lines) return null;
   const head = HEAD_LINE.exec(lines[0].trim());
-  if (!head) return null;
-  const view = { source: 'text', v: Number(head[1]), generated: head[2], game: head[3], browser: head[4], complete: false, cut: null,
+  const view = { source: 'text', v: Number(head[1]), generated: head[2], game: head[3], browser: head[4], complete: false, cut: null, failed: null,
     findings: [], sections: [], values: new Map() };
   let section = null;
   let series = false;
@@ -500,8 +542,13 @@ export function viewOfText(text) {
       view.cut = line;
       continue;
     }
+    const failed = /^Everything but this head was taken out.*?(?:\((.*)\))?\.$/.exec(line);
+    if (failed && !section && !series) {
+      view.failed = failed[1] || 'no reason given';
+      continue;
+    }
     const finding = FINDING_LINE.exec(line);
-    if (finding) {
+    if (finding && !section && !series) {
       view.findings.push({ level: finding[1], code: finding[2], section: finding[3], title: finding[4] });
       continue;
     }
@@ -517,13 +564,10 @@ export function viewOfText(text) {
       view.sections.push({ id: section, title: heading[1] });
       continue;
     }
-    const at = line.indexOf(': ');
-    // Not a value: a finding's detail (indented), a note ("(this part failed: ...)").
-    if (at < 1 || /^[\s(]/.test(line) || (!section && !series)) continue;
-    const name = line.slice(0, at);
-    const value = line.slice(at + 2);
-    if (series) {
-      if (name.split(' ')[0] !== 'fps') continue;
+    if (section) {
+      for (const [key, item] of sectionValues([line])) view.values.set(`${section}.${key}`, item);
+    } else if (series && line.split(/[ :]/)[0] === 'fps') {
+      const value = line.slice(line.indexOf(': ') + 2);
       const summed = SUMMED.exec(value);
       const numbers = value.split(/\s+/).filter((item) => NUMBER.test(item)).map(Number);
       if (summed && summed[2] !== undefined) {
@@ -533,35 +577,19 @@ export function viewOfText(text) {
         view.values.set('series.fps (mean)', numbers.reduce((a, b) => a + b, 0) / numbers.length);
         view.values.set('series.fps (min)', Math.min(...numbers));
       }
-    } else {
-      for (const [key, item] of lineValues(name, value)) view.values.set(`${section}.${key}`, item);
     }
   }
   return view;
 }
 
-// The values of a section's data under the paths the text form gives them.
-function flatten(path, value, out, depth = 0) {
-  if (depth > 40) return;
-  if (isLeaf(value)) {
-    out.set(path || 'value', typeof value === 'string' ? plain(showLine(value, 400)) : value === undefined ? null : value);
-  } else if (Array.isArray(value)) {
-    const name = path || 'value';
-    if (!value.length) return;
-    if (!value.every(isLeaf)) {
-      value.forEach((item, index) => flatten(`${name}[${index}]`, item, out, depth + 1));
-    } else if (value.length === 1) {
-      flatten(name, value[0], out, depth + 1);
-    } else if (value.every((item) => typeof item === 'number')) {
-      out.set(`${name} (mean)`, numberStats(value).mean);
-    } else {
-      out.set(name, value.map((item) => showInline(item, 80)).join(', '));
-    }
-  } else {
-    for (const [key, item] of Object.entries(value)) flatten(path ? `${path}.${key}` : key, item, out, depth + 1);
-  }
-}
+// What nothing is cut from: the text form's detail when a report fits.
+const WHOLE = { strings: 400, values: 30, items: 12 };
 
+// The same of a report's file. A section's values are read from the lines
+// the text form makes of its data, so that the file and the text have one set
+// of paths and of rules: numbers are as the text rounds them, a long list of
+// numbers is its mean, and of a long list of objects or of log lines there is
+// what the text shows.
 export function viewOfReport(report) {
   const sections = isObject(report.sections) ? report.sections : {};
   const view = {
@@ -572,6 +600,7 @@ export function viewOfReport(report) {
     browser: browserName(findText(sections.browser, 'userAgent') || findText(sections, 'userAgent')),
     complete: true,
     cut: null,
+    failed: isObject(report.redacted) && report.redacted.failed ? String(report.redacted.failed) : null,
     findings: (Array.isArray(report.findings) ? report.findings : []).filter(isObject)
       .map((finding) => ({ level: finding.level, code: finding.code, section: finding.section, title: finding.title })),
     sections: Object.entries(sections).map(([id, section]) => ({ id, title: (section && section.title) || id })),
@@ -579,9 +608,9 @@ export function viewOfReport(report) {
   };
   for (const [id, section] of Object.entries(sections)) {
     if (!isObject(section) || section.data === null || section.data === undefined) continue;
-    const values = new Map();
-    flatten('', section.data, values);
-    for (const [key, item] of values) view.values.set(`${id}.${key}`, item);
+    const lines = [];
+    dataLines('', section.data, WHOLE, lines);
+    for (const [key, item] of sectionValues(lines)) view.values.set(`${id}.${key}`, item);
   }
   const fps = numberStats(isObject(report.series) && Array.isArray(report.series.fps) ? report.series.fps : []);
   if (fps) {
@@ -601,8 +630,12 @@ export const SHARE = 0.2;
 //             `share` of a's (change is (b - a) / |a|, or null when a is 0)
 //   others    [{ path, a, b }] for values that are not both numbers and differ
 //   onlyA, onlyB   paths one has and the other has not
+// The lines of a log are left out of all of it.
 export function compare(a, b, share = SHARE) {
   const key = (finding) => `${finding.section}/${finding.code}`;
+  // A line of a log (the formatter gives a list of long texts a line each)
+  // is never the same line in another run: not compared.
+  const logLine = (name, value) => /\[\d+\]$/.test(name) && typeof value === 'string' && value.length > 60;
   const inA = new Set(a.findings.map(key));
   const inB = new Set(b.findings.map(key));
   const result = {
@@ -611,11 +644,11 @@ export function compare(a, b, share = SHARE) {
     both: a.findings.filter((finding) => inB.has(key(finding))),
     numbers: [],
     others: [],
-    onlyA: [...a.values.keys()].filter((name) => !b.values.has(name)),
-    onlyB: [...b.values.keys()].filter((name) => !a.values.has(name)),
+    onlyA: [...a.values.keys()].filter((name) => !b.values.has(name) && !logLine(name, a.values.get(name))),
+    onlyB: [...b.values.keys()].filter((name) => !a.values.has(name) && !logLine(name, b.values.get(name))),
   };
   for (const [name, first] of a.values) {
-    if (!b.values.has(name)) continue;
+    if (!b.values.has(name) || logLine(name, first)) continue;
     const second = b.values.get(name);
     if (typeof first === 'number' && typeof second === 'number') {
       if (first === second) continue;
@@ -644,6 +677,9 @@ export function formatCompare(a, b, result, names = ['A', 'B'], options = {}) {
   const describe = (view) => `${view.generated} | ${view.game} | ${view.browser}${view.source === 'text' ? ` | from the text form${view.complete ? '' : ', which is cut off'}${view.cut ? ', which was cut to fit' : ''}` : ''}`;
   const lines = [`A: ${names[0]}`, `   ${describe(a)}`, `B: ${names[1]}`, `   ${describe(b)}`];
   if (a.game !== b.game) lines.push('The two are of different games.');
+  for (const [label, view] of [['A', a], ['B', b]]) {
+    if (view.failed) lines.push(`${label} is empty: what identifies the visitor could not be removed in the page (${view.failed}), so nothing but the head was let out.`);
+  }
   if (a.source === 'text' || b.source === 'text') lines.push('The text form holds less than the file: a value missing on one side may only have been cut there.');
 
   lines.push('', 'Findings');
@@ -683,14 +719,16 @@ function usage(message) {
   process.exit(2);
 }
 
-// Reads one report: { name, view, report, problems, error }.
+// Reads one report: { name, view, report, problems }. `report` is null for
+// the text form, `view` is null for a file that is not valid.
 export function load(name, text, schema) {
-  if (isText(text)) return { name, view: viewOfText(text), report: null, problems: [] };
+  const clean = String(text).replace(/^\uFEFF/, '');
+  if (!clean.trimStart().startsWith('{') && isText(clean)) return { name, view: viewOfText(clean), report: null, problems: [] };
   let report;
   try {
-    report = JSON.parse(text);
+    report = JSON.parse(clean);
   } catch (error) {
-    return { name, view: null, report: null, problems: [{ at: 'the file', message: `is neither a report's JSON (${error.message}) nor its text form (that begins with "EKA2L1 web diagnostics v1 |")` }] };
+    return { name, view: null, report: null, problems: [{ at: 'the file', message: `is neither a report's JSON (${error.message}) nor its text form (a line that begins with "EKA2L1 web diagnostics v1 |")` }] };
   }
   const problems = checkReport(report, schema);
   return { name, view: problems.length ? null : viewOfReport(report), report, problems };
@@ -751,12 +789,14 @@ function main(argv) {
   }
   const [item] = loaded;
   if (item.report) {
-    console.log(`VALID  ${item.name}: a report of ${item.view.game}, ${item.view.findings.length} finding${item.view.findings.length === 1 ? '' : 's'}, ${item.view.sections.length} sections`);
+    console.log(`VALID  ${item.name}: a report of ${item.view.game}, ${item.view.findings.length} finding${item.view.findings.length === 1 ? '' : 's'}, ${item.view.sections.length} sections`
+      + (item.view.failed ? `; it is empty: what identifies the visitor could not be removed in the page (${item.view.failed}), so nothing but the head was let out` : ''));
     if (!flags.quiet) process.stdout.write(`\n${formatText(item.report, flags.full ? Infinity : TEXT_LIMIT)}`);
   } else {
     const view = item.view;
     console.log(`TEXT  ${item.name}: the text form of a report of ${view.game}, read loosely and not checked`
-      + `${view.complete ? '' : '; its end is missing, so it was cut off when it was pasted'}${view.cut ? '; it was cut to fit when it was copied' : ''}`);
+      + `${view.complete ? '' : '; its end is missing, so it was cut off when it was pasted'}${view.cut ? '; it was cut to fit when it was copied' : ''}`
+      + (view.failed ? `; it is empty: what identifies the visitor could not be removed in the page (${view.failed})` : ''));
     if (!flags.quiet) {
       console.log(`  made ${view.generated} in ${view.browser}`);
       console.log(view.findings.length ? `  findings: ${view.findings.map((finding) => `${finding.code} [${finding.level}]`).join(', ')}` : '  findings: none');
