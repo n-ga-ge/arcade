@@ -73,6 +73,21 @@ it. Add a binding with **+**, remove one by clicking it, and go back to the
 defaults with **Reset this layout**. Your changes are remembered in this
 browser.
 
+## N-Gage 2.0 games
+
+A few games in the list are marked **N-Gage 2.0**. They are from Nokia's
+later games service for phones (2008 to 2010), not cards for the N-Gage, and
+the player runs them on an emulated Nokia 5320 phone.
+
+- The first start downloads more: about 115 MB for the phone and the N-Gage
+  application, once, and then the game.
+- They need more memory. A browser that cannot give the emulator 2 GB cannot
+  start them.
+- They turn the screen sideways, to 320×240.
+- The phone's keys are laid out like the N-Gage's: the same keyboard and
+  gamepad layout works, and **Menu → Guide** says what each key does.
+- Most of them have no sound yet.
+
 ## The menu
 
 **Pause** and **Menu** are above the picture. The game also pauses by itself
@@ -84,6 +99,11 @@ controls, the display settings, your saves, multiplayer and the guide to the
 running game.
 **Copy link to this game** gives you a link that starts it directly, and
 **All games** takes you back to the front page.
+
+In fullscreen, Chrome and Edge give every key the game uses to the game,
+Escape too: hold Escape to leave fullscreen, or choose **Fullscreen** in the
+menu again. In Firefox and Safari a press of Escape leaves fullscreen, so a
+game that uses Escape gets it only outside fullscreen.
 
 ## Saves
 
@@ -133,17 +153,22 @@ Good to know:
   expected to connect more than two players yet.
 - **N-Gage Arena does not work.** It was Nokia's online service, and it has
   been shut down.
-- **This is new, and most games have not been tried this way.** Each game's
-  page says whether its multiplayer has been tried, and a game that has not
-  been tried may not connect.
+- **Most games play, a few do not.** Every game with a Bluetooth game has
+  been tried between two players, and each game's page says how far it got.
 - While you are in a room, what your game sends to the other players passes
   through the site on its way to them, together with the name you set.
 
 ## Display
 
 **Menu → Display** changes how the small N-Gage picture is enlarged: sharp
-pixels (the default), smooth, or one of several filters. These change only the
-look, not the speed of the game.
+pixels (the default), smooth, or one of several filters, grouped by what they
+suit. For 2D games, which most N-Gage games are, **xBRZ** and **MMPX** redraw
+pixel art with smoother edges; for 3D games **FSR** is the one to try. These
+change only the look, not the speed of the game.
+
+For pixels that are all the same size, set **Resolution** to **Largest whole
+multiple** (it leaves a margin), or keep the picture large and choose
+**Sharp pixels, evened**.
 
 The N-Gage's screen is taller than it is wide, so on a monitor there is empty
 space beside the picture. **Fill the screen (beta)** uses it: **Stretch**
@@ -151,6 +176,15 @@ widens the picture over the whole area, and **Ambient fill** keeps the
 picture's shape and fills the space beside it with a soft, blurred copy of
 what is on screen. Neither makes the game show more of its world: a game
 always draws the same picture.
+
+For some 3D games the dialog also offers **3D resolution (beta)**: the
+game's 3D drawn again by your graphics card at two, three or four times the
+phone's resolution, or at the size it is shown at, with **3D textures** sharp
+or smooth. The game's menus, text and logos are drawn at that size too, and
+**Menus, text and logos** says how: through a pixel-art scaler that redraws
+their edges smooth (the default), blended, or as sharp pixels. These settings
+show only for a game that has been prepared for them, and parts of the picture
+may still be wrong.
 
 ## Playing your own copy
 

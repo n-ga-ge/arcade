@@ -1,12 +1,12 @@
 // The front page: loads the catalogue, shows a card per game, and keeps the
-// search, status filter, multiplayer filter, order and open detail view in the
+// search, status filter, multiplayer filter, platform filter, order and open detail view in the
 // address so a view can be shared. It also shows the rooms visitors have
 // opened for others to join (rooms.js).
 //
-//   ?q=<text>  &status=<ingame|menu|boots|broken>  &mp=1  &sort=title  &game=<slug>
-import { isOrder, isStatus, loadCatalog, select, statusOf } from './model.js';
+//   ?q=<text>  &status=<ingame|menu|boots|broken>  &mp=1  &platform=<ngage|ngage2>  &sort=title  &game=<slug>
+import { isOrder, isPlatform, isStatus, loadCatalog, platformOf, select, statusOf } from './model.js';
 import { watchRooms } from './rooms.js';
-import { buildLine, card, cardRooms, chips, detail, detailRooms, el, multiplayerChip, roomSection, setCounts } from './view.js';
+import { buildLine, card, cardRooms, chips, detail, detailRooms, el, multiplayerChip, platformChips, roomSection, setCounts } from './view.js';
 
 const $ = (id) => document.getElementById(id);
 const notice = $('notice');
@@ -18,6 +18,7 @@ const search = $('q');
 const order = $('sort');
 const chipBox = $('chips');
 const multiplayerBox = $('mp-chips');
+const platformBox = $('platform-chips');
 const roomBox = $('rooms');
 const dialog = $('detail');
 const dialogBody = $('detail-body');
@@ -27,7 +28,7 @@ let catalog = null;
 // that opened it, which has the focus again by then.
 let closing = null;
 const cards = new Map();
-const state = { q: '', status: '', mp: '', sort: '', game: '' };
+const state = { q: '', status: '', mp: '', platform: '', sort: '', game: '' };
 // The open rooms by game, for the games on the page; `roomsSeen` is the list
 // as it last arrived, to tell a new answer from the same one again.
 let rooms = new Map();
@@ -40,6 +41,7 @@ function readAddress() {
   state.status = isStatus(params.get('status')) ? params.get('status') : '';
   // A catalogue without multiplayer games has no such filter to switch off again.
   state.mp = params.get('mp') === '1' && (!catalog || catalog.multiplayer) ? '1' : '';
+  state.platform = isPlatform(params.get('platform')) && (!catalog || catalog.platforms) ? params.get('platform') : '';
   state.sort = params.get('sort') && isOrder(params.get('sort')) ? params.get('sort') : '';
   state.game = params.get('game') || '';
 }
@@ -74,9 +76,10 @@ function showNotice(title, ...lines) {
 }
 
 function render() {
-  const { shown, counts, found, multiplayer } = select(catalog.games, state);
+  const { shown, counts, found, multiplayer, platforms } = select(catalog.games, state);
   setCounts(chipBox, counts, found);
   setCounts(multiplayerBox, { multiplayer }, found);
+  setCounts(platformBox, platforms, Object.values(platforms).reduce((sum, count) => sum + count, 0));
   // Only the matching cards stay in the document, in order, so the tab order
   // and what a screen reader lists are what is on screen.
   const wanted = shown.map((game) => cards.get(game.slug));
@@ -85,7 +88,7 @@ function render() {
   const total = catalog.games.length;
   const query = state.q.trim();
   // "62 games", or "3 of 62 games: playable, multiplayer, matching "rally"".
-  const limits = [state.status && statusOf(state.status).label.toLowerCase(), state.mp && 'multiplayer', query && `matching "${query}"`].filter(Boolean);
+  const limits = [state.status && statusOf(state.status).label.toLowerCase(), state.mp && 'multiplayer', state.platform && platformOf(state.platform).label, query && `matching "${query}"`].filter(Boolean);
   summary.textContent = limits.length
     ? `${shown.length} of ${total} games: ${limits.join(', ')}`
     : `${total} ${total === 1 ? 'game' : 'games'}`;
@@ -96,6 +99,7 @@ function syncControls() {
   order.value = state.sort;
   for (const radio of chipBox.querySelectorAll('input')) radio.checked = radio.value === state.status;
   for (const box of multiplayerBox.querySelectorAll('input')) box.checked = Boolean(state.mp);
+  for (const radio of platformBox.querySelectorAll('input')) radio.checked = radio.value === state.platform;
 }
 
 function update() {
@@ -165,10 +169,12 @@ function wire() {
   order.addEventListener('change', () => { state.sort = order.value; update(); });
   chipBox.addEventListener('change', (event) => { state.status = event.target.value; update(); });
   multiplayerBox.addEventListener('change', (event) => { state.mp = event.target.checked ? '1' : ''; update(); });
+  platformBox.addEventListener('change', (event) => { state.platform = event.target.value; update(); });
   $('reset').addEventListener('click', () => {
     state.q = '';
     state.status = '';
     state.mp = '';
+    state.platform = '';
     syncControls();
     update();
     search.focus();
@@ -242,10 +248,15 @@ async function start() {
     multiplayerChip(multiplayerBox);
     $('mp-filter').hidden = false;
   }
+  if (catalog.platforms) {
+    platformChips(platformBox);
+    $('platform-filter').hidden = false;
+  }
   // An address that asks for the multiplayer games of a catalogue that has
-  // none shows every game, and says so.
-  const stale = state.mp && !catalog.multiplayer;
-  if (stale) state.mp = '';
+  // none shows every game, and says so; the same for a platform filter.
+  const stale = (state.mp && !catalog.multiplayer) || (state.platform && !catalog.platforms);
+  if (state.mp && !catalog.multiplayer) state.mp = '';
+  if (state.platform && !catalog.platforms) state.platform = '';
   for (const game of catalog.games) cards.set(game.slug, card(game, openDetail));
   wire();
   syncControls();

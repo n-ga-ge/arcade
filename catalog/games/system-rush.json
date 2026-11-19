@@ -14,14 +14,21 @@
     "Story Mode opens with a long comic strip: each select press shows the next panel, about fifty presses before the first race. Free Hack Mode goes straight to choosing a network and racing.",
     "In a race the left soft key opens the pause menu (Resume, Sound Settings, Restart Race, Quit to Title).",
     "The keys can be changed under Options > Controls; that is on top of the bindings here.",
-    "Multiplayer and N-Gage Arena need Bluetooth or the online service and cannot work here."
+    "Multiplayer: one player chooses Host Game, the other Join Game and then the host in the list. The host picks the network, subnet and security level while the other waits; then both choose a vehicle and spend its five points (the left soft key adds one to the highlighted value; move to another value with the pad when one is full) and select Accept. The race starts when both have accepted. N-Gage Arena was Nokia's online service and cannot work."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins and picks the host from the list, the host chooses the race, both choose and tune a vehicle; a race ran on both screens, each marked the other's vehicle ahead and the positions swapped when one passed. A pause is announced to the other player, and the host is told \"Player 2 has quit the game\" when the joiner quits. Only two players were tried."
+  },
+  "enhance": {
+    "engine": "airplay",
+    "status": "experimental",
+    "note": "The race's 3D is captured in full (polygons, rectangles, lines, textures, colours, blending). The HUD and the background above the horizon stay the game's own. The pause menu's blue tint is a pass over the whole screen and is not captured; textured shading is approximate."
   },
   "controls": {
     "source": "The game's defaults from Options > Controls (Control Configuration). Accelerate, turning, jump, the camera switch and the pause menu were also tried in a race; that 5 and OK select in menus was observed.",

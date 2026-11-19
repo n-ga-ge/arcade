@@ -630,8 +630,10 @@ TEMPLATE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
 <title>{title}</title>
-<link rel="icon" href="data:,">
+<meta name="description" content="{description}">
 <link rel="stylesheet" href="{style}">
 </head>
 <body>
@@ -661,6 +663,18 @@ TEMPLATE = """<!doctype html>
 """
 
 
+def summary(body, limit=200):
+    """The page's description for search results and link previews: the text
+    of its first paragraph, cut at a word before `limit` characters. The icons
+    and share tags around it are added by step 70, for every page of the site."""
+    match = re.search(r"<p>(.*?)</p>", body, re.S)
+    text = html.unescape(re.sub(r"<[^>]+>", "", match.group(1))) if match else ""
+    text = " ".join(text.split())
+    if len(text) > limit:
+        text = text[:limit - 1].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return text
+
+
 def page_html(page, order):
     nav = []
     for other in order:
@@ -683,6 +697,7 @@ def page_html(page, order):
     is_home = page.source == HOME
     return TEMPLATE.format(
         title=escape(f"{SITE_NAME} documentation" if is_home else f"{page.title} · {SITE_NAME} documentation"),
+        description=attribute(summary(page.body)),
         style=attribute(page.href("docs/docs.css")),
         front=attribute(page.href(".", folder=True)),
         home=attribute(page.href("docs", folder=True)),
@@ -848,6 +863,8 @@ def self_test():
     refuses("spaced rule", "* * *", "rule written with spaces")
     refuses("link in a heading", "## See [x](https://e.org)", "link in a heading")
 
+    renders("description", "First *para* & [x](https://e.org) \"q\".\n\nSecond", '<meta name="description" content="First para &amp; x &quot;q&quot;.">')
+    renders("long description", "word " * 60, 'content="' + "word " * 38 + 'word…">')
     renders("rule after text", "a\n***", "<p>a</p>\n<hr>")
     renders("url as link text", "[https://e.org](https://e.org)", '<a href="https://e.org">https://e.org</a>')
     renders("content heading", "## Content\n\n[x](#content)", '<h2 id="content">', '<main id="-text">')
