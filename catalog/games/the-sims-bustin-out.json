@@ -12,6 +12,13 @@
     "The game is in English; Options has a Language setting.",
     "Save from the pause menu (either soft key, then Save Game). Load-a-Sim on the main menu brings a saved sim back."
   ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "status": "untested",
+    "statusNote": "Not found, so not tried. The main menu (Create-a-Sim, Load-a-Sim, Options, Quit Game), with and without a saved sim, its Options, and the pause menu of a new game (Show Map, Catalog, Jobs, Options, Save Game) have no multiplayer entry. The game's files include a Bluetooth library (GAMECOMMS.DLL), so it should have Bluetooth play somewhere later in the game."
+  },
   "controls": {
     "source": "The game has no controls screen. Select, Go Back, Resume, Save Game, Yes and No are from the labels above the soft keys; the direction pad, 5, the soft keys and * were tried in the menus, in Create-a-Sim, while walking on the farm and in a conversation. Next to a sign and a tree 5, OK, 7, 0 and # did nothing; using an object was not seen.",
     "actions": {

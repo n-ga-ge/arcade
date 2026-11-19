@@ -2,7 +2,7 @@
 # Check out the eka2l1 submodule with the nested submodules the web build
 # reads, and nothing else.
 #   tools/ci/checkout-eka2l1.sh
-# The fork has 41 nested submodules, fetched from GitHub; a recursive clone is
+# The fork has 42 nested submodules, fetched from GitHub; a recursive clone is
 # 840 MB. The web target leaves a dozen of them out (the JITs, FFmpeg, the
 # desktop audio and window libraries), and of the submodules' own submodules it
 # needs only mbedtls' framework. Everything is fetched at depth 1.

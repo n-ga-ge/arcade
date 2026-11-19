@@ -20,6 +20,7 @@
     "publisher": { "type": "string" },
     "year": { "type": "integer" },
     "genre": { "type": "string" },
+    "platform": { "enum": ["ngage", "ngage2"], "description": "What the game runs on: ngage (the original N-Gage and N-Gage QD, a card dump; the default) or ngage2 (the N-Gage 2.0 service on an S60 3rd Edition phone, a .n-gage file)." },
     "uid": { "type": "string", "pattern": "^0x[0-9A-F]{8}$", "description": "UID of the app the card launches, as the emulator reports it." },
     "variantOf": { "type": ["string", "null"], "description": "Slug of the base game when this is a translation or mod of it (they share a UID)." },
     "dump": { "type": "string", "description": "Folder name under games/ in a local checkout. Local only; the dumps are never committed." },
@@ -32,7 +33,8 @@
         "move": { "type": "array", "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }, "description": "[from, to] pairs relative to the card root, applied in order." },
         "exclude": { "type": "array", "items": { "type": "string" }, "description": "Extra glob patterns (matched against the path inside the card) to leave out." },
         "borrow": { "type": "array", "items": { "type": "array", "items": { "type": "string" }, "minItems": 3, "maxItems": 3 }, "description": "[dump folder, path in that dump, path in this card]: files taken from another game's dump, for a dump that came without a library the cards of its time all carried." },
-        "folders": { "type": "array", "items": { "type": "string" }, "description": "Folders the card must have although nothing is in them (a dump kept in git loses its empty folders)." }
+        "folders": { "type": "array", "items": { "type": "string" }, "description": "Folders the card must have although nothing is in them (a dump kept in git loses its empty folders)." },
+        "file": { "type": "string", "description": "N-Gage 2.0 only: the .n-gage file inside the dump, when the dump does not hold exactly one. A path may go into a .zip in the dump (Games/x.zip/game.n-gage)." }
       }
     },
     "status": { "enum": ["untested", "broken", "boots", "menu", "ingame"], "description": "How far the game gets in the web build: broken (does not start or crashes), boots (shows its own screens), menu (main menu works), ingame (playable)." },
@@ -49,6 +51,17 @@
         "menu": { "type": "string", "maxLength": 120, "description": "Where the game's own menu has it." },
         "status": { "enum": ["untested", "broken", "connects", "plays"], "description": "Bluetooth play on this site: untested, broken, connects (two players reach each other), plays." },
         "statusNote": { "type": "string", "maxLength": 400, "description": "What was seen. Required when status is broken." }
+      }
+    },
+    "enhance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "status"],
+      "description": "Drawing the game's 3D above its own resolution (docs/enhancements.md). Left out: the game has no enhancement profile.",
+      "properties": {
+        "engine": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "maxLength": 64, "description": "The profile that reads this game's rasteriser: catalog/enhance/<engine>.json." },
+        "status": { "enum": ["experimental", "verified"], "description": "experimental (the capture passes tools/re/enhancetest.py; the picture on the GPU layer was not looked at in play), verified (played at a higher resolution and the picture is right)." },
+        "note": { "type": "string", "maxLength": 400, "description": "What is not right yet, or what a player should know." }
       }
     },
     "controls": {

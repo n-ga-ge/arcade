@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
-import { SHOWN_AT, checkScript, difference, likeness, picture, scriptMs, stepTiming, targetLevel, verdict } from './gamecheck.mjs';
+import { SHOWN_AT, checkScript, difference, gameQuery, likeness, picture, platformOf, scriptMs, stepTiming, targetLevel, verdict } from './gamecheck.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const KEYS = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog', 'schema.json'), 'utf8')).$defs.key.enum;
@@ -137,4 +137,12 @@ test('a page of one colour, or of something else, is not like the game', () => {
 test('nothing to compare gives null', () => {
   assert.equal(likeness(png(900, 686, screen), png(176, 208, () => [0, 0, 0])), null);
   assert.equal(likeness(Buffer.from('no'), png(176, 208, screen)), null);
+});
+
+test('a game starts with the firmware of its platform', () => {
+  assert.equal(platformOf({}), 'ngage');
+  assert.equal(platformOf({ platform: 'ngage2' }), 'ngage2');
+  assert.equal(gameQuery({ slug: 'x' }, 'x'), '?fw=/local/NGAGE.ROM&game=/local/games/x.zip&persist=0');
+  assert.equal(gameQuery({ platform: 'ngage2' }, 'y'),
+    '?device=/local/devices/rm-409.zip&app=/local/ngage2/ngage-1.40.1557.sis&game=/local/games/y.zip&persist=0');
 });
