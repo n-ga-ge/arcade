@@ -213,7 +213,7 @@ export const PERF_NUMBERS = [
   { name: 'fps', digits: 1, paths: ['sections.session.data.fpsAverage'] },
   { name: 'fpsWorst', digits: 1, paths: ['sections.session.data.fpsWorst'] },
   // The share of the time the emulated processor was busy, 0 to 1 (speed).
-  { name: 'cpuLoad', digits: 2, paths: [] },
+  { name: 'cpuLoad', digits: 2, paths: ['sections.speed.data.busy'] },
   // What the graphics thread spends on a frame, in milliseconds (graphics).
   { name: 'graphicsMs', digits: 1, paths: ['sections.graphics.data.busyMsPerFrame'] },
   // The emulator's memory, in megabytes (memory).
