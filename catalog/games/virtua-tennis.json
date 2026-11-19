@@ -12,13 +12,17 @@
     "The title screen waits for 5 or 7. Left alone, it switches to a demo match; any press of 5 brings the title back.",
     "Menus are driven with 5 or the left soft key; the OK key (pad press) does nothing in this game.",
     "Options shows the sound volume at 0 on a first start. Raise it there to hear the game.",
-    "The left soft key pauses a match (continue, end game)."
+    "The left soft key pauses a match (continue, end game).",
+    "A Bluetooth match is under Exhibition > Multi. One player chooses the master option, 2P Singles and the match settings, and waits; the other chooses the client option and then the master in the list. Both confirm the positions and pick a player, and the master picks the court."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "status": "untested"
+    "players": 2,
+    "menu": "Exhibition > Multi > master player / client player",
+    "status": "plays",
+    "statusNote": "Two players in one room: one serves as master (2P Singles), the other connects as client and picks the master from the list; both pick a player and the master the court. A singles match ran on both screens: the client's serve and the score showed on both, the master's player moved on both, one's pause shows PAUSE to the other, and End Game returns both to the main menu. 2P Doubles was not tried."
   },
   "controls": {
     "source": "Seen by pressing keys in the menus and in a match; the game has no controls screen. 5 and 7 both serve and hit. That the two are different strokes (a normal shot and a lob, as in other versions of Virtua Tennis) is general knowledge of the game and was not checked here.",

@@ -16,7 +16,9 @@
                      catalog/assets.json. Needs no credentials and does not
                      touch the bucket.
 
-  --only NAME ...    limit the run to these games (catalogue slugs) and/or "fw"
+  --only NAME ...    limit the run to these games (catalogue slugs) and/or
+                     firmware files: "fw" (the N-Gage ROM), "ngage2Device",
+                     "ngage2App"
   --prune            also remove objects that are not in the catalogue
   --force            upload even what the bucket already has
   --repack           pack the zips again even when they exist (an upload
@@ -25,12 +27,22 @@
   --games DIR        folder of dumps (default: private/games/, else games/)
   --fw FILE          the firmware (default: private/firmware/NGAGE.ROM, else
                      testdata/NGAGE.ROM, else NGAGE.ROM)
+  --ngage2-device FILE   the Nokia 5320's device zip, for N-Gage 2.0 games
+                     (default: private/firmware/devices/rm-409.zip, else
+                     testdata/devices/rm-409.zip; tools/devices/pack.py makes it)
+  --ngage2-app FILE  the N-Gage application 1.40.1557 (default:
+                     private/firmware/ngage2/ngage-1.40.1557.sis, else
+                     testdata/ngage2/ngage-1.40.1557.sis). A path may go into a
+                     .zip: <file>.zip/<name in it>; that file is then taken
+                     out into <out>/firmware/ first.
+  The N-Gage 2.0 files are needed only while the catalogue has an N-Gage 2.0
+  game ("platform": "ngage2").
   --out DIR          where the zips are packed (default: testdata/games/)
   --bucket NAME      default $R2_BUCKET, else n-ga-ge-assets
   --manifest FILE    default catalog/assets.json
 
-Object keys are the paths below /assets/ on the site: NGAGE.ROM and
-games/<slug>.zip. Each object carries its SHA-256 as metadata ("sha256"), which
+Object keys are the paths below /assets/ on the site: NGAGE.ROM,
+devices/rm-409.zip, ngage2/ngage-1.40.1557.sis and games/<slug>.zip. Each object carries its SHA-256 as metadata ("sha256"), which
 is how a later run knows it is unchanged without downloading it.
 
 The manifest is committed in this repository, but the upload usually runs from
@@ -46,6 +58,8 @@ Exits 1 on any failure. Prints file names, sizes and hashes, nothing else.
 """
 import argparse
 import os
+import shutil
+import zipfile
 import zlib
 import subprocess
 import sys
@@ -77,6 +91,10 @@ def parse_args():
     parser.add_argument("--games", default=first_existing(os.path.join(main, "private", "games"), os.path.join(main, "games")))
     parser.add_argument("--fw", default=first_existing(os.path.join(main, "private", "firmware", "NGAGE.ROM"),
                                                        os.path.join(main, "testdata", "NGAGE.ROM"), os.path.join(main, "NGAGE.ROM")))
+    parser.add_argument("--ngage2-device", default=first_existing(os.path.join(main, "private", "firmware", "devices", "rm-409.zip"),
+                                                                  os.path.join(main, "testdata", "devices", "rm-409.zip")))
+    parser.add_argument("--ngage2-app", default=first_existing(os.path.join(main, "private", "firmware", "ngage2", "ngage-1.40.1557.sis"),
+                                                               os.path.join(main, "testdata", "ngage2", "ngage-1.40.1557.sis")))
     parser.add_argument("--out", default=os.path.join(main, "testdata", "games"))
     parser.add_argument("--bucket", default=os.environ.get("R2_BUCKET") or "n-ga-ge-assets")
     parser.add_argument("--manifest", default=common.MANIFEST)
@@ -103,11 +121,34 @@ def pack(args, slugs):
     return subprocess.run(command).returncode == 0
 
 
+def firmware_path(args, name):
+    """The local file of a firmware name. A path that goes into a .zip is taken out of it first."""
+    path = {common.FW: args.fw, "ngage2Device": args.ngage2_device, "ngage2App": args.ngage2_app}[name]
+    if os.path.isfile(path):
+        return path
+    parts = path.replace(os.sep, "/").split("/")
+    for index, part in enumerate(parts[:-1]):
+        archive = "/".join(parts[:index + 1])
+        if part.lower().endswith(".zip") and os.path.isfile(archive):
+            member = "/".join(parts[index + 1:])
+            target = os.path.join(args.out, "firmware", *common.object_key(name).split("/"))
+            try:
+                with zipfile.ZipFile(archive) as zipped, zipped.open(member) as source:
+                    os.makedirs(os.path.dirname(target), exist_ok=True)
+                    with open(target + ".part", "wb") as out:
+                        shutil.copyfileobj(source, out, 1 << 20)
+            except (KeyError, zipfile.BadZipFile):
+                return path  # reported as missing
+            os.replace(target + ".part", target)
+            return target
+    return path
+
+
 def local_files(args, names):
     """{name: {path, bytes, sha256, md5}} for the selected files, and the names whose file is missing."""
     found, missing = {}, []
     for name in names:
-        path = args.fw if name == common.FW else os.path.join(args.out, name + ".zip")
+        path = firmware_path(args, name) if name in common.FIRMWARE else os.path.join(args.out, name + ".zip")
         if not os.path.isfile(path):
             missing.append(f"{common.object_key(name)}: no file at {path}")
             continue
@@ -136,19 +177,21 @@ def write_manifest(args, names, slugs, local):
         manifest = common.load_manifest(args.manifest)
     except (OSError, ValueError):
         manifest = {"fw": None, "games": {}}
-    before = {name: common.entry(manifest, name) for name in [common.FW, *manifest["games"]]}
+    before = {name: common.entry(manifest, name) for name in [*common.FIRMWARE, *manifest["games"]]}
     for name, file in local.items():
         value = {"bytes": file["bytes"], "sha256": file["sha256"]}
-        if name == common.FW:
-            manifest["fw"] = value
+        if name in common.FIRMWARE:
+            manifest[name] = value
         else:
             manifest["games"][name] = value
     if not args.only:  # a whole run also drops what left the catalogue
         manifest["games"] = {slug: value for slug, value in manifest["games"].items() if slug in slugs}
+        for name in set(common.FIRMWARE) - set(common.firmware_for(slugs)) - {common.FW}:
+            manifest.pop(name, None)
     if not manifest.get("fw"):
         print("the manifest has no firmware entry yet: run without --only, or with --only fw", file=sys.stderr)
         return 1
-    after = {name: common.entry(manifest, name) for name in [common.FW, *manifest["games"]]}
+    after = {name: common.entry(manifest, name) for name in [*common.FIRMWARE, *manifest["games"]]}
     for name in sorted(set(before) | set(after)):
         if before.get(name) != after.get(name):
             state = "removed" if name not in after else "added" if not before.get(name) else "changed"
@@ -160,13 +203,18 @@ def write_manifest(args, names, slugs, local):
     return 0
 
 
+def wanted_firmware(slugs):
+    """The firmware the catalogue needs: the N-Gage ROM always, the others for the platforms it has."""
+    return [common.FW, *[name for name in common.firmware_for(slugs) if name != common.FW]]
+
+
 def report(key, size, text):
     print(f"{key:44} {common.megabytes(size) if size is not None else '':>9}  {text}", flush=True)
 
 
 def extras(client, args, slugs, failures):
     """Report objects that belong to no catalogue entry, and remove them with --prune."""
-    expected = {common.object_key(name) for name in [common.FW, *slugs]}
+    expected = {common.object_key(name) for name in [*wanted_firmware(slugs), *slugs]}
     removed = 0
     for key, size in sorted(client.list(args.bucket).items()):
         if key in expected:
@@ -260,12 +308,13 @@ def upload(client, args, names, local, slugs):
 def main():
     args = parse_args()
     slugs = common.catalogue_slugs()
-    names = args.only or [common.FW, *slugs]
-    unknown = [name for name in names if name != common.FW and name not in slugs]
+    everything = [*wanted_firmware(slugs), *slugs]
+    names = args.only or everything
+    unknown = [name for name in names if name not in common.FIRMWARE and name not in slugs]
     if unknown:
         print("not in the catalogue: " + ", ".join(unknown), file=sys.stderr)
         return 1
-    names = [name for name in [common.FW, *slugs] if name in names]  # firmware first, then by slug
+    names = [name for name in [*common.FIRMWARE, *slugs] if name in names]  # firmware first, then by slug
 
     if args.verify:
         try:
@@ -280,7 +329,7 @@ def main():
         return verify(s3.Client.from_env(), args, names, manifest, slugs)
 
     os.makedirs(args.out, exist_ok=True)
-    packed = pack(args, [name for name in names if name != common.FW])
+    packed = pack(args, [name for name in names if name not in common.FIRMWARE])
     local, missing = local_files(args, names)
     if missing or not packed:
         print("cannot continue, files are missing or could not be packed:\n  " + "\n  ".join(missing or ["see the pack errors above"]), file=sys.stderr)

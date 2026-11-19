@@ -1,0 +1,16 @@
+{
+  "name": "n-ga-ge-share-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker that gives a link to one game on n-ga.ge that game's preview",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.3",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.163.0"
+  }
+}

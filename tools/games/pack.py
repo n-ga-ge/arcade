@@ -21,6 +21,12 @@ A dump is whatever came off the card or the net, so the card is normalised:
   - "pack.folders" lists folders the card must have even though they are
     empty (a dump kept in git loses its empty folders)
 
+An N-Gage 2.0 entry ("platform": "ngage2") is a .n-gage file instead of a
+card: the dump folder holds exactly one, or "pack.file" names it, and a path
+there may go into a .zip of the dump ("Games/x.zip/game.n-gage"). Its zip has
+that one file, stored uncompressed (a .n-gage is compressed already) as
+<slug>.n-gage, so the player can take it out without inflating anything.
+
 The zips are reproducible (sorted entries, fixed timestamps), so the same dump
 always gives the same hash and an upload can skip what has not changed.
 
@@ -118,10 +124,57 @@ def collect(root, moves, excludes):
     return files
 
 
+def read_file(dump, relative):
+    """The bytes of a file in the dump; a path may go into a .zip there. None when it is not there."""
+    parts = [p for p in relative.replace("\\", "/").split("/") if p and p != "."]
+    current = dump
+    for index, part in enumerate(parts):
+        current = child(current, part) if os.path.isdir(current) else None
+        if current is None:
+            return None
+        if os.path.isfile(current) and index < len(parts) - 1 and current.lower().endswith(".zip"):
+            inside = "/".join(parts[index + 1:]).lower()
+            with zipfile.ZipFile(current) as archive:
+                names = [name for name in archive.namelist() if name.lower() == inside]
+                return archive.read(names[0]) if names else None
+    if os.path.isfile(current):
+        with open(current, "rb") as fh:
+            return fh.read()
+    return None
+
+
+def pack_ngage2(game, dump, out_dir):
+    """An N-Gage 2.0 game: its one .n-gage file, stored as <slug>.n-gage."""
+    options = game.get("pack") or {}
+    if options.get("file"):
+        content = read_file(dump, options["file"])
+        if content is None:
+            raise ValueError(f"pack.file not found: {options['file']}")
+    else:
+        found = sorted(os.path.join(folder, name) for folder, _, names in os.walk(dump) for name in names if name.lower().endswith(".n-gage"))
+        if len(found) != 1:
+            raise ValueError(f"{len(found)} .n-gage files in the dump: name the one in pack.file" if found else "no .n-gage file in the dump")
+        with open(found[0], "rb") as fh:
+            content = fh.read()
+    if not content.startswith(b"Content-Type: multipart/"):
+        raise ValueError("the .n-gage file does not start like one (Content-Type: multipart/...)")
+    target = os.path.join(out_dir, game["slug"] + ".zip")
+    partial = target + ".part"
+    with zipfile.ZipFile(partial, "w", zipfile.ZIP_STORED) as archive:
+        info = zipfile.ZipInfo(game["slug"] + ".n-gage", date_time=(1980, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_STORED
+        info.external_attr = 0o644 << 16
+        archive.writestr(info, content)
+    os.replace(partial, target)
+    return target, 1
+
+
 def pack(game, games_dir, out_dir):
     dump = os.path.join(games_dir, game["dump"])
     if not os.path.isdir(dump):
         return None
+    if game.get("platform") == "ngage2":
+        return pack_ngage2(game, dump, out_dir)
     options = game.get("pack") or {}
     if options.get("root"):
         root = resolve(dump, options["root"])

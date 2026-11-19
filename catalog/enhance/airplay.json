@@ -1,0 +1,1174 @@
+{
+  "engine": "airplay",
+  "about": "Ideaworks3D's renderer, as System Rush links it: a display list modelled on the PlayStation's drawing commands (flat, textured and Gouraud triangles and quads, rectangles, lines), sorted far to near and turned into spans. Polygons are read after the engine has clipped them.",
+  "images": [
+    {
+      "name": "6r63.exe",
+      "hash": "0x67301A62",
+      "game": "system-rush",
+      "hooks": [
+        {
+          "at": "0x346d8",
+          "do": "begin",
+          "note": "Walks the frame's display list, far to near, and calls a handler per primitive.",
+          "target": {
+            "pixels": "u32(u32(pc - 0x1c) + 0x10)",
+            "width": 176,
+            "height": 208,
+            "pitch": 352,
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x346d8",
+          "do": "set",
+          "note": "G: the renderer's state block. T: the brightness table in use, 32 bytes of 0 to 63.",
+          "vars": {
+            "G": "u32(pc - 0x1c)",
+            "T": "u32(pc - 0x1c) - 0x54507c + (u32(u32(pc - 0x1c) - 0x545080) << 5)"
+          }
+        },
+        {
+          "at": "0x34ef0",
+          "do": "end",
+          "note": "The walk has returned."
+        },
+        {
+          "at": "0x5dc74",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x0",
+          "note": "A flat polygon after clipping, opaque.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r6 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63"
+          },
+          "blend": "none"
+        },
+        {
+          "at": "0x5dc74",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x10",
+          "note": "A flat polygon after clipping, half of each.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r6 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63",
+            "a": 128
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x5dc74",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x20",
+          "note": "A flat polygon after clipping, added.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r6 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5dc74",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x30",
+          "note": "A flat polygon after clipping, subtracted.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r6 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x5dc74",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x40",
+          "note": "A flat polygon after clipping, a quarter added.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r6 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "(u8($T + (u8($G + 0x70) >> 3)) * 255 / 63) * 0.25",
+            "g": "(u8($T + (u8($G + 0x71) >> 3)) * 255 / 63) * 0.25",
+            "b": "(u8($T + (u8($G + 0x72) >> 3)) * 255 / 63) * 0.25"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5f36c",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x70) == 0x0",
+          "note": "A Gouraud polygon after clipping, opaque.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r4 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8(p) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8(p + 1) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8(p + 2) >> 3)) * 255 / 63"
+          },
+          "blend": "none"
+        },
+        {
+          "at": "0x5f36c",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x70) == 0x10",
+          "note": "A Gouraud polygon after clipping, half of each.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r4 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8(p) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8(p + 1) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8(p + 2) >> 3)) * 255 / 63",
+            "a": 128
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x5f36c",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x70) == 0x20",
+          "note": "A Gouraud polygon after clipping, added.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r4 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8(p) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8(p + 1) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8(p + 2) >> 3)) * 255 / 63"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5f36c",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x70) == 0x30",
+          "note": "A Gouraud polygon after clipping, subtracted.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r4 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "u8($T + (u8(p) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8(p + 1) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8(p + 2) >> 3)) * 255 / 63"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x5f36c",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x70) == 0x40",
+          "note": "A Gouraud polygon after clipping, a quarter added.",
+          "mode": "fan",
+          "count": "r0",
+          "vertex": "u32(r4 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "r": "(u8($T + (u8(p) >> 3)) * 255 / 63) * 0.25",
+            "g": "(u8($T + (u8(p + 1) >> 3)) * 255 / 63) * 0.25",
+            "b": "(u8($T + (u8(p + 2) >> 3)) * 255 / 63) * 0.25"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x1",
+          "note": "A textured polygon after clipping, 16 colours, opaque.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "key"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x11",
+          "note": "A textured polygon after clipping, 16 colours, half of each.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x21",
+          "note": "A textured polygon after clipping, 16 colours, added.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x31",
+          "note": "A textured polygon after clipping, 16 colours, subtracted.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x41",
+          "note": "A textured polygon after clipping, 16 colours, a quarter added.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "g": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "b": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x2",
+          "note": "A textured polygon after clipping, 256 colours, opaque.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "key"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x12",
+          "note": "A textured polygon after clipping, 256 colours, half of each.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x22",
+          "note": "A textured polygon after clipping, 256 colours, added.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x32",
+          "note": "A textured polygon after clipping, 256 colours, subtracted.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x42",
+          "note": "A textured polygon after clipping, 256 colours, a quarter added.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "g": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "b": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x3",
+          "note": "A textured polygon after clipping, 16 bits a texel, opaque.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "key"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x13",
+          "note": "A textured polygon after clipping, 16 bits a texel, half of each.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x23",
+          "note": "A textured polygon after clipping, 16 bits a texel, added.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x33",
+          "note": "A textured polygon after clipping, 16 bits a texel, subtracted.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x5e574",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x77) == 0x43",
+          "note": "A textured polygon after clipping, 16 bits a texel, a quarter added.",
+          "mode": "fan",
+          "count": "r4",
+          "vertex": "u32($G - 0x7d310 + 4 * i)",
+          "fields": {
+            "x": "fx(s16(p + 4), 3)",
+            "y": "fx(s16(p + 6), 3)",
+            "w": "s32(p + 12)",
+            "u": "fx(u16(p + 8), 4)",
+            "v": "fx(u16(p + 10), 4)",
+            "r": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "g": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "b": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x1",
+          "note": "A textured rectangle after clipping, 16 colours, opaque.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "key"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x11",
+          "note": "A textured rectangle after clipping, 16 colours, half of each.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x21",
+          "note": "A textured rectangle after clipping, 16 colours, added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x31",
+          "note": "A textured rectangle after clipping, 16 colours, subtracted.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x41",
+          "note": "A textured rectangle after clipping, 16 colours, a quarter added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "g": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "b": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 256,
+            "height": 256,
+            "pitch": 128,
+            "format": "p4",
+            "palette": "u32($G + 0x1c)",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x2",
+          "note": "A textured rectangle after clipping, 256 colours, opaque.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "key"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x12",
+          "note": "A textured rectangle after clipping, 256 colours, half of each.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x22",
+          "note": "A textured rectangle after clipping, 256 colours, added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x32",
+          "note": "A textured rectangle after clipping, 256 colours, subtracted.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x42",
+          "note": "A textured rectangle after clipping, 256 colours, a quarter added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "g": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "b": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 128,
+            "height": 256,
+            "pitch": 128,
+            "format": "p8",
+            "palette": "u32(u32($G + 0x2c) + 4) + 0x4000",
+            "paletteFormat": "bgr555k"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x3",
+          "note": "A textured rectangle after clipping, 16 bits a texel, opaque.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "key"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x13",
+          "note": "A textured rectangle after clipping, 16 bits a texel, half of each.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x23",
+          "note": "A textured rectangle after clipping, 16 bits a texel, added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x33",
+          "note": "A textured rectangle after clipping, 16 bits a texel, subtracted.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "g": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)",
+            "b": "min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x43",
+          "note": "A textured rectangle after clipping, 16 bits a texel, a quarter added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "u": "r9 + sel(i == 1 || i == 2, r4, 0)",
+            "v": "r10 + sel(i >= 2, r5, 0)",
+            "r": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "g": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25",
+            "b": "(min(255, u8($T + (u8($G + 0x70) >> 3)) * 255 / 31)) * 0.25"
+          },
+          "texture": {
+            "pixels": "u32($G + 0x14)",
+            "width": 64,
+            "height": 256,
+            "pitch": 128,
+            "format": "rgb444"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x8",
+          "note": "A plain rectangle after clipping, opaque.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63"
+          },
+          "blend": "none"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x18",
+          "note": "A plain rectangle after clipping, half of each.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63",
+            "a": 128
+          },
+          "blend": "alpha"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x28",
+          "note": "A plain rectangle after clipping, added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x38",
+          "note": "A plain rectangle after clipping, subtracted.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "r": "u8($T + (u8($G + 0x70) >> 3)) * 255 / 63",
+            "g": "u8($T + (u8($G + 0x71) >> 3)) * 255 / 63",
+            "b": "u8($T + (u8($G + 0x72) >> 3)) * 255 / 63"
+          },
+          "blend": "subtract"
+        },
+        {
+          "at": "0x97e48",
+          "do": "draw",
+          "when": "(u32($G + 0x90) & 0x7f) == 0x48",
+          "note": "A plain rectangle after clipping, a quarter added.",
+          "mode": "fan",
+          "count": 4,
+          "fields": {
+            "x": "r7 + sel(i == 1 || i == 2, r4, 0)",
+            "y": "r8 + sel(i >= 2, r5, 0)",
+            "r": "(u8($T + (u8($G + 0x70) >> 3)) * 255 / 63) * 0.25",
+            "g": "(u8($T + (u8($G + 0x71) >> 3)) * 255 / 63) * 0.25",
+            "b": "(u8($T + (u8($G + 0x72) >> 3)) * 255 / 63) * 0.25"
+          },
+          "blend": "add"
+        },
+        {
+          "at": "0x1c43c",
+          "do": "draw",
+          "when": "(r2 & 0x2000000) == 0",
+          "note": "A line, opaque: r0 and r1 point at the ends (x and y at +4 and +6, eighths of a pixel), r2 is the colour.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 1 || i == 2, r1, r0)",
+          "fields": {
+            "x": "sar(s16(p + 4), 3) + sel(i >= 2 && (abs(sar(s16(r1 + 6), 3) - sar(s16(r0 + 6), 3)) > abs(sar(s16(r1 + 4), 3) - sar(s16(r0 + 4), 3))), 1, 0)",
+            "y": "sar(s16(p + 6), 3) + sel(i >= 2 && !(abs(sar(s16(r1 + 6), 3) - sar(s16(r0 + 6), 3)) > abs(sar(s16(r1 + 4), 3) - sar(s16(r0 + 4), 3))), 1, 0)",
+            "r": "(r2 & 0xf0) * 17 / 16",
+            "g": "((r2 >> 8) & 0xf0) * 17 / 16",
+            "b": "((r2 >> 16) & 0xf0) * 17 / 16"
+          },
+          "blend": "none",
+          "skip": true
+        },
+        {
+          "at": "0x1c43c",
+          "do": "draw",
+          "when": "(r2 & 0x2000000) != 0",
+          "note": "A line, half of each: r0 and r1 point at the ends (x and y at +4 and +6, eighths of a pixel), r2 is the colour.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 1 || i == 2, r1, r0)",
+          "fields": {
+            "x": "sar(s16(p + 4), 3) + sel(i >= 2 && (abs(sar(s16(r1 + 6), 3) - sar(s16(r0 + 6), 3)) > abs(sar(s16(r1 + 4), 3) - sar(s16(r0 + 4), 3))), 1, 0)",
+            "y": "sar(s16(p + 6), 3) + sel(i >= 2 && !(abs(sar(s16(r1 + 6), 3) - sar(s16(r0 + 6), 3)) > abs(sar(s16(r1 + 4), 3) - sar(s16(r0 + 4), 3))), 1, 0)",
+            "r": "(r2 & 0xf0) * 17 / 16",
+            "g": "((r2 >> 8) & 0xf0) * 17 / 16",
+            "b": "((r2 >> 16) & 0xf0) * 17 / 16",
+            "a": 128
+          },
+          "blend": "alpha",
+          "skip": true
+        },
+        {
+          "at": "0xa003c",
+          "do": "set",
+          "skip": true,
+          "note": "Draws the spans the polygons and rectangles queued. Skipping it leaves them undrawn; the caller empties the queue either way.",
+          "vars": {
+            "spans": "r0"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -24,6 +24,11 @@
     "status": "plays",
     "statusNote": "Two players in one room: one hosts, the other joins and picks the host from the list, the host connects and starts, both press Ready; a deathmatch ran on both screens, one player's pause is shown to the other, and the host's game is cancelled when the other quits. More than two players were not tried."
   },
+  "enhance": {
+    "engine": "call-of-duty",
+    "status": "experimental",
+    "note": "Sky, terrain, trees, soldiers and objects of the first mission are captured with their textures. The fog is only its darkening, without its colour, so distant dark surfaces lack the game's olive tint. The weapon, the muzzle flash and the HUD stay the game's own 2D. Maps without fog and multiplayer were not seen."
+  },
   "controls": {
     "source": "The game's defaults, read action by action from Options > Customize Controls; moving, turning, pitching up, shooting, zoom, the map and the menu keys were confirmed in play.",
     "actions": {

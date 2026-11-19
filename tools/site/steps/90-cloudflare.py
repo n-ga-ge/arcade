@@ -125,7 +125,7 @@ def known_assets(dist):
     try:
         with open(path) as fh:
             manifest = json.load(fh)
-        entries = [("the firmware", manifest.get("fw"))]
+        entries = [(f"the firmware {name}", manifest.get(name)) for name in ("fw", "ngage2Device", "ngage2App")]
         entries += [(f"the game {slug}", entry) for slug, entry in (manifest.get("games") or {}).items()]
         known = {}
         for name, entry in entries:

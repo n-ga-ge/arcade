@@ -15,14 +15,15 @@
     "On the title screen choose with left and right (1P game, VS game, High Score, Options, Exit) and confirm with 5. The OK key does nothing in this game.",
     "Left idle, the title screen starts a demo; any direction key returns to the title.",
     "Either soft key pauses a stage; the pause menu can save and return to the title screen.",
-    "VS game needs Bluetooth, which is not available here."
+    "VS game is a Bluetooth match: one player chooses VS game > Host and waits, the other VS game > Client and picks the host's name with 5; the host then presses 5 on the client's name, sets the game and chooses Start. A round ends when a bomber is blown up; the pause menu's To the Title Screen leaves the match."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "menu": "Title screen > VS game",
-    "status": "untested"
+    "menu": "Title screen > VS game > Host / Client",
+    "status": "plays",
+    "statusNote": "Two players in one room: one picks Host, the other Client and the host's name, the host confirms the client and starts; a VS match ran on both screens with the same clock. The host's bomber walked, laid a bomb and was blown up by it on both screens, the other got the win and the next round began. A pause is shown to the other player, and when one quits the other reads \"Opponent has quit.\""
   },
   "controls": {
     "source": "Observed in the menus and in play (the game has no controls screen): moving, laying a bomb with 5, the pause menu on the soft keys, 5 and 7 as confirm and back in menus.",

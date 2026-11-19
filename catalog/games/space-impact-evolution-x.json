@@ -12,7 +12,7 @@
     "The game reaches its main menu by itself, a few seconds after the Space Impact logo.",
     "The right soft key pauses a game and opens Continue, Save game, Options and End game.",
     "Save game and the high scores ask for a three-letter name: type it with the number keys (2 gives A, 3 gives D, 4 gives G), then choose Ok.",
-    "New game also offers 2-player as server or client, a game over Bluetooth. Nobody has tried it between two players of the site yet.",
+    "New game also offers 2-player as server or client, a game over Bluetooth. It does not start here: either choice returns to the same menu.",
     "A plain Series 60 application rather than an N-Gage card title: it has no N-Gage start screens."
   ],
   "multiplayer": {
@@ -21,7 +21,8 @@
     ],
     "players": 2,
     "menu": "Play > New game > 2-player (server) / 2-player (client)",
-    "status": "untested"
+    "status": "broken",
+    "statusNote": "Neither player gets past the menu: choosing 2-player (server) or 2-player (client) leaves the game on the same menu with Play selected again, and it neither hosts nor searches. At that moment the game asks for the phone's dialog that switches Bluetooth on, which the emulator does not have."
   },
   "controls": {
     "source": "The game's Help screen and its Options > Control keys screen (Fire: 5, Fire Special: 7, the defaults); the soft keys and OK by pressing them in the menus and in play.",

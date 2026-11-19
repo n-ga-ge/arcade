@@ -7,7 +7,8 @@
 # set by two rules is joined with a comma, so a narrower rule first detaches
 # ("! Name") what it replaces. Pages does not apply this file to responses
 # from Pages Functions (the site has none) or from the assets Worker, which
-# sets its own headers on /assets/.
+# sets its own headers on /assets/. The share Worker on /play/* passes on
+# the headers Pages gave each response, so these rules hold there too.
 
 /*
   # Cross-origin isolation. The player runs the emulator on threads, which
@@ -53,9 +54,14 @@
   # Device features no page of the site uses. Fullscreen, gamepads, audio
   # playback and storage are not listed and keep their defaults.
   Permissions-Policy: accelerometer=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=()
-  # Everything comes from the site's own origin: no third-party scripts,
-  # styles, fonts or frames (cross-origin isolation rules most of them out
-  # anyway). What the other sources are for:
+  # Everything comes from the site's own origin except the visitor
+  # statistics: no other third-party scripts, styles, fonts or frames
+  # (cross-origin isolation rules most of them out anyway). What the other
+  # sources are for:
+  #   telemetry.bad.cash  Umami's tracker and session recorder, which
+  #                       tools/site/steps/80-telemetry.py adds to every page
+  #                       (with crossorigin, as COEP requires); what they send
+  #                       goes there under connect-src https:
   #   'wasm-unsafe-eval'  compiling WebAssembly (the emulator; nothing else is evaluated)
   #   'unsafe-inline'     inline scripts and styles in the front page and the docs
   #   blob:, data:        images and downloads the pages build in memory
@@ -63,17 +69,17 @@
   #   connect-src wss:    the multiplayer relay under /net/ on the site's own two host names. Current
   #                       Chrome and Firefox take 'self' to cover a WebSocket to the page's own host;
   #                       older Safari does not, so the hosts are named
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: wss://n-ga.ge wss://dev.n-ga.ge data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://telemetry.bad.cash; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: wss://n-ga.ge wss://dev.n-ga.ge data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 
 /play/*
   # The player holds the visitor's saves and takes URLs from the address bar,
   # so it gets the stricter policy: scripts only from files of this site, no
   # inline script. Its page has none; tools/site/steps/90-cloudflare.py fails
-  # the build if one appears. Workers (the emulator's threads) and the audio
+  # the build if one appears. The statistics host is allowed as above. Workers (the emulator's threads) and the audio
   # worklet are files of the site as well and need nothing more. connect-src
   # is the same as above: this is the page that opens the relay's WebSocket.
   ! Content-Security-Policy
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: wss://n-ga.ge wss://dev.n-ga.ge data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://telemetry.bad.cash; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: wss://n-ga.ge wss://dev.n-ga.ge data: blob:; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 
 /s/*
   # The front page's style sheet and scripts, in a folder named after a hash
@@ -94,6 +100,15 @@
   # neither here nor revalidated.
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable
+
+/demo.mp4
+  # The demo video (docs/demo-video.md), made to be shared: other sites may
+  # show it in a <video> of their own, which the resource policy of /* would
+  # block. It keeps its address from one video to the next, so it is
+  # revalidated like the pages (the Cache-Control of /*); the zone's Browser
+  # Cache TTL may let a browser keep it for four hours, which does no harm.
+  ! Cross-Origin-Resource-Policy
+  Cross-Origin-Resource-Policy: cross-origin
 
 # No Content-Type rule: Pages takes the type from the file extension, and
 # .wasm is served as application/wasm (which streaming compilation requires)

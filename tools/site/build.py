@@ -40,8 +40,12 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOCAL_ONLY = ("dump", "pack")
-SUMMARY = ("slug", "title", "publisher", "year", "genre", "uid", "variantOf", "status", "statusNote", "multiplayer")
-PLAYER_CONFIG = {"catalog": "/catalog/", "assets": "/assets/", "fw": "/assets/NGAGE.ROM"}
+SUMMARY = ("slug", "title", "platform", "publisher", "year", "genre", "uid", "variantOf", "status", "statusNote", "multiplayer")
+# "fw" is the original N-Gage's firmware; an N-Gage 2.0 game needs the phone's
+# device zip and the N-Gage application instead (tools/assets/common.py names
+# the same files).
+PLAYER_CONFIG = {"catalog": "/catalog/", "assets": "/assets/", "fw": "/assets/NGAGE.ROM",
+                 "ngage2Device": "/assets/devices/rm-409.zip", "ngage2App": "/assets/ngage2/ngage-1.40.1557.sis"}
 
 
 def default_bin():
@@ -172,6 +176,7 @@ def build_catalog(out, status_dir):
         write_json(os.path.join(out, "catalog", "games", name), public)
         # "multiplayer": null (the game has none) is kept; a missing field means nobody knows.
         summary = {key: game[key] for key in SUMMARY if game.get(key) is not None or (key == "multiplayer" and key in game)}
+        summary.setdefault("platform", "ngage")  # every summary says it, so the front page need not know the default
         summary["hasControls"] = bool(game.get("controls"))
         if game["slug"] in results:
             summary["ci"] = results[game["slug"]]
