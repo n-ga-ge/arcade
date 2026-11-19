@@ -109,28 +109,30 @@ export const SCENARIOS = {
     absent: [...BROKEN, ...SLOW, ...SOFTWARE, ...UNDRAWN, ...HIDDEN],
   },
   stall: {
-    what: "The page's own thread is twenty times slower; the emulator's threads are not.",
-    options: { throttle: '20' },
+    what: "The page's own thread is held up for a third of every second; the emulator's threads are not.",
+    options: { block: '300' },
     expect: ['main-thread-stalls'],
-    // Chrome's throttling does not reach the emulator's threads, so the game
-    // itself must not be found slow.
+    // Only the page's thread is held up, so the game itself must not be found
+    // slow. (Chrome's throttling, --throttle, slows that thread too, but on a
+    // quiet machine the page has too little to do for it to stall.)
     absent: [...BROKEN, ...SLOW, ...SOFTWARE, ...UNDRAWN, ...HIDDEN, ...SILENT],
   },
 };
 
 // Options of diag.mjs that make the condition. A scenario sets its own, so
 // none of them, and no --expect or --absent, can be given beside --scenario.
-export const CONDITION_OPTIONS = ['browser', 'cpu', 'cpu-from', 'cores', 'throttle', 'hidden', 'undrawn', 'device', 'nosound'];
+export const CONDITION_OPTIONS = ['browser', 'cpu', 'cpu-from', 'cores', 'throttle', 'block', 'hidden', 'undrawn', 'device', 'nosound'];
 export const BROWSER_NAMES = ['chrome', 'chrome-software'];
 
 // What is wrong with a condition, as the message for the command line, or
 // null. `options` are diag.mjs's options by name, values as they are typed.
 export function conditionProblem(options) {
   if (options.browser !== undefined && !BROWSER_NAMES.includes(options.browser)) return `unknown browser: ${options.browser}`;
-  for (const name of ['cpu', 'cores', 'throttle']) {
+  for (const name of ['cpu', 'cores', 'throttle', 'block']) {
     if (options[name] !== undefined && !(Number(options[name]) > 0)) return `--${name} must be a positive number`;
   }
   if (options.cores !== undefined && !Number.isInteger(Number(options.cores))) return '--cores must be a whole number';
+  if (options.block !== undefined && Number(options.block) >= 1000) return '--block must be less than 1000: it is milliseconds of every second';
   if (options['cpu-from'] !== undefined && !['start', 'play'].includes(options['cpu-from'])) return `--cpu-from is start or play, not ${options['cpu-from']}`;
   if (options['cpu-from'] !== undefined && options.cpu === undefined) return '--cpu-from needs --cpu';
   if (options.hidden && options.undrawn) return '--hidden already takes the animation frames away: give it or --undrawn, not both';

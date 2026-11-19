@@ -52,6 +52,9 @@
 //   --throttle N       slow the page's own thread down N times (Chrome's CPU
 //                      throttling, which does not reach workers, so it does
 //                      not slow the emulator: for a page that stalls)
+//   --block MS         hold the page's own thread up for MS milliseconds in
+//                      every second, as a script that works too long does:
+//                      what stalls a page on any machine, however fast
 //   --hidden           make the page a tab in the background once the game
 //                      has been played, and read the report there ten seconds
 //                      later. Headless Chrome hides no page whatever is put
@@ -153,14 +156,14 @@ import { CODE, CONDITION_OPTIONS, DEVICES, SCENARIOS, conditionMissed, condition
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OPTIONS = {
   game: 'value', out: 'value', scenario: 'value', strict: 'flag', browser: 'value', seconds: 'value', keys: 'value', idle: 'flag', stretch: 'value',
-  cpu: 'value', 'cpu-from': 'value', cores: 'value', throttle: 'value', hidden: 'flag', undrawn: 'flag', device: 'value', nosound: 'flag',
+  cpu: 'value', 'cpu-from': 'value', cores: 'value', throttle: 'value', block: 'value', hidden: 'flag', undrawn: 'flag', device: 'value', nosound: 'flag',
   query: 'value', hook: 'value', expect: 'value', absent: 'value', port: 'value', bin: 'value', shell: 'value', assets: 'value', verbose: 'flag',
 };
 
 function usage(message) {
   console.error(`${message}\nusage: node tools/web/diag.mjs --game <slug> --out <dir> [--seconds N] [--keys a,b | --idle] [--stretch F] [--query STRING] [--hook FILE]`
     + ' [--port N] [--bin DIR] [--shell DIR] [--assets DIR] [--verbose]\n'
-    + '       one run:   [--browser chrome|chrome-software] [--cpu PERCENT [--cpu-from start|play]] [--cores N] [--throttle N] [--hidden | --undrawn]'
+    + '       one run:   [--browser chrome|chrome-software] [--cpu PERCENT [--cpu-from start|play]] [--cores N] [--throttle N] [--block MS] [--hidden | --undrawn]'
     + ` [--device ${Object.keys(DEVICES).join('|')}] [--nosound] [--expect a,b] [--absent a,b]\n`
     + `       scenarios: --scenario ${Object.keys(SCENARIOS).join(',')} | all  [--strict]`);
   process.exit(2);
@@ -439,6 +442,7 @@ async function play(run, prepared) {
       cpuFrom: options.cpu ? options['cpu-from'] || 'start' : null,
       quota: null, // what the browser's cgroup says once the quota is set
       throttle: options.throttle ? Number(options.throttle) : 1,
+      block: options.block ? Number(options.block) : 0,
       cores: options.cores ? Number(options.cores) : null,
       hidden: Boolean(options.hidden),
       undrawn: Boolean(options.undrawn),
@@ -579,6 +583,15 @@ async function play(run, prepared) {
       state.phase = 'throttling';
       await throttle(page, Number(options.throttle));
     }
+    if (options.block) {
+      state.phase = "holding up the page's thread";
+      await evaluate((ms) => {
+        setInterval(() => {
+          const until = performance.now() + ms;
+          while (performance.now() < until); // nothing else on this thread runs meanwhile
+        }, 1000);
+      }, Number(options.block));
+    }
     // --hidden and --undrawn. Headless Chrome keeps a page visible and
     // drawn whatever is put in front of it (another page, a minimised
     // window: its own thread and its workers go on getting 60 animation
@@ -616,7 +629,7 @@ async function play(run, prepared) {
 
     // The diagnostics measure the last 30 seconds of play. A condition that
     // begins with the play and lasts less mixes with the play before it.
-    if (seconds < 30 && (options.throttle || options.undrawn || (options.cpu && options['cpu-from'] === 'play'))) {
+    if (seconds < 30 && (options.throttle || options.block || options.undrawn || (options.cpu && options['cpu-from'] === 'play'))) {
       result.warnings.push(`played ${seconds} s under the condition, and the diagnostics measure the last 30: the rates mix in the play before it`);
     }
 

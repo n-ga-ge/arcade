@@ -212,12 +212,12 @@ export const PERF_NUMBERS = [
   // Frames the game presented per second: on average, and in the worst second.
   { name: 'fps', digits: 1, paths: ['sections.session.data.fpsAverage'] },
   { name: 'fpsWorst', digits: 1, paths: ['sections.session.data.fpsWorst'] },
-  // The sections these three come from (speed, graphics, memory) are not
-  // written yet, so their field names are not known: fill in the paths once
-  // they are, e.g. 'sections.speed.data.<field>'. Until then they are left out.
-  { name: 'cpuLoad', digits: 2, paths: [] }, // share of the time the emulated processor was busy, 0 to 1
-  { name: 'graphicsMs', digits: 1, paths: [] }, // what the graphics thread spends on a frame
-  { name: 'heapMB', digits: 0, paths: [] }, // the emulator's memory in use
+  // The share of the time the emulated processor was busy, 0 to 1 (speed).
+  { name: 'cpuLoad', digits: 2, paths: [] },
+  // What the graphics thread spends on a frame, in milliseconds (graphics).
+  { name: 'graphicsMs', digits: 1, paths: ['sections.graphics.data.busyMsPerFrame'] },
+  // The emulator's memory, in megabytes (memory).
+  { name: 'heapMB', digits: 0, paths: ['sections.memory.data.heap.sizeMB'] },
 ];
 
 export const REPORT_KIND = 'eka2l1-web-diagnostics';
