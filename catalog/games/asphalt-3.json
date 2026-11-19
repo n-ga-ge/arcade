@@ -1,0 +1,85 @@
+{
+  "slug": "asphalt-3",
+  "title": "Asphalt 3: Street Rules",
+  "platform": "ngage2",
+  "publisher": "Gameloft",
+  "year": 2008,
+  "genre": "Racing",
+  "uid": "0x2000AFE3",
+  "variantOf": null,
+  "dump": "Asphalt 3 (N-Gage 2.0)",
+  "status": "ingame",
+  "statusNote": "Language menu, attract demo, menus and an Instant Play race in landscape, with correct 3D and with its music (MP3), at 11 to 13 fps on a fast laptop. In about one start in three it quits by itself within the first minute or while a race loads (a fault of the emulator, under investigation); starting it again works. The dump is a community release without signatures, which the N-Gage application refuses, so the player installs the game directly.",
+  "notes": [
+    "Sometimes quits by itself soon after starting: start it again.",
+    "The phone is turned to landscape by the game, 320×240."
+  ],
+  "multiplayer": null,
+  "controls": {
+    "source": "Watched in play during the bring-up: the language, sound and menu screens, and an Instant Play race.",
+    "actions": {
+      "left": "Steer left",
+      "right": "Steer right",
+      "up": "Nitro; up in menus",
+      "down": "Down in menus",
+      "ok": "Accelerate; select in menus",
+      "lsk": "Yes (sound question)"
+    },
+    "keyboard": {
+      "ok": [
+        "Space",
+        "Enter",
+        "KeyX"
+      ],
+      "up": [
+        "ArrowUp",
+        "KeyZ"
+      ]
+    },
+    "gamepad": {
+      "ok": [
+        "b0",
+        "b7"
+      ],
+      "up": [
+        "b12",
+        "a1-",
+        "b2"
+      ]
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 45000
+      },
+      {
+        "key": "ok",
+        "hold": 300,
+        "wait": 10000
+      },
+      {
+        "key": "ok",
+        "hold": 300,
+        "wait": 5000
+      },
+      {
+        "key": "lsk",
+        "hold": 300,
+        "wait": 6000
+      },
+      {
+        "key": "ok",
+        "hold": 300,
+        "wait": 25000
+      },
+      {
+        "key": "ok",
+        "hold": 300,
+        "wait": 10000
+      }
+    ],
+    "timeoutMs": 150000
+  }
+}

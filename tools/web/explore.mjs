@@ -3,13 +3,16 @@
 // script can press keys and look at screenshots one step at a time.
 //
 //   node tools/web/explore.mjs [--game SLUG] [--script] [--port 8080] [--control-port 8091] [--out DIR]
-//                              [--gameplay] [--query "..."] [--log "*:warn"]
+//                              [--gameplay] [--query "..."] [--log "*:warn"] [--viewport 1280x800] [--dpr 1]
 //
 //   --game SLUG      load testdata/games/<SLUG>.zip (see tools/games/pack.py); default is Shadowkey
 //   --script         after the game starts, replay "test.script" from catalog/games/<SLUG>.json
 //   --port           the dev server's port (tools/web/devserver.py)
 //   --control-port   the port this tool listens on
 //   --gameplay       Shadowkey only: its key script into the first room
+//   --viewport WxH   the window's size in CSS pixels (default 1280x800)
+//   --dpr N          screen pixels per CSS pixel (default 1; 2 is a high-density screen), for looking at
+//                    how the picture is scaled: /pageshot then has N times as many pixels
 //
 // The page's console (emulator log lines included) is written to DIR/console.log.
 // If the game does not start within 90 s the tool says so and still serves
@@ -21,12 +24,14 @@
 //   curl 'http://127.0.0.1:8091/status'                           page status line and running app
 //   curl 'http://127.0.0.1:8091/shot?name=menu'                   guest screenshot -> DIR/menu.png
 //   curl 'http://127.0.0.1:8091/api?method=GET&target=/v1/apps'   control API call
+//   curl 'http://127.0.0.1:8091/api?raw=1&target=/v1/screenshot'  the same, the body as it is (status in X-Status)
 //   curl 'http://127.0.0.1:8091/eval' --data 'return document.title'
 //   curl 'http://127.0.0.1:8091/quit'
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { PLATFORM_FILES, platformOf } from './gamecheck.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, value, i, all) => {
   if (value.startsWith('--')) acc.push([value.slice(2), all[i + 1] && !all[i + 1].startsWith('--') ? all[i + 1] : true]);
@@ -46,11 +51,16 @@ const root = path.join(TOOLCHAIN, 'chrome', 'chrome');
 const exe = TOOLCHAIN && fs.existsSync(root) ? path.join(root, fs.readdirSync(root).sort().pop(), 'chrome-linux64', 'chrome') : undefined;
 const browser = await chromium.launch({ executablePath: exe, headless: true,
   args: ['--autoplay-policy=no-user-gesture-required', '--use-gl=angle', '--use-angle=gl-egl', '--enable-gpu', '--ignore-gpu-blocklist'] });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const [viewWidth, viewHeight] = String(args.viewport || '1280x800').split('x').map(Number);
+const page = await browser.newPage({ viewport: { width: viewWidth || 1280, height: viewHeight || 800 }, deviceScaleFactor: Number(args.dpr) || 1 });
 const consoleLog = fs.createWriteStream(path.join(outDir, 'console.log'));
 page.on('console', (message) => consoleLog.write(`[${message.type()}] ${message.text()}\n`));
 page.on('pageerror', (error) => { console.log('[pageerror]', error.message); consoleLog.write(`[pageerror] ${error.message}\n`); });
-const defaultQuery = `fw=/local/NGAGE.ROM&game=/local/${slug ? `games/${slug}.zip` : 'shadowkey.zip'}${args.log ? `&log=${encodeURIComponent(args.log)}` : ''}`;
+// The firmware of the game's platform: for an N-Gage 2.0 entry the phone's
+// device zip and the N-Gage application instead of the ROM (gamecheck.mjs).
+const entryPlatform = catalogFile && fs.existsSync(catalogFile) ? platformOf(JSON.parse(fs.readFileSync(catalogFile, 'utf8'))) : 'ngage';
+const firmware = Object.entries(PLATFORM_FILES[entryPlatform]).map(([name, file]) => `${name}=/local/${file}`).join('&');
+const defaultQuery = `${firmware}&game=/local/${slug ? `games/${slug}.zip` : 'shadowkey.zip'}${args.log ? `&log=${encodeURIComponent(args.log)}` : ''}`;
 await page.goto(`http://127.0.0.1:${port}/?${args.query !== undefined ? args.query : defaultQuery}`);
 const pageStatus = () => page.evaluate(() => ({
   status: document.getElementById('status')?.textContent || '',
@@ -128,6 +138,19 @@ http.createServer(async (req, res) => {
       const file = path.join(outDir, `${q.name || 'page'}.png`);
       await page.screenshot({ path: file });
       out = file;
+    } else if (url.pathname === '/api' && q.raw) {
+      // The response as it is: the body's bytes, the status in a header. For
+      // tools (tools/re/dbg.py); the form below is for reading by eye.
+      const r = await page.evaluate(async ([m, t, b]) => {
+        const r = await window.eka2l1.request(m, t, b || null);
+        let binary = '';
+        for (let i = 0; i < r.body.length; i += 0x8000) binary += String.fromCharCode.apply(null, r.body.subarray(i, i + 0x8000));
+        return { status: r.status, type: r.type, body: btoa(binary) };
+      }, [q.method || 'GET', q.target, body]);
+      res.setHeader('X-Status', String(r.status));
+      res.setHeader('Content-Type', r.type || 'application/octet-stream');
+      res.end(Buffer.from(r.body, 'base64'));
+      return;
     } else if (url.pathname === '/api') {
       out = await page.evaluate(async ([m, t, b]) => {
         const r = await window.eka2l1.request(m, t, b || null);

@@ -13,13 +13,16 @@
     "5 confirms everywhere (the title asks for it) and 7 cancels; the OK key is not the confirm key in this game.",
     "When choosing opponents, the \"?\" tiles are characters that are still locked and cannot be picked; choose three different unlocked ones, then confirm with 5.",
     "Either soft key opens the System menu in a match (Help, Options, Quit).",
-    "Multiplayer needs Bluetooth, which is not available here."
+    "A Bluetooth game: both choose Start Game > multiplayer > Bluetooth and accept the change of the Bluetooth ID with 5. One chooses Host Game. The other chooses Join Game, presses 5 to end the search (or waits for \"Time outed\"), picks the host's name and YES. The host then moves down to START GAME (5 on a player's name removes that player), answers YES and picks the computer players; both accept the map with 5. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
-      "bluetooth"
+      "bluetooth",
+      "arena"
     ],
-    "status": "untested"
+    "menu": "Start Game > multiplayer > Bluetooth > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins, ends the search with 5 and picks the host, the host chooses START GAME and two computer players; a game ran on both screens. Both rolled for the turn order with the same dice shown on both, the joiner built a settlement and a road that appeared on the host's board, and when the joiner quit the host read \"Bo has quit the game.\""
   },
   "controls": {
     "source": "Options > Key Config (2 construction window, 3 card data window; neither opened during the opening settlement phase), the game's own prompts (\"OK=key 5, Cancel=key 7\"), and the cursor and soft keys as seen in a match.",

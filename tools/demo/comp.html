@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>n-ga.ge demo video</title>
+<!-- The demo video, 1920x1080, 38 s at 30 fps. render(t) draws the frame at
+     time t (t < 0: the poster); tools/demo/render.mjs copies this file into
+     the work folder and screenshots it frame by frame. It reads, relative to
+     that folder: comp-data.js, site.css and shots/ (site.mjs), clips/<slug>/cfr/
+     (capture.mjs + cfr.py), sk-1x.png and sk-4x.png (capture.mjs --stills4x),
+     settings/ (settings.mjs + cfr.py), mp/ (mpcap.py + cfr.py, and the two
+     crops of docs/demo-video.md). Scenes and their times: docs/demo-video.md. -->
+<link rel="stylesheet" href="site.css">
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0e1013; }
+  body { min-height: 0; display: block; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--plate); font-family: var(--sans); color: var(--plate-ink); }
+  .scene { position: absolute; inset: 0; display: none; }
+  .dots { background-color: var(--plate);
+    background-image: radial-gradient(circle at 1px 1px, rgb(255 255 255 / .09) 1px, transparent 1.4px);
+    background-size: 10px 10px; }
+  .w { display: inline-block; will-change: transform, opacity; }
+  .orange { color: var(--signal); }
+  .mono { font: 600 24px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--plate-dim); }
+
+  /* 1: hook */
+  #s1 .copy { position: absolute; left: 130px; top: 368px; width: 900px; }
+  #s1 h1 { margin: 0; font-size: 104px; line-height: 1.02; font-weight: 800; letter-spacing: -.02em; }
+  #s1 h1 + h1 { margin-top: 26px; }
+  .win { position: absolute; left: 1060px; top: 92px; width: 720px; height: 896px; border-radius: 16px; overflow: hidden;
+    background: #15171c; box-shadow: 0 30px 80px rgb(0 0 0 / .55), 0 0 0 1px #3b414d; }
+  .win-top { height: 58px; background: #20242c; display: flex; align-items: center; gap: 10px; padding: 0 20px; }
+  .win-top i { width: 14px; height: 14px; border-radius: 50%; background: #3b414d; display: block; }
+  .win-top i:first-child { background: var(--signal); }
+  .addr { margin-left: 18px; flex: 1; height: 34px; border-radius: 17px; background: #15171c; display: flex; align-items: center; padding: 0 18px;
+    font: 500 19px var(--mono); color: var(--plate-dim); white-space: nowrap; overflow: hidden; }
+  .addr b { color: var(--plate-ink); font-weight: 600; }
+  .pbar { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 19px; color: #c9ccd3; }
+  .pbar .btns { display: flex; gap: 8px; }
+  .pbar .btns span { border: 1px solid #3b414d; background: #1c1f25; border-radius: 6px; padding: 6px 12px; font-size: 16px; color: #e8e6df; }
+  .gscreen { display: block; background: #000; image-rendering: pixelated; }
+  .win .gscreen { width: 640px; height: 755px; margin: 0 auto; }
+  .static { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: repeating-linear-gradient(0deg, rgb(255 255 255 / .16) 0 2px, transparent 2px 5px), linear-gradient(#fff2, #fff0); mix-blend-mode: screen; }
+
+  /* 2 + 3: the front page */
+  #page { position: absolute; left: 0; top: 0; width: 1920px; transform-origin: 0 0; background: var(--page); }
+  #s23 { background: var(--plate); }
+  #page .masthead { border-bottom-color: transparent; position: relative; }
+  #rule { position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; background: var(--signal); transform-origin: 0 50%; }
+  #page main { padding-top: 20px; }
+  #page .card.target { outline: 3px solid var(--signal); outline-offset: 3px; }
+  .cap { position: absolute; z-index: 20; background: rgb(14 16 19 / .94); border-left: 8px solid var(--signal); padding: 26px 40px 30px 34px;
+    box-shadow: 0 20px 60px rgb(0 0 0 / .5); }
+  .cap h2 { margin: 0; font-size: 76px; line-height: 1.05; font-weight: 800; letter-spacing: -.015em; color: var(--plate-ink); }
+  #cursor { position: absolute; z-index: 30; left: 0; top: 0; width: 44px; height: 60px; transform-origin: 6px 6px; filter: drop-shadow(0 6px 10px rgb(0 0 0 / .5)); }
+  #zoom { position: absolute; z-index: 15; display: none; image-rendering: pixelated; }
+  #player { position: absolute; inset: 0; z-index: 10; background: #15171c; display: none; }
+  #player .pbar { position: absolute; left: 0; right: 0; top: 0; height: 84px; padding: 0 44px; font-size: 28px; }
+  #player .pbar .btns span { font-size: 22px; padding: 9px 18px; border-radius: 8px; }
+  #player .gscreen { position: absolute; left: 940px; top: 150px; width: 704px; height: 830px; }
+
+
+  #page .card .ci { visibility: hidden; }
+  .cap2 { margin: 0; font-size: 96px; line-height: 1.04; font-weight: 800; letter-spacing: -.02em; color: var(--plate-ink); }
+  .copy { position: absolute; }
+  .copy .mono { margin-top: 30px; line-height: 1.6; }
+  .ui { position: absolute; transform-origin: 0 0; box-shadow: 0 30px 80px rgb(0 0 0 / .55); border-radius: 12px; }
+  .ui img { display: block; width: 100%; height: 100%; }
+  .cursor2 { position: absolute; z-index: 30; left: 0; top: 0; width: 44px; height: 60px; transform-origin: 6px 6px; filter: drop-shadow(0 6px 10px rgb(0 0 0 / .5)); }
+
+  /* poster (frame 0 and the thumbnail) */
+  #s0 .copy { left: 130px; top: 250px; width: 920px; }
+  #s0 svg.wm0 { width: 330px; height: 77px; display: block; }
+  #s0 h1 { margin: 60px 0 0; font-size: 82px; line-height: 1.04; font-weight: 800; letter-spacing: -.02em; }
+  #s0 .mono { margin-top: 34px; font-size: 25px; color: var(--plate-ink); }
+  #s0 .mono b { color: var(--signal); font-weight: 700; }
+  #s0 .row { display: flex; gap: 16px; margin-top: 50px; }
+  #s0 .row img { width: 120px; height: 142px; image-rendering: pixelated; outline: 2px solid #2a2f38; background: var(--lcd); }
+  #s0 .win { left: 1060px; top: 92px; }
+
+  /* 4: the wall */
+  #wall { position: absolute; left: 152px; top: 74px; width: 1616px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; perspective: 1400px; }
+  .tile { position: relative; width: 120px; height: 142px; background: var(--lcd); outline: 2px solid #2a2f38; }
+  .tile img { width: 120px; height: 142px; display: block; image-rendering: pixelated; }
+  .tile .ok { position: absolute; right: -8px; bottom: -8px; width: 32px; height: 26px; border-radius: 6px; background: #20242c; color: #5fd183; display: grid; place-items: center; box-shadow: 0 0 0 3px var(--plate); }
+  .tile .ok svg { width: 16px; height: 14px; fill: currentColor; }
+  #s4 .veil { position: absolute; inset: 0; background: radial-gradient(ellipse 62% 48% at 50% 50%, rgb(14 16 19 / .96) 30%, rgb(14 16 19 / .55) 100%); }
+  #s4 .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  #s4 .big { font-size: 200px; line-height: .95; font-weight: 800; letter-spacing: -.03em; }
+  #s4 .sub2 { margin-top: 34px; font-size: 60px; font-weight: 700; line-height: 1.15; }
+
+  /* 5: multiplayer, host */
+  #hostdlg { left: 1040px; top: 150px; width: 714px; height: 750px; overflow: hidden; }
+  #linkmask { position: absolute; left: 3.33%; top: 14.97%; width: 74.76%; height: 6.58%; background: #121418; border-radius: 6px; display: flex; align-items: center; padding-left: 1.6%; font-size: 18px; color: #e8e6df; white-space: nowrap; }
+  #rooms { left: 130px; top: 600px; width: 840px; height: 254px; border-radius: 0; box-shadow: 0 20px 60px rgb(0 0 0 / .5); }
+  #chip2 { position: absolute; left: 130px; top: 880px; width: 315px; height: 84px; transform-origin: 0 50%; }
+
+  /* 6: multiplayer, match */
+  .win2 { position: absolute; top: 200px; width: 544px; height: 735px; border-radius: 14px; overflow: hidden; background: #15171c; box-shadow: 0 30px 80px rgb(0 0 0 / .55), 0 0 0 1px #3b414d; }
+  .win2 .win-top { height: 50px; }
+  .win2 .addr { font-size: 15px; height: 30px; margin-left: 12px; padding: 0 12px; }
+  .win2 .pbar { height: 52px; font-size: 17px; padding: 0 14px; }
+  .win2 .pbar .room { border: 1px solid #4a8cff; color: #86b4ff; border-radius: 6px; padding: 4px 9px; font-size: 14px; margin-right: 6px; }
+  .win2 .gscreen { width: 504px; height: 597px; margin: 6px auto 0; }
+  .who { position: absolute; top: 148px; font: 700 26px var(--mono); letter-spacing: .04em; color: var(--plate-ink); }
+  .who span { color: var(--plate-dim); font-weight: 600; }
+  #wire { position: absolute; left: 1250px; top: 540px; width: 60px; height: 4px; }
+
+  /* 7: display */
+  #dispdlg { left: 130px; top: 370px; width: 800px; }
+  #dispdlg img { height: auto; }
+  .screen7 { position: absolute; left: 1150px; top: 150px; width: 640px; height: 758px; background: #000; outline: 3px solid #2a2f38; overflow: hidden; }
+  .screen7 img { width: 100%; height: 100%; display: block; }
+  .tag7 { position: absolute; left: 1150px; top: 930px; font: 700 30px var(--mono); padding: 8px 16px; border-radius: 6px; background: var(--signal); color: #15171c; }
+
+  /* 8: 4x */
+  .screen5 { position: absolute; left: 1080px; top: 125px; width: 704px; height: 830px; overflow: hidden; background: #000; outline: 3px solid #2a2f38; }
+  .screen5 .layer { position: absolute; inset: 0; transform-origin: 0 0; }
+  .screen5 img { position: absolute; left: 0; top: 0; width: 704px; height: 830px; image-rendering: pixelated; }
+  #wipe { position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--signal); box-shadow: 0 0 24px var(--signal); }
+  .tag { position: absolute; z-index: 3; font: 700 30px var(--mono); padding: 8px 16px; border-radius: 6px; letter-spacing: .04em; }
+  .tag.a { right: 18px; bottom: 18px; background: rgb(14 16 19 / .88); color: var(--plate-ink); }
+  .tag.b { left: 18px; top: 130px; background: var(--signal); color: #15171c; }
+
+  /* 9: controls & saves */
+  #ctldlg { left: 130px; top: 310px; width: 900px; height: 701px; }
+  #savdlg { left: 1090px; top: 480px; width: 700px; height: 358px; }
+  #keycap { position: absolute; z-index: 31; width: 84px; height: 84px; border-radius: 14px; background: #f1efe8; color: #15171c; font: 800 46px var(--mono); display: grid; place-items: center; box-shadow: 0 8px 0 #9a988f, 0 18px 40px rgb(0 0 0 / .5); }
+
+  /* 10: outro */
+  #s10 .center { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
+  #s10 svg.big { width: 960px; height: 224px; }
+  #s10 .lede2 { margin-top: 60px; font-size: 62px; font-weight: 700; letter-spacing: -.01em; }
+  #s10 .url { margin-top: 46px; background: var(--signal); color: #15171c; font: 800 60px var(--mono); padding: 14px 40px 16px; border-radius: 10px; letter-spacing: .02em; }
+  #s10 .mono { margin-top: 42px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="defs"></div>
+
+  <section class="scene dots" id="s1">
+    <div class="copy">
+      <h1 id="h1a"></h1>
+      <h1 id="h1b" class="orange"></h1>
+    </div>
+    <div class="win" id="win">
+      <div class="win-top"><i></i><i></i><i></i><div class="addr" id="addr"></div></div>
+      <div class="pbar"><span id="wtitle"></span><span class="btns"><span>Pause</span><span>Menu</span></span></div>
+      <img class="gscreen" id="wimg" alt="">
+      <div class="static" id="static"></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s23">
+    <div id="page"></div>
+    <div id="player"><div class="pbar"><span>Glimmerati</span><span class="btns"><span>Pause</span><span>Menu</span></span></div><img class="gscreen" id="pimg" alt=""></div>
+    <img id="zoom" alt="">
+    <div class="cap" id="cap3" style="left:84px; top:640px"><h2 id="cap3h"></h2></div>
+    <svg id="cursor" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-9h8z" fill="#fff" stroke="#15171c" stroke-width="2" stroke-linejoin="round"/></svg>
+  </section>
+
+
+  <section class="scene dots" id="s0">
+    <div class="copy">
+      <svg class="wm0" id="wm0" viewBox="0 0 30 7" shape-rendering="crispEdges"></svg>
+      <h1>Nokia N-Gage games,<br><span class="orange">in your browser.</span></h1>
+      <p class="mono">Over 60 games <b>·</b> no install <b>·</b> online multiplayer</p>
+      <div class="row">
+        <img src="shots/shadowkey.png" alt=""><img src="shots/sonicn.png" alt=""><img src="shots/glimmerati.png" alt=""><img src="shots/super-monkey-ball.png" alt=""><img src="shots/king-of-fighters.png" alt=""><img src="shots/tony-hawks-pro-skater.png" alt="">
+      </div>
+    </div>
+    <div class="win">
+      <div class="win-top"><i></i><i></i><i></i><div class="addr"><b>n-ga.ge</b>/play/?g=rayman-3</div></div>
+      <div class="pbar"><span>Rayman 3</span><span class="btns"><span>Pause</span><span>Menu</span></span></div>
+      <img class="gscreen" src="clips/rayman-3/cfr/0075.jpg" alt="">
+    </div>
+  </section>
+
+  <section class="scene dots" id="s4">
+    <div id="wall"></div>
+    <div class="veil" id="veil"></div>
+    <div class="center">
+      <div class="big" id="big4"></div>
+      <div class="sub2" id="sub4"></div>
+    </div>
+  </section>
+
+  <section class="scene dots" id="s5">
+    <div class="copy" style="left:130px; top:230px; width:860px">
+      <h2 class="cap2" id="h5"></h2>
+      <p class="mono" id="m5">Host a room · share the link<br>or join one from the front page</p>
+    </div>
+    <div class="ui" id="hostdlg"><img src="mp/host-dialog-el.png" alt=""><div id="linkmask">n-ga.ge/play/?g=rayman-3&amp;room=5YXQ59</div></div>
+    <div class="ui" id="rooms"><img src="mp/rooms-crop.png" alt=""></div>
+    <img id="chip2" src="mp/chip2.png" alt="">
+    <svg class="cursor2" id="cur5" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-9h8z" fill="#fff" stroke="#15171c" stroke-width="2" stroke-linejoin="round"/></svg>
+  </section>
+
+  <section class="scene dots" id="s6">
+    <div class="copy" style="left:110px; top:330px; width:600px">
+      <h2 class="cap2" id="h6" style="font-size:88px"></h2>
+      <p class="mono" id="m6">Bluetooth games,<br>played over the internet</p>
+    </div>
+    <div class="who" id="whoA" style="left:690px">Ann <span>· hosting</span></div>
+    <div class="who" id="whoB" style="left:1290px">Bo <span>· joined by link</span></div>
+    <div class="win2" id="winA" style="left:690px">
+      <div class="win-top"><i></i><i></i><i></i><div class="addr"><b>n-ga.ge</b>/play/?g=rayman-3&amp;room=5YXQ59</div></div>
+      <div class="pbar"><span>Rayman 3</span><span class="btns"><span class="room">5YXQ59 · 2 players</span><span>Menu</span></span></div>
+      <img class="gscreen" id="imgA" alt="">
+    </div>
+    <div class="win2" id="winB" style="left:1290px">
+      <div class="win-top"><i></i><i></i><i></i><div class="addr"><b>n-ga.ge</b>/play/?g=rayman-3&amp;room=5YXQ59</div></div>
+      <div class="pbar"><span>Rayman 3</span><span class="btns"><span class="room">5YXQ59 · 2 players</span><span>Menu</span></span></div>
+      <img class="gscreen" id="imgB" alt="">
+    </div>
+    <svg id="wire" viewBox="0 0 60 4"><line x1="0" y1="2" x2="60" y2="2" stroke="#ff7a1a" stroke-width="4" stroke-dasharray="6 6" id="wireline"/></svg>
+  </section>
+
+  <section class="scene dots" id="s7">
+    <div class="copy" style="left:130px; top:170px; width:900px">
+      <h2 class="cap2" id="h7"></h2>
+      <p class="mono" id="m7">15 scaling filters · Menu → Display</p>
+    </div>
+    <div class="ui" id="dispdlg"><img id="dispimg" alt=""></div>
+    <div class="screen7"><img id="img7" alt=""></div>
+    <div class="tag7" id="tag7"></div>
+  </section>
+
+  <section class="scene dots" id="s8">
+    <div class="copy" style="left:130px; top:330px; width:940px">
+      <h2 class="cap2" id="h8" style="font-size:92px"></h2>
+      <p class="mono" id="m8">Experimental · 23 games<br>Menu → Display → 3D resolution</p>
+    </div>
+    <div class="screen5" id="screen5">
+      <div class="layer" id="layer5">
+        <img id="sk1" src="sk-1x.png" alt="">
+        <img id="sk4" src="sk-4x.png" alt="">
+        <img id="sklive" alt="">
+        <div id="wipe"></div>
+      </div>
+      <span class="tag a" id="tagA">176×208</span>
+      <span class="tag b" id="tagB">4×</span>
+    </div>
+  </section>
+
+  <section class="scene dots" id="s9">
+    <div class="copy" style="left:130px; top:120px; width:1600px">
+      <h2 class="cap2" id="h9"></h2>
+      <p class="mono" id="m9" style="margin-top:20px">Keyboard, gamepad or touch · saves export as a .zip</p>
+    </div>
+    <div class="ui" id="ctldlg"><img id="ctlimg" src="settings/controls-0.png" alt=""></div>
+    <div class="ui" id="savdlg"><img src="settings/saves.png" alt=""></div>
+    <div id="keycap">I</div>
+    <svg class="cursor2" id="cur9" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-9h8z" fill="#fff" stroke="#15171c" stroke-width="2" stroke-linejoin="round"/></svg>
+  </section>
+
+  <section class="scene dots" id="s10">
+    <div class="center">
+      <svg class="big" id="wm6" viewBox="0 0 30 7" shape-rendering="crispEdges"></svg>
+      <div class="lede2" id="lede6"></div>
+      <div class="url" id="url6">n-ga.ge</div>
+      <div class="mono" id="m10">Online multiplayer · keyboard, gamepad or touch · Chrome, Edge, Firefox</div>
+    </div>
+  </section>
+</div>
+
+<script src="comp-data.js"></script>
+<script>
+const FPS = 30;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (x) => 1 - Math.pow(1 - x, 3);                 // ease out cubic
+const eio = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const back = (x) => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, p) => a + (b - a) * p;
+const pad = (n) => String(n).padStart(4, '0');
+
+// --- build -------------------------------------------------------------------
+$('defs').innerHTML = DATA.defs;
+const words = (el, text) => { el.innerHTML = text.split(' ').map((w) => `<span class="w">${w}</span>`).join(' '); return [...el.children]; };
+const W1a = words($('h1a'), 'Nokia N-Gage games.');
+const W1b = words($('h1b'), 'In a browser tab.');
+const W3 = (() => { $('cap3h').innerHTML = '<span class="w">Pick</span> <span class="w">a</span> <span class="w">card.</span><br><span class="w orange">You’re</span> <span class="w orange">playing.</span>'; return [...$('cap3h').querySelectorAll('.w')]; })();
+
+const W4 = words($('big4'), 'Over 60 games.');
+const W4b = words($('sub4'), 'All playable, right in your browser.');
+const W5 = words($('h5'), 'Play together.');
+const W6 = (() => { $('h6').innerHTML = '<span class="w">Online</span><br><span class="w orange">multiplayer.</span>'; return [...$('h6').querySelectorAll('.w')]; })();
+const W7 = words($('h7'), 'Pick how it looks.');
+const W8 = (() => { $('h8').innerHTML = '<span class="w">Some</span> <span class="w">3D</span> <span class="w">games</span> <span class="w">redraw</span> <span class="w">at</span> <span class="w orange">up</span> <span class="w orange">to</span> <span class="w orange">4×.</span>'; return [...$('h8').querySelectorAll('.w')]; })();
+const W9 = (() => { $('h9').innerHTML = '<span class="w">Your</span> <span class="w">keys.</span> <span class="w orange">Your</span> <span class="w orange">saves.</span>'; return [...$('h9').querySelectorAll('.w')]; })();
+const W10 = words($('lede6'), 'Over 60 N-Gage games, playable in the browser.');
+
+
+// The front page, from the live markup.
+$('page').innerHTML = DATA.masthead + '<main class="wrap">' + DATA.controls + DATA.grid + '</main>';
+const mast = $('page').querySelector('.masthead');
+mast.insertAdjacentHTML('beforeend', '<div id="rule"></div>');
+const lede = mast.querySelector('.lede'), sub = mast.querySelector('.sub'), nav = mast.querySelector('.topnav');
+const Wl = words(lede, lede.textContent.trim());
+const browse = $('page').querySelector('#browse');
+const grid = $('page').querySelector('#grid');
+const counts = [...$('page').querySelectorAll('.chip-count')].map((el) => ({ el, n: Number(el.textContent) }));
+const summary = $('page').querySelector('#summary');
+const target = grid.querySelector('[data-slug="glimmerati"]');
+const targetShot = target.querySelector('.screen img');
+
+// Wordmark pixels: each rect of the path becomes its own path, in reading order.
+function pixels(svg, src) {
+  const out = [];
+  for (const cls of ['wm-ink', 'wm-dot']) {
+    const d = src.querySelector('.' + cls).getAttribute('d');
+    for (const m of d.match(/M[^M]+/g)) {
+      const [x, y] = m.slice(1).split(/[h ]/).map(Number);
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', m); p.setAttribute('class', cls);
+      svg.appendChild(p); out.push({ p, x, y });
+    }
+  }
+  return out;
+}
+const wmPage = mast.querySelector('svg.wordmark');
+const wmPageSrc = wmPage.cloneNode(true);
+wmPage.innerHTML = '';
+const P2 = pixels(wmPage, wmPageSrc).map((o, i) => ({ ...o, d: o.x * 0.011 + ((i * 37) % 11) * 0.008 }));
+const P6 = pixels($('wm6'), wmPageSrc).map((o, i) => ({ ...o, d: o.x * 0.014 + ((i * 53) % 7) * 0.01 }));
+$('wm6').querySelectorAll('.wm-ink').forEach((p) => p.style.fill = 'var(--plate-ink)');
+$('wm6').querySelectorAll('.wm-dot').forEach((p) => p.style.fill = 'var(--signal)');
+
+
+// The wall: every game's screenshot, in catalogue order, each with the site's "Playable" bars.
+const slugs = [...grid.querySelectorAll('[data-slug]')].map((li) => li.dataset.slug);
+$('wall').innerHTML = slugs.map((s) => `<div class="tile"><img src="shots/${s}.png" alt=""><span class="ok"><svg viewBox="0 0 14 12"><use href="#sig-ingame"/></svg></span></div>`).join('');
+const tiles = [...$('wall').children].map((el, i) => ({ el, ok: el.querySelector('.ok'), r: Math.floor(i / 12), c: i % 12 }));
+
+
+// Layout of the page at its scale: where the target card is.
+const SCALE = 1.4;
+const pageEl = $('page');
+$('s23').style.display = 'block';
+pageEl.style.transform = 'none';
+const tRect = target.getBoundingClientRect();
+const sRect = targetShot.getBoundingClientRect();
+const ROW_Y = tRect.top;            // unscaled page coordinates
+const CAM3 = ROW_Y - 230 / SCALE;   // page y at the top of the frame after the scroll
+$('s23').style.display = 'none';
+const toScreen = (x, y, cam) => ({ x: 960 + (x - 960) * SCALE, y: (y - cam) * SCALE });
+
+{
+  const holder = document.createElement('div'); holder.innerHTML = DATA.masthead;
+  const src = holder.querySelector('svg.wordmark');
+  $('wm0').innerHTML = src.innerHTML;
+  $('wm0').querySelectorAll('.wm-ink').forEach((p) => p.style.fill = 'var(--plate-ink)');
+  $('wm0').querySelectorAll('.wm-dot').forEach((p) => p.style.fill = 'var(--signal)');
+}
+// --- render --------------------------------------------------------------------
+const show = (id, on) => { $(id).style.display = on ? 'block' : 'none'; };
+function sceneAlpha(t, a, b, fin = 0.2, fout = 0.2) {
+  return Math.min(fin ? seg(t, a, a + fin) : 1, fout ? 1 - seg(t, b - fout, b) : 1);
+}
+function wordsIn(ws, t, start, gap = 0.08, dur = 0.28, dy = 40) {
+  ws.forEach((w, i) => {
+    const p = eo(seg(t, start + i * gap, start + i * gap + dur));
+    w.style.opacity = p; w.style.transform = `translateY(${(1 - p) * dy}px)`;
+  });
+}
+const imgs = [];
+function setSrc(img, src) { if (img.getAttribute('src') !== src) { img.setAttribute('src', src); imgs.push(img); } }
+
+function render(t) {
+  imgs.length = 0;
+  show('s0', t < 0);
+  // 1: hook, 0 - 3
+  show('s1', t >= 0 && t < 3);
+  if (t < 3) {
+    $('s1').style.opacity = sceneAlpha(t, 0, 3, 0, 0.2);
+    wordsIn(W1a, t, 0.0, 0.08, 0.26);
+    wordsIn(W1b, t, 1.0, 0.08, 0.26);
+    const pw = eo(seg(t, 0, 0.4));
+    $('win').style.transform = `translateX(${(1 - pw) * 60}px) scale(${0.95 + 0.05 * pw})`;
+    $('win').style.opacity = 0.35 + 0.65 * pw;
+    const clip = t < 1 ? ['sonicn', 'Sonic N', 30 + Math.floor(t * FPS)]
+      : t < 2 ? ['super-monkey-ball', 'Super Monkey Ball', 62 + Math.floor((t - 1) * FPS)]
+      : ['rayman-3', 'Rayman 3', 60 + Math.floor((t - 2) * FPS)];
+    setSrc($('wimg'), `clips/${clip[0]}/cfr/${pad(clip[2])}.jpg`);
+    $('addr').innerHTML = `<b>n-ga.ge</b>/play/?g=${clip[0]}`;
+    $('wtitle').textContent = clip[1];
+    const flip = Math.min(Math.abs(t - 1), Math.abs(t - 2));
+    $('static').style.opacity = flip < 0.1 ? 1 - flip / 0.1 : 0;
+  }
+
+  // 2 + 3: the front page, 3 - 11
+  const on23 = t >= 3 && t < 11;
+  show('s23', on23);
+  if (on23) {
+    $('s23').style.opacity = sceneAlpha(t, 3, 11, 0.2, 0.2);
+    // camera: a slow push during the reveal, then the scroll to the row
+    // close on the masthead (scale 2, wrap's left edge at x 130, masthead centred),
+    // pull back to the page at 1.4, then scroll to the card row
+    const pull = eio(seg(t, 4.25, 5.0));
+    const scroll = eio(seg(t, 7.0, 7.7));
+    const mh = mast.offsetHeight;
+    const A = { s: 2.4, a: 130 - 308 * 2.4, b: (1080 - mh * 2.4) / 2 };
+    const B = { s: SCALE, a: 960 - 960 * SCALE, b: 0 };
+    const cam = lerp(0, CAM3, scroll);
+    const sc = lerp(A.s, B.s, pull);
+    const ax = lerp(A.a, B.a, pull), by = lerp(A.b, B.b, pull) - cam * SCALE;
+    pageEl.style.transform = `translate(${ax}px, ${by}px) scale(${sc})`;
+    // masthead
+    P2.forEach(({ p, d }) => { const q = seg(t, 3.0 + d, 3.0 + d + 0.1); p.style.opacity = q; });
+    $('rule').style.transform = `scaleX(${eo(seg(t, 3.1, 3.7))})`;
+    nav.style.opacity = seg(t, 3.4, 3.7);
+    wordsIn(Wl, t, 3.3, 0.07, 0.26, 24);
+    sub.style.opacity = seg(t, 3.8, 4.1);
+    const pb = eo(seg(t, 4.35, 4.85));
+    browse.style.opacity = pb; browse.style.transform = `translateY(${(1 - pb) * 30}px)`;
+    const pg = eo(seg(t, 4.5, 5.0));
+    grid.style.opacity = pg; grid.style.transform = `translateY(${(1 - pg) * 40}px)`;
+    const pc = eo(seg(t, 5.0, 6.5));
+    counts.forEach(({ el, n }) => { el.textContent = Math.round(n * pc); });
+    summary.textContent = `${Math.round(62 * pc)} games`;
+    // 3: the card
+    wordsIn(W3, t, 7.35, 0.09, 0.26, 30);
+    $('cap3').style.opacity = t < 7.3 ? 0 : 1;
+    const c0 = { x: 1640, y: 1150 };
+    const cRect = toScreen(tRect.left + tRect.width * 0.55, tRect.top + tRect.height * 0.42, CAM3);
+    const pm = eio(seg(t, 7.55, 8.4));
+    const press = t >= 8.5 && t < 8.62 ? 0.84 : 1;
+    $('cursor').style.display = t >= 7.5 && t < 8.75 ? 'block' : 'none';
+    $('cursor').style.transform = `translate(${lerp(c0.x, cRect.x, pm)}px, ${lerp(c0.y, cRect.y, pm)}px) scale(${press})`;
+    target.classList.toggle('target', t >= 8.2 && t < 8.75);
+    target.style.transform = t >= 8.5 && t < 8.62 ? 'scale(.97)' : '';
+    // zoom from the card's screen to the player
+    const z = eio(seg(t, 8.6, 9.15));
+    const zoomOn = t >= 8.6 && t < 9.15;
+    const from = toScreen(sRect.left, sRect.top, CAM3);
+    const fw = sRect.width * SCALE, fh = sRect.height * SCALE;
+    const to = { x: 940, y: 150, w: 704, h: 830 };
+    $('zoom').style.display = zoomOn ? 'block' : 'none';
+    if (zoomOn) {
+      setSrc($('zoom'), 'shots/glimmerati.png');
+      Object.assign($('zoom').style, { left: `${lerp(from.x, to.x, z)}px`, top: `${lerp(from.y, to.y, z)}px`, width: `${lerp(fw, to.w, z)}px`, height: `${lerp(fh, to.h, z)}px` });
+    }
+    $('player').style.display = t >= 8.6 ? 'block' : 'none';
+    $('player').style.opacity = eo(seg(t, 8.6, 9.0));
+    $('pimg').style.opacity = t >= 9.15 ? 1 : 0;
+    if (t >= 9.1) setSrc($('pimg'), `clips/glimmerati/cfr/${pad(20 + Math.floor((t - 9.1) * FPS))}.jpg`);
+  }
+
+
+  // 4: over 60, 11 - 15
+  const on4 = t >= 11 && t < 15;
+  show('s4', on4);
+  if (on4) {
+    $('s4').style.opacity = sceneAlpha(t, 11, 15, 0.15, 0.2);
+    tiles.forEach(({ el, ok, r, c }) => {
+      const d = 11.0 + (r + c) * 0.055;
+      const p = eo(seg(t, d, d + 0.3));
+      el.style.opacity = p; el.style.transform = `rotateY(${(1 - p) * 80}deg) translateY(${(1 - p) * 20}px)`;
+      const q = back(seg(t, d + 0.3, d + 0.5));
+      ok.style.transform = `scale(${q})`; ok.style.opacity = seg(t, d + 0.3, d + 0.4);
+    });
+    $('wall').style.transform = `scale(${1 + 0.03 * seg(t, 11, 15)})`;
+    $('veil').style.opacity = eo(seg(t, 11.45, 11.9));
+    wordsIn(W4, t, 11.5, 0.09, 0.3, 50);
+    wordsIn(W4b, t, 12.1, 0.06, 0.26, 26);
+  }
+
+  // 5: multiplayer, host, 15 - 19
+  const on5 = t >= 15 && t < 19;
+  show('s5', on5);
+  if (on5) {
+    $('s5').style.opacity = sceneAlpha(t, 15, 19, 0.15, 0.2);
+    wordsIn(W5, t, 15.1, 0.1, 0.3, 40);
+    $('m5').style.opacity = seg(t, 15.6, 15.9);
+    const ph = back(seg(t, 15.05, 15.45));
+    $('hostdlg').style.opacity = seg(t, 15.05, 15.2);
+    $('hostdlg').style.transform = `translateY(${(1 - seg(t, 15.05, 15.45)) * 40}px) scale(${0.94 + 0.06 * ph})`;
+    const pr = eo(seg(t, 16.3, 16.75));
+    $('rooms').style.opacity = pr; $('rooms').style.transform = `translateY(${(1 - pr) * 60}px)`;
+    // cursor to Join (button centre at 51% / 65% of the rooms image), click at 17.5
+    const jx = 130 + 464 * 1.2, jy = 600 + 137 * 1.2;
+    const pm = eio(seg(t, 16.75, 17.4));
+    $('cur5').style.display = t >= 16.75 ? 'block' : 'none';
+    const press = t >= 17.5 && t < 17.62 ? 0.84 : 1;
+    $('cur5').style.transform = `translate(${lerp(1500, jx, pm)}px, ${lerp(1150, jy, pm)}px) scale(${press})`;
+    const pc = back(seg(t, 17.65, 17.95));
+    $('chip2').style.opacity = seg(t, 17.65, 17.75);
+    $('chip2').style.transform = `scale(${0.5 + 0.5 * pc})`;
+  }
+
+  // 6: multiplayer, the match, 19 - 23
+  const on6 = t >= 19 && t < 23;
+  show('s6', on6);
+  if (on6) {
+    $('s6').style.opacity = sceneAlpha(t, 19, 23, 0.15, 0.2);
+    wordsIn(W6, t, 19.1, 0.12, 0.3, 40);
+    $('m6').style.opacity = seg(t, 19.6, 19.9);
+    const pa = eo(seg(t, 19.0, 19.4)), pb = eo(seg(t, 19.15, 19.55));
+    $('winA').style.opacity = pa; $('winA').style.transform = `translateY(${(1 - pa) * 50}px)`;
+    $('winB').style.opacity = pb; $('winB').style.transform = `translateY(${(1 - pb) * 50}px)`;
+    $('whoA').style.opacity = seg(t, 19.4, 19.6); $('whoB').style.opacity = seg(t, 19.55, 19.75);
+    const f = 75 + Math.floor((t - 19) * FPS);
+    setSrc($('imgA'), `mp/match-a/cfr/${pad(f)}.jpg`);
+    setSrc($('imgB'), `mp/match-b/cfr/${pad(f)}.jpg`);
+    $('wireline').setAttribute('stroke-dashoffset', String(-((t * 40) % 12)));
+    $('wire').style.opacity = seg(t, 19.6, 19.8);
+  }
+
+  // 7: display, 23 - 27
+  const on7 = t >= 23 && t < 27;
+  show('s7', on7);
+  if (on7) {
+    $('s7').style.opacity = sceneAlpha(t, 23, 27, 0.15, 0.2);
+    wordsIn(W7, t, 23.1, 0.08, 0.28, 36);
+    $('m7').style.opacity = seg(t, 23.5, 23.8);
+    const pd = eo(seg(t, 23.05, 23.45));
+    $('dispdlg').style.opacity = pd; $('dispdlg').style.transform = `translateY(${(1 - pd) * 40}px)`;
+    const steps = [['nearest', 'Sharp pixels'], ['xbrz_freescale', 'xBRZ'], ['fsr', 'FSR 1.0'], ['CRT-Lottes', 'CRT']];
+    const k = Math.min(3, Math.floor(t - 23));
+    const [f, label] = steps[k];
+    setSrc($('dispimg'), `settings/display-${f}.png`);
+    setSrc($('img7'), `settings/filter-${f}/cfr/${pad(20 + Math.floor((t - 23 - k) * FPS))}.jpg`);
+    $('tag7').textContent = label;
+    const pt = back(seg(t, 23 + k, 23 + k + 0.25));
+    $('tag7').style.transform = `scale(${0.7 + 0.3 * pt})`;
+  }
+
+  // 8: 4x, 27 - 31
+  const on8 = t >= 27 && t < 31;
+  show('s8', on8);
+  if (on8) {
+    const u = t - 12;   // the first video's timings, 15 - 19
+    $('s8').style.opacity = sceneAlpha(t, 27, 31, 0.15, 0.2);
+    wordsIn(W8, t, 27.1, 0.07, 0.26, 30);
+    $('m8').style.opacity = seg(u, 15.9, 16.2);
+    const ps = eo(seg(u, 15.0, 15.35));
+    $('screen5').style.transform = `translateX(${(1 - ps) * 50}px)`;
+    const zin = eio(seg(u, 15.2, 15.6)), zout = eio(seg(u, 16.6, 17.0));
+    const zs = 1 + 1.25 * zin * (1 - zout);
+    const fx = 220, fy = 520;
+    $('layer5').style.transform = `translate(${fx - fx * zs}px, ${fy - fy * zs}px) scale(${zs})`;
+    const w = eio(seg(u, 15.65, 16.45));
+    const live = u >= 17.0;
+    $('sk4').style.clipPath = `inset(0 ${(1 - w) * 100}% 0 0)`;
+    $('wipe').style.left = `${w * 704}px`;
+    $('wipe').style.opacity = w > 0 && w < 1 ? 1 : 0;
+    $('sk1').style.display = live ? 'none' : 'block';
+    $('sk4').style.display = live ? 'none' : 'block';
+    $('sklive').style.display = live ? 'block' : 'none';
+    if (live) setSrc($('sklive'), `clips/shadowkey/cfr/${pad(36 + Math.floor((u - 17.0) * FPS))}.jpg`);
+    $('tagA').style.opacity = 1 - seg(u, 16.3, 16.5);
+    $('tagB').style.opacity = seg(u, 16.35, 16.5);
+    $('tagB').style.transform = `scale(${back(seg(u, 16.35, 16.6))})`;
+  }
+
+  // 9: controls and saves, 31 - 35
+  const on9 = t >= 31 && t < 35;
+  show('s9', on9);
+  if (on9) {
+    $('s9').style.opacity = sceneAlpha(t, 31, 35, 0.15, 0.2);
+    wordsIn(W9, t, 31.1, 0.09, 0.28, 36);
+    $('m9').style.opacity = seg(t, 31.6, 31.9);
+    const pc = eo(seg(t, 31.05, 31.45));
+    $('ctldlg').style.opacity = pc; $('ctldlg').style.transform = `translateY(${(1 - pc) * 40}px)`;
+    // the + of "Pad up" (keyboard) is at (581, 262) of the 1140 x 888 image; shown at 760 / 1140
+    const px = 130 + 581 * (900 / 1140), py = 310 + 262 * (900 / 1140);
+    const pm = eio(seg(t, 31.6, 32.4));
+    $('cur9').style.display = t >= 31.6 && t < 33.6 ? 'block' : 'none';
+    const press = t >= 32.5 && t < 32.62 ? 0.84 : 1;
+    $('cur9').style.transform = `translate(${lerp(980, px, pm)}px, ${lerp(1150, py, pm)}px) scale(${press})`;
+    setSrc($('ctlimg'), t < 32.55 ? 'settings/controls-0.png' : t < 33.0 ? 'settings/controls-1.png' : 'settings/controls-2.png');
+    const kp = seg(t, 32.75, 33.25);
+    $('keycap').style.display = t >= 32.7 && t < 33.5 ? 'grid' : 'none';
+    $('keycap').style.left = `${px + 40}px`; $('keycap').style.top = `${py - 130}px`;
+    $('keycap').style.transform = `translateY(${t >= 32.95 && t < 33.1 ? 8 : 0}px) scale(${0.8 + 0.2 * eo(kp * 3 > 1 ? 1 : kp * 3)})`;
+    $('keycap').style.opacity = 1 - seg(t, 33.3, 33.5);
+    const ps = eo(seg(t, 33.0, 33.4));
+    $('savdlg').style.opacity = ps; $('savdlg').style.transform = `translateX(${(1 - ps) * 80}px)`;
+  }
+
+  // 10: outro, 35 - 38
+  const on10 = t >= 35;
+  show('s10', on10);
+  if (on10) {
+    $('s10').style.opacity = seg(t, 35, 35.15);
+    P6.forEach(({ p, d }) => { const q = eo(seg(t, 35.0 + d, 35.0 + d + 0.14)); p.style.opacity = q; p.style.transform = `translateY(${(1 - q) * -1.2}px)`; });
+    wordsIn(W10, t, 35.4, 0.06, 0.26, 26);
+    const u = back(seg(t, 35.85, 36.15));
+    $('url6').style.opacity = seg(t, 35.85, 35.95); $('url6').style.transform = `scale(${0.6 + 0.4 * u})`;
+    $('m10').style.opacity = seg(t, 36.1, 36.4);
+  }
+
+  const all = [...document.images].filter((i) => i.offsetParent !== null);
+  return Promise.all(all.map((i) => i.decode().catch(() => {})));
+}
+window.render = render;
+window.ready = document.fonts.ready.then(() => Promise.all([...document.images].map((i) => i.decode().catch(() => {}))));
+</script>
+</body>
+</html>

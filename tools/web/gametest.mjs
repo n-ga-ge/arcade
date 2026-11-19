@@ -13,12 +13,19 @@
 //   --bin DIR          web build to test (default: eka2l1/build/web/bin of this
 //                      checkout, else of $ARCADE_MAIN)
 //   --assets DIR       folder with NGAGE.ROM and games/<slug>.zip (default:
-//                      testdata/ of this checkout, else of $ARCADE_MAIN)
+//                      testdata/ of this checkout, else of $ARCADE_MAIN); an
+//                      N-Gage 2.0 game ("platform": "ngage2") needs
+//                      devices/rm-409.zip and ngage2/ngage-1.40.1557.sis
+//                      there instead of NGAGE.ROM
 //   --entry FILE       read the catalogue entry from FILE instead (to try a
 //                      changed script without editing the catalogue)
 //   --time-limit SEC   give up after this long (default: start-up timeout +
 //                      script length + a margin)
 //   --verbose          print the page console while it runs
+//   --enhance FILE     load this enhancement profile (catalog/enhance/<engine>.json)
+//                      as soon as the game runs, with replacing off, and record
+//                      in the result what it captured: shows that the hooks do
+//                      not disturb the game (docs/enhancements.md)
 //
 // Levels, from what a machine can check:
 //   broken   the game did not install or launch, the page reported an error,
@@ -49,13 +56,13 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SHOWN_AT, checkScript, difference, likeness, picture, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
+import { PLATFORM_FILES, SHOWN_AT, checkScript, difference, gameQuery, likeness, picture, platformOf, scriptMs, stepTiming, targetLevel, verdict, rank } from './gamecheck.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const OPTIONS = { game: 'value', out: 'value', browser: 'value', port: 'value', bin: 'value', assets: 'value', entry: 'value', 'time-limit': 'value', verbose: 'flag' };
+const OPTIONS = { game: 'value', out: 'value', browser: 'value', port: 'value', bin: 'value', assets: 'value', entry: 'value', 'time-limit': 'value', verbose: 'flag', enhance: 'value' };
 
 function usage(message) {
-  console.error(`${message}\nusage: node tools/web/gametest.mjs --game <slug> --out <dir> [--browser chrome-software|chrome] [--port N] [--bin DIR] [--assets DIR] [--entry FILE] [--time-limit SEC] [--verbose]`);
+  console.error(`${message}\nusage: node tools/web/gametest.mjs --game <slug> --out <dir> [--browser chrome-software|chrome] [--port N] [--bin DIR] [--assets DIR] [--entry FILE] [--time-limit SEC] [--verbose] [--enhance FILE]`);
   process.exit(2);
 }
 
@@ -128,6 +135,7 @@ const run = {
   shot: null, // the last screenshot worth keeping
   shotBlank: true,
   console: [],
+  enhance: null, // with --enhance: the capture machine's counters after the script
 };
 let browser = null;
 let server = null;
@@ -200,6 +208,7 @@ async function finish() {
     commit: commit(),
     checks: run.checks,
   };
+  if (run.enhance) result.enhance = run.enhance;
   if (better) {
     result.better = true;
     result.note = `listed as ${expect}, reached ${run.reached}: the catalogue entry can be updated`;
@@ -339,6 +348,20 @@ const probe = (session = false) => ask(async (wantSession) => {
   }
   return out;
 }, session);
+
+// With --enhance: what the capture machine counted, for every hook of the
+// profile's images that are loaded (those of other games are left out).
+let enhanceLoaded = false;
+async function readEnhance() {
+  const status = await ask(async () => (await window.eka2l1.request('GET', '/v1/enhance')).json(), null, 'enhancement status');
+  const loaded = new Set(status.hooks.filter((hook) => (hook.addresses || []).length).map((hook) => hook.image));
+  run.enhance = {
+    active: status.active, replace: status.replace, frames: status.frames, triangles: status.triangles,
+    hooks: status.hooks.filter((hook) => loaded.has(hook.image))
+      .map((hook) => ({ image: hook.image, at: hook.at, do: hook.do, hits: hook.hits, faults: hook.faults })),
+  };
+  return status;
+}
 
 // The emulator's own screenshot: the guest's screen, whatever the page shows.
 async function guestShot(keep = true) {
@@ -550,7 +573,7 @@ async function test() {
   }, limitMs).unref();
 
   for (const [file, hint] of [[path.join(binDir, 'eka2l1_web.wasm'), 'build it with tools/ci/build-web.sh or pass --bin'],
-    [path.join(assetsDir, 'NGAGE.ROM'), 'fetch it with tools/assets/fetch.py or pass --assets'],
+    ...Object.values(PLATFORM_FILES[platformOf(entry)]).map((firmware) => [path.join(assetsDir, ...firmware.split('/')), 'fetch it with tools/assets/fetch.py --fw <slug> or pass --assets']),
     [path.join(assetsDir, 'games', `${run.slug}.zip`), 'fetch it with tools/assets/fetch.py, pack it with tools/games/pack.py, or pass --assets']]) {
     if (!fs.existsSync(file)) throw setupProblem(`missing ${file}: ${hint}`);
   }
@@ -606,7 +629,9 @@ async function test() {
   });
 
   run.phase = 'loading the player';
-  const url = `http://127.0.0.1:${port}/?fw=/local/NGAGE.ROM&game=${gamePath}&persist=0`;
+  // An N-Gage 2.0 game names the phone's files instead of the ROM; the page
+  // then starts with the memory a phone needs.
+  const url = `http://127.0.0.1:${port}/${gameQuery(entry, run.slug)}`;
   const response = await guard(page.goto(url, { timeout: 60000 })).catch((error) => {
     throw error instanceof Problem ? error : setupProblem(`the player page did not load: ${firstLine(error)}`);
   });
@@ -621,6 +646,17 @@ async function test() {
     const support = window.eka2l1Page.support;
     return support && support.webgl ? support.webgl.renderer : null;
   }).catch(() => null);
+
+  if (args.enhance) {
+    run.phase = 'loading the enhancement profile';
+    const profile = fs.readFileSync(path.resolve(args.enhance), 'utf8');
+    const loaded = await ask(async ([body]) => {
+      const res = await window.eka2l1.request('PUT', '/v1/enhance/profile', body);
+      return { ok: res.ok, status: res.status, text: res.ok ? null : res.text() };
+    }, [profile], 'enhancement profile');
+    if (!loaded.ok) throw setupProblem(`the enhancement profile was refused (${loaded.status}): ${loaded.text}`);
+    enhanceLoaded = true;
+  }
 
   // Keys go straight to the emulator by N-Gage name: the page's own bindings
   // differ per game.
@@ -640,6 +676,10 @@ async function test() {
         await pause(step.wait);
       }
     }
+  }
+  if (args.enhance) {
+    const status = await readEnhance();
+    if (!status.active) throw setupProblem('the enhancement profile matches no code of this game: no hook was placed');
   }
   // A game with no script is watched for a while. One whose script was too
   // short to see a picture gets the same patience before it is called blank.
@@ -711,4 +751,6 @@ try {
 } catch (error) {
   failed(error);
 }
+// A run that failed on the way still says what the hooks did, if the page answers.
+if (enhanceLoaded && !run.enhance) await readEnhance().catch(() => {});
 await finish();

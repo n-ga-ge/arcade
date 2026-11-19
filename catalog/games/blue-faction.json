@@ -11,14 +11,20 @@
     "A mod of Red Faction with the artwork recoloured blue; levels, menus and keys are the same.",
     "Menus are selected with the left soft key; the OK key does nothing there. The right soft key goes back.",
     "In play either soft key opens the menu (sound, music, quit to menu).",
-    "VS (multiplayer) needs Bluetooth, which is not available here."
+    "VS (a deathmatch over Bluetooth) works between two players in one room of the site (Menu > Multiplayer): one chooses Play > VS > Host, with the map and the frag limit set on that screen, the other Play > VS > Join and then the host's name with the left soft key; the match starts at once. Key 7 leaves the waiting screens."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "menu": "VS",
-    "status": "untested"
+    "menu": "Play > VS > Host / Join",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Play > VS > Host (with the map and frag limit), the other Join and the host's name in the list; both load the map and a deathmatch runs on both screens. The game menu one opens pauses the other's screen too, and when one quits the other reads \"Connection was lost\". The two did not meet in the map. Tried with Red Faction, not Blue Faction, the same program."
+  },
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "The same executable as Red Faction, so the same profile image: the mine, doors and effects are captured; the HUD and the gun are 2D."
   },
   "controls": {
     "source": "Same as Red Faction (its Help, page 4, and keys confirmed in play there); in this mod the menu keys and the walk into the first level were checked again.",
