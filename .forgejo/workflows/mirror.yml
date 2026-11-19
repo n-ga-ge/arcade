@@ -1,0 +1,94 @@
+# The public mirror of n-ga.ge/arcade and the fork n-ga.ge/EKA2L1 on GitHub,
+# without the people who work on them and with the source code only.
+# docs/mirror.md describes it; tools/mirror/mirror.sh does the work.
+#
+# Every push to main rewrites both histories and checks the result (a dry
+# run), so that a change that could not be published is seen at once. It
+# pushes to GitHub only when the variable MIRROR_PUSH is "true". Started by
+# hand it is a dry run unless "push" is ticked.
+#
+# Configuration, under the repository's (or the organisation's) Settings >
+# Actions:
+#
+#   Secrets
+#     GITHUBTOKEN        a GitHub token that may push to n-ga-ge/arcade and
+#                        n-ga-ge/EKA2L1 (contents and workflows: write; the
+#                        fork carries upstream's .github/workflows). Only a
+#                        push needs it
+#     FORGE_TOKEN        reads the fork while it is private (as in ci.yml)
+#     MIRROR_IDENTITIES  optional: names, handles and addresses, one per
+#                        line, that the check looks for besides the ones it
+#                        finds in the history itself
+#     and the project's other secrets (the names below): the check fails if
+#     any of their values is in a file or a message
+#   Variables
+#     MIRROR_PUSH        "true" to push after every push to main
+#     MIRROR_IDENTITY    the one author of every commit; default
+#                        "n-ga.ge contributors <contributors@n-ga.ge>"
+name: Mirror
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      push:
+        description: Push to GitHub (otherwise rewrite and check only)
+        type: boolean
+        default: false
+      force_fork:
+        description: Let the fork's web-port on GitHub be replaced (after a rebase of web-port)
+        type: boolean
+        default: false
+
+# One at a time, none cancelled: each run publishes the whole history as it is
+# then, and the rewrite gives the same IDs every time, so a later run only
+# adds to what an earlier one pushed.
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    name: Mirror to GitHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: https://data.forgejo.org/actions/checkout@v7
+        with:
+          token: ${{ secrets.FORGE_TOKEN || forge.token }}
+          persist-credentials: false
+
+      - name: Self-test of the rewrite
+        run: python3 -I tools/mirror/rewrite.py --self-test
+
+      - name: Rewrite, check and push
+        env:
+          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN || forge.token }}
+          GITHUBTOKEN: ${{ secrets.GITHUBTOKEN }}
+          MIRROR_IDENTITIES: ${{ secrets.MIRROR_IDENTITIES }}
+          MIRROR_IDENTITY: ${{ vars.MIRROR_IDENTITY }}
+          ASSETS_TOKEN: ${{ secrets.ASSETS_TOKEN }}
+          CLOUDFLARE_API_TOKEN_PAGES: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
+          CLOUDFLARE_API_TOKEN_WORKERS: ${{ secrets.CLOUDFLARE_API_TOKEN_WORKERS }}
+          CLOUDFLARE_API_TOKEN_R2: ${{ secrets.CLOUDFLARE_API_TOKEN_R2 }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          EVENT: ${{ forge.event_name }}
+          MIRROR_PUSH: ${{ vars.MIRROR_PUSH }}
+          INPUT_PUSH: ${{ inputs.push }}
+          INPUT_FORCE_FORK: ${{ inputs.force_fork }}
+        run: |
+          args=()
+          if [ "$EVENT" = workflow_dispatch ]; then
+            [ "$INPUT_PUSH" != true ] || args+=(--push)
+            [ "$INPUT_FORCE_FORK" != true ] || args+=(--force-fork)
+          elif [ "$MIRROR_PUSH" = true ]; then
+            args+=(--push)
+          fi
+          case " ${args[*]} " in
+            *" --push "*) [ -n "$GITHUBTOKEN" ] || { echo "the GITHUBTOKEN secret is not set: nothing can be pushed"; exit 1; } ;;
+            *) echo "dry run: rewrite and check, no push" ;;
+          esac
+          tools/mirror/mirror.sh --work "${RUNNER_TEMP:-/tmp}/mirror" "${args[@]}"

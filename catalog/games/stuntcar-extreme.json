@@ -10,14 +10,21 @@
   "notes": [
     "The first start asks for a player name on a letter grid: pick letters with the left soft key, 5 or OK, then choose the return arrow in the bottom right corner to finish.",
     "The Help lists race keys for three phones; the Nokia N-Gage ones are the ones that apply here.",
-    "Multiplayer is head-to-head over Bluetooth and cannot work here."
+    "Multiplayer is a head-to-head race over Bluetooth, between two players in one room of the site (Menu > Multiplayer). One chooses Host Game. The other chooses Search for Hosts, which puts the host's name beside Join, then Join. Both then pick a car, the host picks the track, and the race begins when both have chosen Start Race."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
     "players": 2,
-    "status": "untested"
+    "menu": "Multiplayer > Host Game / Search for Hosts, then Join",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Host Game, the other Search for Hosts, then Join. Both get the lobby, where the track the host picks shows on the other screen, and both choose Start Race. A race on The Metropolitan ran on both screens; the joiner saw the host's car ahead until the host drove on. When one ends the race both return to the lobby; when one leaves it the host says Connection Lost."
+  },
+  "enhance": {
+    "engine": "xforge",
+    "status": "experimental",
+    "note": "Track, cars, scenery and the cars' shadows are captured. The sky picture, the HUD and the dashboard are 2D and stay at 176x208."
   },
   "controls": {
     "source": "The game's Help (General Controls and Race Controls for Nokia N-Gage). Steering, accelerate, view change and pause were also tried in a race; that 5 and OK select in menus was observed.",

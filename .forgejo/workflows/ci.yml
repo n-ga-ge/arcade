@@ -44,13 +44,15 @@
 #                                   private. Without the secret the job's own
 #                                   token is used, which is enough when the fork
 #                                   is public; that it can read a private one has
-#                                   not been seen
+#                                   not been seen. The deploy job also fetches
+#                                   the demo video from n-ga.ge/private with it
+#                                   (media/demo.mp4)
 #
 # The game jobs need ASSETS_URL and ASSETS_TOKEN, the deployment needs
 # CLOUDFLARE_API_TOKEN_PAGES and CLOUDFLARE_ACCOUNT_ID. Pull requests from
 # forks get no secrets, so there the game tests and the deployment are skipped
 # and only build runs. tools/ci/deploy.sh decides what a deployment is: main
-# goes live and deploys the two Workers, anything else (a pull request above all)
+# goes live and deploys the three Workers, anything else (a pull request above all)
 # becomes the dev deployment at https://dev.<project>.pages.dev (dev.n-ga.ge),
 # which the plan step and the Pages project call a preview.
 #
@@ -369,6 +371,15 @@ jobs:
         with:
           name: status
           path: status
+
+      # The demo video shows games, so it is kept in the private repository
+      # and never here (docs/demo-video.md). Without it the site is built
+      # without /demo.mp4.
+      - name: Fetch the demo video
+        env:
+          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN || forge.token }}
+          FORGE_URL: ${{ forge.server_url }}
+        run: tools/ci/fetch-demo.sh
 
       - name: Build the site
         run: |

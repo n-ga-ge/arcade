@@ -29,6 +29,8 @@ import s3  # noqa: E402
 import s3stub  # noqa: E402
 
 SLUGS = common.catalogue_slugs()
+# Firmware files the catalogue needs: the N-Gage ROM, and the N-Gage 2.0 ones while it has such a game.
+NFW = len({common.FW, *common.firmware_for(SLUGS)})
 SECRETS = ("CLOUDFLARE_API_TOKEN_R2", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_BASE_URL", "R2_ENDPOINT", "R2_ACCESS_KEY_ID",
            "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "ASSETS_URL", "ASSETS_TOKEN")
 
@@ -44,11 +46,15 @@ def make_files(folder):
     os.makedirs(os.path.join(folder, "zips"))
     with open(os.path.join(folder, "NGAGE.ROM"), "wb") as fh:
         fh.write(os.urandom(5000))
+    for name, size in (("rm-409.zip", 4000), ("ngage-1.40.1557.sis", 3000)):  # an N-Gage 2.0 game's firmware
+        with open(os.path.join(folder, name), "wb") as fh:
+            fh.write(os.urandom(size))
     for slug in SLUGS:
         with open(os.path.join(folder, "zips", slug + ".zip"), "wb") as fh:
             fh.write(os.urandom(1000 + len(slug)))
     # --games names a folder with no dumps, so nothing can be packed from real ones
-    return ["--fw", os.path.join(folder, "NGAGE.ROM"), "--out", os.path.join(folder, "zips"), "--games", os.path.join(folder, "none"),
+    return ["--fw", os.path.join(folder, "NGAGE.ROM"), "--ngage2-device", os.path.join(folder, "rm-409.zip"),
+            "--ngage2-app", os.path.join(folder, "ngage-1.40.1557.sis"), "--out", os.path.join(folder, "zips"), "--games", os.path.join(folder, "none"),
             "--manifest", os.path.join(folder, "assets.json")]
 
 
@@ -119,15 +125,15 @@ class Upload(unittest.TestCase):
         # a dry run with credentials changes nothing
         out = self.upload("--dry-run")
         self.assertIn("would create it", out)
-        self.assertIn(f"0 unchanged, {len(SLUGS) + 1} would upload", out)
+        self.assertIn(f"0 unchanged, {len(SLUGS) + NFW} would upload", out)
         self.assertFalse(os.path.exists(self.bucket))
         self.assertEqual(self.puts(), [])
 
         # the first upload creates the bucket and stores everything, byte for byte
         out = self.upload()
         self.assertIn("creating it", out)
-        self.assertIn(f"0 unchanged, {len(SLUGS) + 1} uploaded", out)
-        self.assertEqual(len(self.puts()), len(SLUGS) + 1)
+        self.assertIn(f"0 unchanged, {len(SLUGS) + NFW} uploaded", out)
+        self.assertEqual(len(self.puts()), len(SLUGS) + NFW)
         with open(os.path.join(self.folder, "NGAGE.ROM"), "rb") as fh:
             self.assertEqual(self.stored("NGAGE.ROM"), fh.read())
         self.assertEqual(hashlib.sha256(self.stored(f"games/{SLUGS[0]}.zip")).hexdigest(), manifest["games"][SLUGS[0]]["sha256"])
@@ -136,9 +142,9 @@ class Upload(unittest.TestCase):
 
         # nothing changed: nothing uploaded
         del self.stub.log[:]
-        self.assertIn(f"{len(SLUGS) + 1} unchanged, 0 uploaded", self.upload())
+        self.assertIn(f"{len(SLUGS) + NFW} unchanged, 0 uploaded", self.upload())
         self.assertEqual(self.puts(), [])
-        self.assertIn(f"{len(SLUGS) + 1} of {len(SLUGS) + 1} objects match", self.upload("--verify"))
+        self.assertIn(f"{len(SLUGS) + NFW} of {len(SLUGS) + NFW} objects match", self.upload("--verify"))
         self.assertIn("content hashed", self.upload("--verify", "--download"))
 
         # a file that differs from the committed manifest stops the upload before the bucket is touched
@@ -157,7 +163,7 @@ class Upload(unittest.TestCase):
         out = self.upload("--write-manifest", "--only", changed)
         self.assertIn("1 changed", out)
         del self.stub.log[:]
-        self.assertIn(f"{len(SLUGS)} unchanged, 1 uploaded", self.upload())
+        self.assertIn(f"{len(SLUGS) + NFW - 1} unchanged, 1 uploaded", self.upload())
         self.assertEqual(self.puts(), [f"/bkt/games/{changed}.zip"])
         self.assertTrue(self.stored(f"games/{changed}.zip").endswith(b"changed"))
 
@@ -174,7 +180,7 @@ class Upload(unittest.TestCase):
         self.upload("--verify")
         out = self.upload("--verify", "--download", code=1)
         self.assertIn("WRONG CONTENT", out)
-        self.assertIn(f"{len(SLUGS)} of {len(SLUGS) + 1} objects match", out)
+        self.assertIn(f"{len(SLUGS) + NFW - 1} of {len(SLUGS) + NFW} objects match", out)
 
         # replaced by something else (other size, no recorded hash), and removed
         with open(os.path.join(self.bucket, *other.split("/")), "ab") as fh:
@@ -182,12 +188,12 @@ class Upload(unittest.TestCase):
         self.stub.meta[("bkt", "NGAGE.ROM")]["sha256"] = None
         os.remove(os.path.join(self.bucket, *gone.split("/")))
         out = self.upload("--verify", code=1)
-        for expected in ("WRONG SIZE", "WRONG HASH recorded: none", "MISSING from the bucket", f"{len(SLUGS) - 2} of {len(SLUGS) + 1} objects match"):
+        for expected in ("WRONG SIZE", "WRONG HASH recorded: none", "MISSING from the bucket", f"{len(SLUGS) + NFW - 3} of {len(SLUGS) + NFW} objects match"):
             self.assertIn(expected, out)
 
         # the next upload repairs exactly those; the same-size damage is invisible to it, as to --verify, and needs --force
         del self.stub.log[:]
-        self.assertIn(f"{len(SLUGS) - 2} unchanged, 3 uploaded", self.upload())
+        self.assertIn(f"{len(SLUGS) + NFW - 3} unchanged, 3 uploaded", self.upload())
         self.assertEqual(sorted(self.puts()), sorted(["/bkt/NGAGE.ROM", "/bkt/" + other, "/bkt/" + gone]))
         self.assertIn("1 uploaded", self.upload("--force", "--only", SLUGS[0]))
         self.upload("--verify", "--download")
@@ -263,8 +269,13 @@ class Fetch(unittest.TestCase):
         os.makedirs(served)
         shutil.copy(os.path.join(self.folder, "NGAGE.ROM"), served)
         shutil.copytree(os.path.join(self.folder, "zips"), os.path.join(served, "games"))
+        for name, file in (("ngage2Device", "rm-409.zip"), ("ngage2App", "ngage-1.40.1557.sis")):
+            target = os.path.join(served, *common.object_key(name).split("/"))
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.copy(os.path.join(self.folder, file), target)
         self.served = served
-        common.write_manifest({"fw": self.entry(common.FW), "games": {slug: self.entry(slug) for slug in SLUGS}}, self.manifest)
+        firmware = {name: self.entry(name) for name in common.FIRMWARE}
+        common.write_manifest({**firmware, "games": {slug: self.entry(slug) for slug in SLUGS}}, self.manifest)
         AssetServer.token, AssetServer.fail_next, AssetServer.requests = None, 0, []
         handler = functools.partial(AssetServer, directory=os.path.join(self.folder, "served"))
         self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
@@ -300,9 +311,20 @@ class Fetch(unittest.TestCase):
         out = self.fetch("--fw", slug)
         self.assertEqual((out.count("downloaded"), out.count("already there")), (1, 1))
 
+    def test_platform_firmware(self):
+        # an N-Gage 2.0 game brings the phone's files instead of the N-Gage ROM
+        phone = [slug for slug in SLUGS if common.platform_of(slug) == "ngage2"]
+        if not phone:
+            self.skipTest("the catalogue has no N-Gage 2.0 game")
+        out = self.fetch("--fw", phone[0])
+        self.assertEqual(out.count("downloaded"), 3)
+        for key in ("devices/rm-409.zip", "ngage2/ngage-1.40.1557.sis", f"games/{phone[0]}.zip"):
+            self.assertTrue(os.path.isfile(os.path.join(self.out, *key.split("/"))), key)
+        self.assertFalse(os.path.exists(os.path.join(self.out, "NGAGE.ROM")))
+
     def test_all(self):
         out = self.fetch("--all", env={"ASSETS_URL": self.url.rstrip("/")})  # a base without the slash works too
-        self.assertEqual(out.count("downloaded"), len(SLUGS) + 1)
+        self.assertEqual(out.count("downloaded"), len(SLUGS) + len(common.FIRMWARE))
         self.assertEqual(len(os.listdir(os.path.join(self.out, "games"))), len(SLUGS))
 
     def test_hash_mismatch(self):

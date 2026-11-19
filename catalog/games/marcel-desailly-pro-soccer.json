@@ -12,15 +12,16 @@
     "The first screen asks for a language: English (UK or US), German, French, Italian or Spanish.",
     "Friendly > Game starts a single match; Cup, League and Career are on the main menu too.",
     "Either soft key pauses a match. In menus the right soft key selects and the left one goes back.",
-    "The 2 Players mode needs a second N-Gage over Bluetooth and is not available in the browser."
+    "Friendly > 2 Players works over Bluetooth between two players in one room: one chooses Server, the other Client. Then the server chooses Game and the settings; on Team Selection both confirm their team with 5 before the server's OK (right soft key) appears, both press Play on Team Formation, and the server presses 5 to start."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
     "players": 2,
-    "menu": "2 Players",
-    "status": "untested"
+    "menu": "Friendly > 2 Players > Server / Client",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Server and waits, the other Client and is connected at once, without a list. Game on the server then opens the settings and the team selection for both; a France v Japan match ran on both screens with the same clock and the same moves, one player's pause shows as \"Remote pause\" on the other's screen, and the server says \"Session ended\" when the other quits."
   },
   "controls": {
     "source": "The game's defaults, read from the diagram on its Options > Controls screen. The soft keys, OK and key 5 selecting in menus were observed.",

@@ -11,14 +11,18 @@
   "statusNote": "Rating and RedLynx screens, intro cutscene, main menu, Single-player > New game with the default commander and perk, the \"Broken Tranquility\" briefing, then the first battle: the sea map with both fleets, the adviser's messages, unit selection with its move range, the order menu, the pause menu and the help pages.",
   "notes": [
     "Battles are turn based: put the cursor on one of your ships, press 5 to select it, move the cursor inside the highlighted range and press 5 again, then pick an order.",
-    "N-Gage Arena cannot work here. The multiplayer game was not tried."
+    "Multiplayer game > Bluetooth works between two players in one room. The host chooses Host a game, Select mission, a mission and Ready, and waits on Select players; the other chooses Join a game and the host. The host then presses OK on the joiner's name to tick it, which lights Start. Both pick a commander and press Ready, on the teams screen too. Hot Seat (several players on one device) was not tried; N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
-      "arena"
+      "arena",
+      "hotseat"
     ],
-    "status": "untested"
+    "players": 4,
+    "menu": "Multiplayer game > Bluetooth > Host a game / Join a game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, picks a mission and presses Ready, the other joins and picks the host; the host ticks the joiner in its list and presses Start, then both choose a commander. A battle ran on both screens: the turn passed to the other and back, a unit one moved appeared on the other's map, and the host is told when the other disconnects. More than two players were not tried."
   },
   "controls": {
     "source": "The game's own Help pages (Battle view help and Travel view help, default key configuration). The cursor, 5, 3, the soft keys and the pause menu were confirmed in the first battle.",

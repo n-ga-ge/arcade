@@ -24,3 +24,13 @@ licence. The same goes for the pictures of the games on the front page.
 N-Gage is a trademark of Nokia. The names of the games are trademarks of their
 owners. This site is not affiliated with, or endorsed by, Nokia or any of the
 games' publishers.
+
+## Visitor statistics
+
+The site counts its visits with [Umami](https://umami.is). Each page sends the
+address visited, the referring page, the page's title, the screen size and the
+browser's language. A share of visits may also be recorded as a session replay
+of the page's layout, clicks and scrolling, with every input field masked; the
+game's picture is not recorded. No cookies are set, and a browser that asks not
+to be tracked is still counted. The site works the same with the statistics
+blocked.

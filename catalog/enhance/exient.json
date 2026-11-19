@@ -1,0 +1,2896 @@
+{
+  "engine": "exient",
+  "about": "Exient's software renderer (SSX Out of Bounds, WWE Aftershock): polygons sorted far to near, each drawn by a triangle or a quad function through a span filler the material picks: 8-bit textures with a palette per light level, colour ramps, flat colours, half-transparent and keyed variants.",
+  "viewport": {
+    "width": 176,
+    "height": 208
+  },
+  "images": [
+    {
+      "name": "6R65.app",
+      "hash": "0x4E81FA0B",
+      "game": "ssx-out-of-bounds",
+      "hooks": [
+        {
+          "at": "0x70394",
+          "do": "begin",
+          "note": "The 3D of a frame starts: the sorted list of polygons is emptied. r0 is the renderer. The target is the screen buffer from its first row to the last row of the view (176 by 176, 16 rows down in a race), so that the key never covers the black bar below it.",
+          "target": {
+            "pixels": "u32(u32(r0 + 0xb854) + 8)",
+            "width": "176",
+            "height": "(u32(r0 + 0x10) - u32(u32(r0 + 0xb854) + 8)) / u32(r0 + 0x18) + 176",
+            "pitch": "u32(r0 + 0x18)",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x70394",
+          "do": "set",
+          "note": "Counts the frames.",
+          "vars": {
+            "fno": "$fno + 1"
+          }
+        },
+        {
+          "at": "0xa0bf8",
+          "do": "set",
+          "note": "Dims a rectangle of the picture (behind a menu): while one of at least half the view is dimmed, the polygons are left to the game.",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa10b0",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa06a4",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "note": "A triangle: r0 the renderer, r1 three vertices of 12 bytes, r2 the material (+0x18 texture or colour, +0x1c palettes, +0x20 mode).",
+          "vars": {
+            "m": "u32(r2 + 0x20)",
+            "col": "u32(r2 + 0x18)",
+            "L": "u32(r0 + 0xb95c)",
+            "yo": "(u32(r0 + 0x10) - u32(u32(r0 + 0xb854) + 8)) / u32(r0 + 0x18)"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "vars": {
+            "tex": "($m & 1) == 0",
+            "rows": "($m & 0x80) && (($m & 0x40) || ($m & 0x26) == 0)",
+            "shade": "(s16(r1 + 0 + 8) + s16(r1 + 12 + 8) + s16(r1 + 24 + 8)) / 3",
+            "ramp": "$col >= 0x10000",
+            "clear": "$fno - $dimmed > 1"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "vars": {
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
+          "vars": {
+            "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
+            "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
+            "e0_2": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 24)",
+            "e0_3": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 0)",
+            "e0_4": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 0)",
+            "e0_5": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 12)"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
+          "vars": {
+            "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
+            "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
+            "t0_2": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_2 + 2)))",
+            "t0_3": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_3 + 2)))",
+            "t0_4": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_4 + 2)))",
+            "t0_5": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_5 + 2)))"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, opaque: 64 by 64 texels of 8 bits, 256 bytes a row, through one of 64 palettes picked by the light, or a row per pixel by the shade (mode bit 0x80).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, index 0 transparent (bit 2).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, half and half with the picture (bit 4), or every other pixel (bit 0x20).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, every other pixel, index 0 transparent.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, shaded: each pixel takes the colour ramp entry (32 entries of 12 bits) of the shade interpolated across the polygon, dithered; the ramp is drawn as a texture.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, shaded, every other pixel (bit 0x20): drawn as half and half.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, one colour: the material's 12-bit colour through the light.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, one colour, half and half (bit 4) or every other pixel (bit 0x20).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "note": "A quad: the same arguments, with four vertices.",
+          "vars": {
+            "m": "u32(r2 + 0x20)",
+            "col": "u32(r2 + 0x18)",
+            "L": "u32(r0 + 0xb95c)",
+            "yo": "(u32(r0 + 0x10) - u32(u32(r0 + 0xb854) + 8)) / u32(r0 + 0x18)"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "vars": {
+            "tex": "($m & 1) == 0",
+            "rows": "($m & 0x80) && (($m & 0x40) || ($m & 0x26) == 0)",
+            "shade": "(s16(r1 + 0 + 8) + s16(r1 + 12 + 8) + s16(r1 + 24 + 8) + s16(r1 + 36 + 8)) / 4",
+            "ramp": "$col >= 0x10000",
+            "clear": "$fno - $dimmed > 1"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "vars": {
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
+            "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
+            "e0_2": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 24)",
+            "e0_3": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 0)",
+            "e0_4": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 0)",
+            "e0_5": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 12)"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
+            "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
+            "t0_2": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_2 + 2)))",
+            "t0_3": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_3 + 2)))",
+            "t0_4": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_4 + 2)))",
+            "t0_5": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_5 + 2)))"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "note": "The same for the quad's second triangle (vertices 0, 2, 3).",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "e1_0": "sel(s16(r1 + 36 + 2) >= 0, r1 + 36, r1 + 24)",
+            "e1_1": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 36)",
+            "e1_2": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 36)",
+            "e1_3": "sel(s16(r1 + 36 + 2) >= 0, r1 + 36, r1 + 0)",
+            "e1_4": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 0)",
+            "e1_5": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 24)"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "t1_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_0 + 2)))",
+            "t1_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_1 + 2)))",
+            "t1_2": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e1_2 + 2)))",
+            "t1_3": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e1_3 + 2)))",
+            "t1_4": "sel(s16(r1 + 36 + 2) >= 0, 0, s16(r1 + 36 + 2) / (s16(r1 + 36 + 2) - s16($e1_4 + 2)))",
+            "t1_5": "sel(s16(r1 + 36 + 2) >= 0, 0, s16(r1 + 36 + 2) / (s16(r1 + 36 + 2) - s16($e1_5 + 2)))"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        }
+      ]
+    },
+    {
+      "name": "6R65.app",
+      "hash": "0x299798D8",
+      "game": "ssx-out-of-bounds-pl",
+      "hooks": [
+        {
+          "at": "0x70394",
+          "do": "begin",
+          "note": "The 3D of a frame starts: the sorted list of polygons is emptied. r0 is the renderer. The target is the screen buffer from its first row to the last row of the view (176 by 176, 16 rows down in a race), so that the key never covers the black bar below it.",
+          "target": {
+            "pixels": "u32(u32(r0 + 0xb854) + 8)",
+            "width": "176",
+            "height": "(u32(r0 + 0x10) - u32(u32(r0 + 0xb854) + 8)) / u32(r0 + 0x18) + 176",
+            "pitch": "u32(r0 + 0x18)",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x70394",
+          "do": "set",
+          "note": "Counts the frames.",
+          "vars": {
+            "fno": "$fno + 1"
+          }
+        },
+        {
+          "at": "0xa0bf8",
+          "do": "set",
+          "note": "Dims a rectangle of the picture (behind a menu): while one of at least half the view is dimmed, the polygons are left to the game.",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa10b0",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0xa06a4",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "note": "A triangle: r0 the renderer, r1 three vertices of 12 bytes, r2 the material (+0x18 texture or colour, +0x1c palettes, +0x20 mode).",
+          "vars": {
+            "m": "u32(r2 + 0x20)",
+            "col": "u32(r2 + 0x18)",
+            "L": "u32(r0 + 0xb95c)",
+            "yo": "(u32(r0 + 0x10) - u32(u32(r0 + 0xb854) + 8)) / u32(r0 + 0x18)"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "vars": {
+            "tex": "($m & 1) == 0",
+            "rows": "($m & 0x80) && (($m & 0x40) || ($m & 0x26) == 0)",
+            "shade": "(s16(r1 + 0 + 8) + s16(r1 + 12 + 8) + s16(r1 + 24 + 8)) / 3",
+            "ramp": "$col >= 0x10000",
+            "clear": "$fno - $dimmed > 1"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "vars": {
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
+          "vars": {
+            "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
+            "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
+            "e0_2": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 24)",
+            "e0_3": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 0)",
+            "e0_4": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 0)",
+            "e0_5": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 12)"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0)",
+          "vars": {
+            "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
+            "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
+            "t0_2": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_2 + 2)))",
+            "t0_3": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_3 + 2)))",
+            "t0_4": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_4 + 2)))",
+            "t0_5": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_5 + 2)))"
+          }
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, opaque: 64 by 64 texels of 8 bits, 256 bytes a row, through one of 64 palettes picked by the light, or a row per pixel by the shade (mode bit 0x80).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, index 0 transparent (bit 2).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, half and half with the picture (bit 4), or every other pixel (bit 0x20).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Textured, every other pixel, index 0 transparent.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, shaded: each pixel takes the colour ramp entry (32 entries of 12 bits) of the shade interpolated across the polygon, dithered; the ramp is drawn as a texture.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, shaded, every other pixel (bit 0x20): drawn as half and half.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, one colour: the material's 12-bit colour through the light.",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "note": "Untextured, one colour, half and half (bit 4) or every other pixel (bit 0x20).",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x62da0",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "note": "A quad: the same arguments, with four vertices.",
+          "vars": {
+            "m": "u32(r2 + 0x20)",
+            "col": "u32(r2 + 0x18)",
+            "L": "u32(r0 + 0xb95c)",
+            "yo": "(u32(r0 + 0x10) - u32(u32(r0 + 0xb854) + 8)) / u32(r0 + 0x18)"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "vars": {
+            "tex": "($m & 1) == 0",
+            "rows": "($m & 0x80) && (($m & 0x40) || ($m & 0x26) == 0)",
+            "shade": "(s16(r1 + 0 + 8) + s16(r1 + 12 + 8) + s16(r1 + 24 + 8) + s16(r1 + 36 + 8)) / 4",
+            "ramp": "$col >= 0x10000",
+            "clear": "$fno - $dimmed > 1"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "vars": {
+            "pal": "u32(r2 + 0x1c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "note": "Clipping at the top of the view, for a polygon that reaches above it: where each corner of the triangle moves to.",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "e0_0": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 12)",
+            "e0_1": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 24)",
+            "e0_2": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 24)",
+            "e0_3": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 0)",
+            "e0_4": "sel(s16(r1 + 12 + 2) >= 0, r1 + 12, r1 + 0)",
+            "e0_5": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 12)"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "t0_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_0 + 2)))",
+            "t0_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e0_1 + 2)))",
+            "t0_2": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_2 + 2)))",
+            "t0_3": "sel(s16(r1 + 12 + 2) >= 0, 0, s16(r1 + 12 + 2) / (s16(r1 + 12 + 2) - s16($e0_3 + 2)))",
+            "t0_4": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_4 + 2)))",
+            "t0_5": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e0_5 + 2)))"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "note": "The same for the quad's second triangle (vertices 0, 2, 3).",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "e1_0": "sel(s16(r1 + 36 + 2) >= 0, r1 + 36, r1 + 24)",
+            "e1_1": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 36)",
+            "e1_2": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 36)",
+            "e1_3": "sel(s16(r1 + 36 + 2) >= 0, r1 + 36, r1 + 0)",
+            "e1_4": "sel(s16(r1 + 24 + 2) >= 0, r1 + 24, r1 + 0)",
+            "e1_5": "sel(s16(r1 + 0 + 2) >= 0, r1 + 0, r1 + 24)"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "set",
+          "when": "!(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0)",
+          "vars": {
+            "t1_0": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_0 + 2)))",
+            "t1_1": "sel(s16(r1 + 0 + 2) >= 0, 0, s16(r1 + 0 + 2) / (s16(r1 + 0 + 2) - s16($e1_1 + 2)))",
+            "t1_2": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e1_2 + 2)))",
+            "t1_3": "sel(s16(r1 + 24 + 2) >= 0, 0, s16(r1 + 24 + 2) / (s16(r1 + 24 + 2) - s16($e1_3 + 2)))",
+            "t1_4": "sel(s16(r1 + 36 + 2) >= 0, 0, s16(r1 + 36 + 2) / (s16(r1 + 36 + 2) - s16($e1_4 + 2)))",
+            "t1_5": "sel(s16(r1 + 36 + 2) >= 0, 0, s16(r1 + 36 + 2) / (s16(r1 + 36 + 2) - s16($e1_5 + 2)))"
+          }
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && (($m & 0x40) || ($m & 0x26) == 0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x24) == 0 && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ((($m & 0x20) && ($m & 2) == 0) || (($m & 0x20) == 0 && ($m & 4))))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "w": "s16(p + 10)",
+            "u": "s16(p + 4) / 128",
+            "v": "s16(p + 6) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 4) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 6) / 128 / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10)) / ((1 - sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5)))))) / s16(p + 10) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) / s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex && ($m & 0x40) == 0 && ($m & 0x20) && ($m & 2))",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "w": "1 / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "u": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 4) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 4) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "v": "((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) * s16(p + 6) / 128 / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 6) / 128 / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10)) / ((1 - sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5)))))) / s16(p + 10) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) / s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 10))",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "u": "min(31.5, max(0.5, s16(p + 8) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x20) && $ramp)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "u": "min(31.5, max(0.5, (s16(p + 8) + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 8) - s16(p + 8))) / 32 + 0.5))",
+            "v": "0.5",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) == 0 && ($m & 0x80) == 0 && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0 && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 12 * i",
+          "fields": {
+            "x": "s16(p) / 4",
+            "y": "s16(p + 2) / 4 + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 12 + 2) >= 0 || s16(r1 + 24 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * ((i - i % 2) / 2)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t0_0, sel(i == 1, $t0_1, sel(i == 2, $t0_2, sel(i == 3, $t0_3, sel(i == 4, $t0_4, $t0_5))))) * (s16(sel(i == 0, $e0_0, sel(i == 1, $e0_1, sel(i == 2, $e0_2, sel(i == 3, $e0_3, sel(i == 4, $e0_4, $e0_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60734",
+          "do": "draw",
+          "when": "$clear && !(s16(r1 + 0 + 2) >= 0 && s16(r1 + 12 + 2) >= 0 && s16(r1 + 24 + 2) >= 0 && s16(r1 + 36 + 2) >= 0) && (s16(r1 + 0 + 2) >= 0 || s16(r1 + 24 + 2) >= 0 || s16(r1 + 36 + 2) >= 0) && ($tex == 0 && ($m & 0x24) && $ramp == 0)",
+          "skip": true,
+          "mode": "fan",
+          "count": "6",
+          "vertex": "r1 + 12 * sel(i < 2, 0, (i - i % 2) / 2 + 1)",
+          "fields": {
+            "x": "(s16(p) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5)))))) / 4 - s16(p) / 4))",
+            "y": "(s16(p + 2) / 4 + sel(i == 0, $t1_0, sel(i == 1, $t1_1, sel(i == 2, $t1_2, sel(i == 3, $t1_3, sel(i == 4, $t1_4, $t1_5))))) * (s16(sel(i == 0, $e1_0, sel(i == 1, $e1_1, sel(i == 2, $e1_2, sel(i == 3, $e1_3, sel(i == 4, $e1_4, $e1_5))))) + 2) / 4 - s16(p + 2) / 4)) + $yo",
+            "r": "min(15, ((sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 8) & 15) * ($L + 1024), (($col >> 8) & 15) * 1536 + (16 - (($col >> 8) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "g": "min(15, ((sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) - (sel($L <= 512, (($col >> 4) & 15) * ($L + 1024), (($col >> 4) & 15) * 1536 + (16 - (($col >> 4) & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "b": "min(15, ((sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) - (sel($L <= 512, ($col & 15) * ($L + 1024), ($col & 15) * 1536 + (16 - ($col & 15)) * ($L - 512))) % 1536) / 1536) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        }
+      ]
+    },
+    {
+      "name": "6RAA.APP",
+      "hash": "0x1CAE5616",
+      "game": "wwe-aftershock",
+      "hooks": [
+        {
+          "at": "0x6cfbc",
+          "do": "begin",
+          "note": "The 3D of a frame starts: the sorted list of polygons is emptied. r0 is the renderer, whose +0x10 is the screen buffer: the view is the whole screen.",
+          "target": {
+            "pixels": "u32(r0 + 0x10)",
+            "width": "176",
+            "height": "208",
+            "pitch": "u32(r0 + 0x18)",
+            "format": "rgb444"
+          },
+          "when": "lr - (pc - 0x6cfbc) != 0x7d404"
+        },
+        {
+          "at": "0x6cfbc",
+          "do": "set",
+          "note": "Counts the frames.",
+          "vars": {
+            "fno": "$fno + 1"
+          },
+          "when": "lr - (pc - 0x6cfbc) != 0x7d404"
+        },
+        {
+          "at": "0x86c1c",
+          "do": "set",
+          "note": "Dims a rectangle of the picture (behind a menu): while one of at least half the view is dimmed, the polygons are left to the game.",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0x870d4",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0x866c8",
+          "do": "set",
+          "when": "r3 * u16(sp) >= 15488",
+          "vars": {
+            "dimmed": "$fno"
+          }
+        },
+        {
+          "at": "0x624f4",
+          "do": "set",
+          "note": "A triangle: r0 the renderer, r1 three vertices of 20 bytes, r2 the material (+0x28 texture or colour, +0x2c palettes, +0x30 mode).",
+          "vars": {
+            "m": "u32(r2 + 0x30)",
+            "col": "u32(r2 + 0x28)",
+            "L": "u32(r0 + 0x2b5c)",
+            "yo": "0",
+            "f": "u32(r2 + 0x3c) - (pc - 0x624f4)"
+          }
+        },
+        {
+          "at": "0x624f4",
+          "do": "set",
+          "vars": {
+            "tex": "($m & 1) == 0",
+            "rows": "$f == 0x63a80",
+            "shade": "(s32(r1 + 0 + 16) + s32(r1 + 20 + 16) + s32(r1 + 40 + 16)) / 3",
+            "ramp": "$col >= 0x10000",
+            "clear": "$fno - $dimmed > 1"
+          }
+        },
+        {
+          "at": "0x624f4",
+          "do": "set",
+          "vars": {
+            "pal": "u32(r2 + 0x2c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
+          }
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Textured, opaque: 64 by 64 texels of 8 bits, 256 bytes a row, through one of 64 palettes picked by the light, or a row per pixel by the shade (mode bit 0x80).",
+          "when": "$clear && (($f == 0x64600 || $f == 0x63a80))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Textured, index 0 transparent (bit 2).",
+          "when": "$clear && (($f == 0x650b8))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Textured, half and half with the picture (bit 4), or every other pixel (bit 0x20).",
+          "when": "$clear && (($f == 0x66d28 || $f == 0x6599c))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Textured, every other pixel, index 0 transparent.",
+          "when": "$clear && (($f == 0x66324))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Textured with 16-bit texels, 64 by 64, 512 bytes a row, no palette.",
+          "when": "$clear && (($f == 0x63360))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "512",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Untextured, shaded: each pixel takes the colour ramp entry (32 entries of 12 bits) of the shade interpolated across the polygon, dithered; the ramp is drawn as a texture.",
+          "when": "$clear && (($f == 0x685f0))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "min(31.5, max(0.5, s32(p + 16) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Untextured, one colour: the material's 12-bit colour.",
+          "when": "$clear && (($f == 0x681e4))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "r": "(($col >> 8) & 15) * 17",
+            "g": "(($col >> 4) & 15) * 17",
+            "b": "($col & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x624f4",
+          "do": "draw",
+          "note": "Untextured, one colour, half and half (bit 4) or every other pixel (bit 0x20).",
+          "when": "$clear && (($f == 0x67bf8))",
+          "skip": true,
+          "mode": "triangles",
+          "count": "3",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "r": "(($col >> 8) & 15) * 17",
+            "g": "(($col >> 4) & 15) * 17",
+            "b": "($col & 15) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "set",
+          "note": "A quad: the same arguments, with four vertices.",
+          "vars": {
+            "m": "u32(r2 + 0x30)",
+            "col": "u32(r2 + 0x28)",
+            "L": "u32(r0 + 0x2b5c)",
+            "yo": "0",
+            "f": "u32(r2 + 0x3c) - (pc - 0x60a90)"
+          }
+        },
+        {
+          "at": "0x60a90",
+          "do": "set",
+          "vars": {
+            "tex": "($m & 1) == 0",
+            "rows": "$f == 0x63a80",
+            "shade": "(s32(r1 + 0 + 16) + s32(r1 + 20 + 16) + s32(r1 + 40 + 16) + s32(r1 + 60 + 16)) / 4",
+            "ramp": "$col >= 0x10000",
+            "clear": "$fno - $dimmed > 1"
+          }
+        },
+        {
+          "at": "0x60a90",
+          "do": "set",
+          "vars": {
+            "pal": "u32(r2 + 0x2c) + sel($rows, min(31, max(0, sar($shade, 5))), sel($m & 0x80, 0, min(63, max(0, sar($L, 5))))) * 512"
+          }
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x64600 || $f == 0x63a80))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x650b8))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x66d28 || $f == 0x6599c))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x66324))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128",
+            "a": "128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "256",
+            "format": "p8",
+            "palette": "$pal",
+            "paletteFormat": "rgb444",
+            "key": "0"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x63360))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "s32(p + 8) / 128",
+            "v": "s32(p + 12) / 128"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "64",
+            "height": "64",
+            "pitch": "512",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x685f0))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "u": "min(31.5, max(0.5, s32(p + 16) / 32 + 0.5))",
+            "v": "0.5"
+          },
+          "texture": {
+            "pixels": "$col",
+            "width": "32",
+            "height": "1",
+            "pitch": "64",
+            "format": "rgb444"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x681e4))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "r": "(($col >> 8) & 15) * 17",
+            "g": "(($col >> 4) & 15) * 17",
+            "b": "($col & 15) * 17"
+          },
+          "blend": "none",
+          "depth": "none"
+        },
+        {
+          "at": "0x60a90",
+          "do": "draw",
+          "when": "$clear && (($f == 0x67bf8))",
+          "skip": true,
+          "mode": "fan",
+          "count": "4",
+          "vertex": "r1 + 20 * i",
+          "fields": {
+            "x": "s32(p) / 64",
+            "y": "s32(p + 4) / 64 + $yo",
+            "r": "(($col >> 8) & 15) * 17",
+            "g": "(($col >> 4) & 15) * 17",
+            "b": "($col & 15) * 17",
+            "a": "128"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        }
+      ]
+    }
+  ]
+}

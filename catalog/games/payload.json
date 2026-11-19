@@ -13,14 +13,16 @@
     "In menus and briefings key 5 selects or continues and key 7 goes back; hold 5 to skip the Story intro.",
     "The right soft key pauses a race.",
     "Double-tap left or right to shunt and double-tap down for a 180 degree turn.",
-    "Multiplayer and N-Gage Arena are not available in the browser."
+    "Two players: both open Multiplayer > Play. The host chooses Host Game, a list of challenges (My Challenges holds the ones made with Multiplayer > Create), a challenge and Play, and waits in the Host Lobby. The other chooses Join Game and selects the host's name. In the Host Lobby the host presses right to change the joiner's mark from X to a tick, then 5 to continue. Leaving a race with Exit To Menu stops the game here. N-Gage Arena is not available in the browser."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Play > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts a challenge, the other joins and selects the host, the host ticks the joiner in its lobby and continues; a Pit Qualifier ran on both screens, one player's craft drives away on the other's screen, and a pause and quitting are announced to the other by name. Exit To Menu from the race then stopped the game of each player who chose it (access violation)."
   },
   "controls": {
     "source": "The game's own Default Key Controls screen, shown while a mission loads, and the Select 5 / Back 7 labels in its menus. Accelerating (up and 5), steering, the map (#), race info (9) and the right soft key's pause menu were also observed in the first race. Publisher and year are from the game's copyright screen.",
