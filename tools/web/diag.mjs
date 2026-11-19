@@ -253,8 +253,10 @@ function pretendHidden(hidden) {
     delete document.hidden;
   }
   const module = window.eka2l1 && window.eka2l1.module;
-  if (module && module._eka2l1_web_debug_animation_frames) module._eka2l1_web_debug_animation_frames(hidden ? 1 : 0);
+  const switched = Boolean(module && module._eka2l1_web_debug_animation_frames);
+  if (switched) module._eka2l1_web_debug_animation_frames(hidden ? 1 : 0);
   document.dispatchEvent(new Event('visibilitychange'));
+  return switched;
 }
 
 // --- the run ---------------------------------------------------------------------
@@ -359,7 +361,9 @@ async function main() {
     await other.bringToFront();
     await sleep(500);
     pretended = await evaluate(() => document.visibilityState === 'visible');
-    if (pretended) await evaluate(pretendHidden, true);
+    // Without the switch the page would be called hidden and still be drawn,
+    // which is no hidden page and must not be measured as one.
+    if (pretended && !await evaluate(pretendHidden, true)) throw new Error('this browser does not hide a page, and this build has no switch for its animation frames (eka2l1_web_debug_animation_frames)');
   }
 
   phase = 'playing';
