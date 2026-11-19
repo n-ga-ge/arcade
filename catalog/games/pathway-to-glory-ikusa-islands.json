@@ -12,15 +12,18 @@
     "Start game > Soloplayer > New creates a campaign (name, insignia, difficulty); the first mission is 1942 First Blood.",
     "The game is turn-based: move the cursor over the map and press 5 (or OK) to send the selected soldier there (the green line shows the path and what it costs). Key 7 opens the mission menu with End turn, Mission data / Audio, Use (weapons and gear), Commands and End mission.",
     "The first mission opens with rookie help text: the left soft key (OK) closes it, the right soft key (Disable) turns the help off.",
-    "Cooperative and multiplayer games need Bluetooth or N-Gage Arena and are not available in the browser.",
+    "Bluetooth games work between two players in one room of the site (Menu > Multiplayer). A battle against each other: Start game > Local battleground, one chooses Host a game and Create, the other Join a game and the host's name; the host chooses Start game, then Start the battle. The campaign together: Start game > Cooperative, one chooses Create Bluetooth game and Create campaign, the other Join, Create player and the host's name; the host chooses Start game twice. Global battleground is N-Gage Arena, which is no longer online.",
     "The card is the largest in the catalogue (54 MB), so the first start takes longer than other games."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
-      "arena"
+      "arena",
+      "hotseat"
     ],
-    "status": "untested"
+    "menu": "Start game > Local battleground > Host a game / Join a game; Cooperative > Create Bluetooth game / Join",
+    "status": "plays",
+    "statusNote": "Two players in one room played both kinds. Local battleground: one hosts, the other joins and picks the host, the host starts; a battle (Operation Stalemate, US against Japan) ran on both screens with the turn passing back and forth, and ended for the one who stayed when the other left. Cooperative: the first mission ran on both, the turns in step; \"John Doe has quit\" was shown when one left."
   },
   "controls": {
     "source": "The game's rookie help at the start of the first mission (point with the controller key, confirm the move with key 5, 'the main battlefield action key'; key 7 then End Turn finishes the turn), the shortcuts shown in its Commands menu (shoot 6, stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus. The cursor, OK, key 7 and the 1, 3, 9 and 0 shortcuts were also observed in the first mission. The year is from general knowledge of the game.",

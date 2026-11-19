@@ -13,6 +13,7 @@
     "When a city is founded its name appears in a plain text box on a black screen. The left soft key accepts the suggested name.",
     "The main menu starts a demo when left idle for about half a minute; any key returns to the menu."
   ],
+  "multiplayer": null,
   "controls": {
     "source": "The game's own Game Controls list, shown when a new game starts (number keys, star, hash, both soft keys). The d-pad, OK and the soft key labels in dialogs were observed in play.",
     "actions": {

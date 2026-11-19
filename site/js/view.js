@@ -2,7 +2,7 @@
 // the detail view, the lists of open rooms and the footer's build line. Text
 // from the catalogue and from the relay's room list only ever goes in as text
 // nodes, never as markup.
-import { CI, SOURCE_URL, STATUSES, levelLabel, modeText, multiplayerWords, statusOf } from './model.js';
+import { CI, PLATFORMS, SOURCE_URL, STATUSES, levelLabel, modeText, multiplayerWords, platformOf, statusOf } from './model.js';
 import { SVG, sprite } from './sprite.js';
 
 export function el(tag, attributes, ...children) {
@@ -44,6 +44,8 @@ function multiplayerBadge(multiplayer) {
 }
 
 const byline = (game) => [game.publisher, game.year].filter(Boolean).join(' · ');
+// Only the second platform is named on a card: the catalogue is mostly original N-Gage games.
+const platformLabel = (game) => (game.platform === 'ngage2' ? platformOf(game.platform).label : '');
 
 // The 176x208 screen: the CI screenshot when there is one, else the game's
 // placeholder figure. `eager` is for the detail view, which is opened on purpose.
@@ -77,6 +79,7 @@ export function card(game, onDetails) {
     el('div', { class: 'card-shot' }, screen(game), broken && el('span', { class: 'stamp', 'aria-hidden': 'true', text: 'Not working' })),
     el('h3', { class: 'card-title' }, link),
     game.base && el('p', { class: 'card-variant', text: `Variant of ${game.base.title}` }),
+    platformLabel(game) && el('p', { class: 'card-platform', text: platformLabel(game) }),
     by && el('p', { class: 'card-by', text: by }),
     statusBadge(status),
     // The multiplayer label and, while someone is hosting the game, how many
@@ -107,6 +110,18 @@ export function chips(container) {
         entry.id && glyph(`sig-${entry.id}`, 'sig'),
         el('span', { text: entry.label }),
         el('b', { class: 'chip-count', 'data-count': entry.id || 'all', text: '0' }))));
+  }
+}
+
+// What the games run on: "All", the original N-Gage and N-Gage 2.0, with
+// counts filled in by setCounts().
+export function platformChips(container) {
+  for (const entry of [{ id: '', label: 'All' }, ...PLATFORMS]) {
+    container.append(el('label', { class: 'chip' },
+      el('input', { type: 'radio', name: 'platform', value: entry.id }),
+      el('span', { class: 'chip-face' },
+        el('span', { text: entry.label }),
+        el('b', { class: 'chip-count', 'data-count': entry.id ? `p-${entry.id}` : 'all', text: '0' }))));
   }
 }
 
@@ -257,8 +272,9 @@ export function detail(body, game, onOpen, rooms) {
     fact(facts, game.variants.length > 1 ? 'Variants' : 'Variant',
       el('ul', { class: 'plain' }, ...game.variants.map((variant) => el('li', null, gameLink(variant, onOpen)))));
   }
+  fact(facts, 'Platform', game.platform === 'ngage2' ? 'N-Gage 2.0, on a Nokia 5320 phone' : platformOf(game.platform).label);
   if (game.multiplayer) fact(facts, 'Multiplayer', multiplayerFact(game.multiplayer));
-  fact(facts, 'Controls', game.hasControls ? 'Laid out for this game' : 'Standard N-Gage layout');
+  fact(facts, 'Controls', game.hasControls ? 'Laid out for this game' : game.platform === 'ngage2' ? 'Standard phone layout' : 'Standard N-Gage layout');
   if (game.uid) fact(facts, 'App UID', el('code', { text: game.uid }));
 
   const by = byline(game);

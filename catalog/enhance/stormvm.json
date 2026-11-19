@@ -1,0 +1,1642 @@
+{
+  "engine": "stormvm",
+  "about": "The 3D of StormBASIC's virtual machine (STORMVM.DLL, or the same code in a game's _lnk.DLL): meshes drawn as textured quads and triangles with a depth buffer, a colour key and a distance shade.",
+  "viewport": {
+    "width": 176,
+    "height": 208
+  },
+  "images": [
+    {
+      "name": "stormvm.dll",
+      "hash": "0xF213F0D1",
+      "game": "techwars",
+      "hooks": [
+        {
+          "at": "0x19ce8",
+          "do": "begin",
+          "note": "RenderScene, after it set the view (r0 nonzero when there is one). u32(sp + 0x24) is the renderer, which holds the picture the 3D is drawn into (12-bit colours, 176 by 208).",
+          "when": "r0",
+          "target": {
+            "pixels": "u32(u32(sp + 0x24) + 0x2e4)",
+            "width": "u32(u32(sp + 0x24) + 0x10)",
+            "height": "u32(u32(sp + 0x24) + 0x14)",
+            "pitch": "u32(u32(sp + 0x24) + 0x10) * 2",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x19ce8",
+          "do": "set",
+          "when": "r0",
+          "vars": {
+            "scene": 1
+          }
+        },
+        {
+          "at": "0x19f90",
+          "do": "end",
+          "when": "$scene",
+          "note": "RenderScene returns: every mesh is drawn; the game draws its 2D after this."
+        },
+        {
+          "at": "0x19f90",
+          "do": "set",
+          "vars": {
+            "scene": 0
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x2e8)",
+            "tb": "u32(r0 + 0x680)"
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x2ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x2f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x2fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x67c)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), opaque; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), half the texel over half the picture; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x2e8)",
+            "tb": "u32(r0 + 0x680)"
+          }
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x2ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x2f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x2fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x67c)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        }
+      ]
+    },
+    {
+      "name": "stormvm.dll",
+      "hash": "0x1CFDA991",
+      "game": "barakel",
+      "hooks": [
+        {
+          "at": "0x19ce8",
+          "do": "begin",
+          "note": "RenderScene, after it set the view (r0 nonzero when there is one). u32(sp + 0x24) is the renderer, which holds the picture the 3D is drawn into (12-bit colours, 176 by 208).",
+          "when": "r0",
+          "target": {
+            "pixels": "u32(u32(sp + 0x24) + 0x2e4)",
+            "width": "u32(u32(sp + 0x24) + 0x10)",
+            "height": "u32(u32(sp + 0x24) + 0x14)",
+            "pitch": "u32(u32(sp + 0x24) + 0x10) * 2",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x19ce8",
+          "do": "set",
+          "when": "r0",
+          "vars": {
+            "scene": 1
+          }
+        },
+        {
+          "at": "0x19f90",
+          "do": "end",
+          "when": "$scene",
+          "note": "RenderScene returns: every mesh is drawn; the game draws its 2D after this."
+        },
+        {
+          "at": "0x19f90",
+          "do": "set",
+          "vars": {
+            "scene": 0
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x2e8)",
+            "tb": "u32(r0 + 0x680)"
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x2ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x2f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x2fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x67c)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), opaque; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), half the texel over half the picture; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3cc1c",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x2e8)",
+            "tb": "u32(r0 + 0x680)"
+          }
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x2ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x2f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x2fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x67c)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x3d2e0",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        }
+      ]
+    },
+    {
+      "name": "pfriction_lnk.dll",
+      "hash": "0x4F530D6E",
+      "game": "pool-friction",
+      "hooks": [
+        {
+          "at": "0x1d28c",
+          "do": "begin",
+          "note": "RenderScene, after it set the view (r0 nonzero when there is one). r9 is the renderer, which holds the picture the 3D is drawn into (12-bit colours, 176 by 208).",
+          "when": "r0",
+          "target": {
+            "pixels": "u32(r9 + 0x3e4)",
+            "width": "u32(r9 + 0x10)",
+            "height": "u32(r9 + 0x14)",
+            "pitch": "u32(r9 + 0x10) * 2",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x1d28c",
+          "do": "set",
+          "when": "r0",
+          "vars": {
+            "scene": 1
+          }
+        },
+        {
+          "at": "0x1d514",
+          "do": "end",
+          "when": "$scene",
+          "note": "RenderScene returns: every mesh is drawn; the game draws its 2D after this."
+        },
+        {
+          "at": "0x1d514",
+          "do": "set",
+          "vars": {
+            "scene": 0
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x3e8)",
+            "tb": "u32(r0 + 0x9c0)"
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x3ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x3f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x3fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x9bc)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), opaque; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), half the texel over half the picture; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x3e8)",
+            "tb": "u32(r0 + 0x9c0)"
+          }
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x3ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x3f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x3fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x9bc)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        }
+      ]
+    },
+    {
+      "name": "freestyle_lnk.dll",
+      "hash": "0x4F530D6E",
+      "game": "freestyle",
+      "hooks": [
+        {
+          "at": "0x1d28c",
+          "do": "begin",
+          "note": "RenderScene, after it set the view (r0 nonzero when there is one). r9 is the renderer, which holds the picture the 3D is drawn into (12-bit colours, 176 by 208).",
+          "when": "r0",
+          "target": {
+            "pixels": "u32(r9 + 0x3e4)",
+            "width": "u32(r9 + 0x10)",
+            "height": "u32(r9 + 0x14)",
+            "pitch": "u32(r9 + 0x10) * 2",
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x1d28c",
+          "do": "set",
+          "when": "r0",
+          "vars": {
+            "scene": 1
+          }
+        },
+        {
+          "at": "0x1d514",
+          "do": "end",
+          "when": "$scene",
+          "note": "RenderScene returns: every mesh is drawn; the game draws its 2D after this."
+        },
+        {
+          "at": "0x1d514",
+          "do": "set",
+          "vars": {
+            "scene": 0
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x3e8)",
+            "tb": "u32(r0 + 0x9c0)"
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x3ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x3f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x3fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x9bc)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A quad (grids: floors, terrain), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !$rc && $lw == $lh && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), opaque; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "draw",
+          "note": "A rectangle on the screen (billboards: plants, signs), half the texel over half the picture; always the depth buffer and the colour key.",
+          "when": "$tx != 0 && $rc && s32(sp + 4) >= sar(r1, 0) && sel(u32(r0 + 0x21c), $lw == $lh && $lw >= 5 && $lw <= 7, $lw >= 4 && $lw <= 6 && ($lh == $lw || $lh == $lw + 1)) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lh) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lh)",
+            "format": "rgb444",
+            "key": "0x0f0f"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x420d0",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "note": "The polygon's texture, its size and the colour table.",
+          "vars": {
+            "lv": "u32(r0 + 0x3e8)",
+            "tb": "u32(r0 + 0x9c0)"
+          }
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "vars": {
+            "tx": "u32(r0 + 0x3ec + 4 * $lv)",
+            "lw": "u16(r0 + 0x3f8 + 2 * $lv)",
+            "lh": "u16(r0 + 0x3fe + 2 * $lv)",
+            "sh": "$tb != 0 && $tb != u32(r0 + 0x9bc)",
+            "rc": "r1 == u32(sp + 36) && u32(sp + 4) == u32(sp + 20)"
+          }
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "vars": {
+            "cr": "sel($sh, ((u16($tb + 0x1ffe) >> 8) & 15) * 17, 255)",
+            "cg": "sel($sh, ((u16($tb + 0x1ffe) >> 4) & 15) * 17, 255)",
+            "cb": "sel($sh, (u16($tb + 0x1ffe) & 15) * 17, 255)"
+          }
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), opaque, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "greater"
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), opaque, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && !u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb"
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "key",
+          "depth": "none"
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, with the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "greater"
+        },
+        {
+          "at": "0x42768",
+          "do": "draw",
+          "note": "A triangle (models), half the texel over half the picture, without the depth buffer.",
+          "when": "$tx != 0 && $lw >= 4 && $lw <= 8 && !u32(r0 + 0x24c) && u32(r0 + 0x250)",
+          "mode": "fan",
+          "count": 3,
+          "vertex": "sp - 12 + 16 * i",
+          "fields": {
+            "x": "fx(sel(i == 0, sar(r1, 0), s32(p)), 3)",
+            "y": "fx(sel(i == 0, sar(r2, 0), s32(p + 4)), 3) + 0.5",
+            "z": "sel(i == 0, sar(r3, 0), s32(p + 8))",
+            "w": "1048576 / max(sel(i == 0, sar(r3, 0), s32(p + 8)), 1)",
+            "u": "u8(p + 12) * (1 << $lw) / 256",
+            "v": "u8(p + 13) * (1 << $lw) / 256",
+            "r": "$cr",
+            "g": "$cg",
+            "b": "$cb",
+            "a": 128
+          },
+          "texture": {
+            "pixels": "$tx",
+            "width": "(1 << $lw)",
+            "height": "(1 << $lw)",
+            "format": "rgb444",
+            "key": "sel(u32(r0 + 0x254), 0x0f0f, 0x10000)"
+          },
+          "blend": "alpha",
+          "depth": "none"
+        },
+        {
+          "at": "0x42768",
+          "do": "set",
+          "note": "Replacing: the rasteriser returns at once, so the guest draws none of the polygon.",
+          "vars": {},
+          "skip": true
+        }
+      ]
+    }
+  ]
+}

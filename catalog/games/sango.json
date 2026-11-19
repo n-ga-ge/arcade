@@ -8,7 +8,7 @@
   "variantOf": null,
   "dump": "Sango",
   "status": "ingame",
-  "statusNote": "Logo, intro poem, title menu and settings work; a new game opens with Liu Bei's first line and then the map, where the character walks and the mini-map, quick panel, help and pause menu open. The small text (dialogue, help) is drawn with rows of pixels missing and is hard to read.",
+  "statusNote": "Logo, intro poem, title menu and settings work; a new game opens with Liu Bei's first line and then the map, where the character walks and the mini-map, quick panel, help and pause menu open.",
   "notes": [
     "The game is in Chinese only. Its title screen reads 三國演義 (Romance of the Three Kingdoms); the phone lists the app as SanGo.",
     "The dump has an English patch as a separate .SIS file, which a card install does not apply.",
@@ -17,7 +17,7 @@
   ],
   "multiplayer": null,
   "controls": {
-    "source": "Observed in play: moving, OK in menus, the mini-map on 0, the quick panel on the left soft key and 7, the pause menu on the right soft key. From the game's help (帮助, in Chinese and partly unreadable because of the damaged text): 5 confirming, the star key, the hash key and the keys 1 to 4.",
+    "source": "Observed in play: moving, OK in menus, the mini-map on 0, the quick panel on the left soft key and 7, the pause menu on the right soft key. From the game's help (帮助, in Chinese): 5 confirming, the star key, the hash key and the keys 1 to 4.",
     "actions": {
       "up": "Move up",
       "down": "Move down",

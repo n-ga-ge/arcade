@@ -1,5 +1,6 @@
-// Serves /assets/<key> from the private R2 bucket: the firmware and one zip per
-// game. README.md describes the behaviour; the short version:
+// Serves /assets/<key> from the private R2 bucket: the firmware (the N-Gage ROM,
+// and for N-Gage 2.0 the phone's device zip and the N-Gage application) and
+// one zip per game. README.md describes the behaviour; the short version:
 //
 // - only GET and HEAD of the known keys, only for the site, the origins in
 //   ALLOWED_ORIGINS and holders of ASSETS_TOKEN (access.js);
@@ -12,7 +13,8 @@ import { applyAccessHeaders, checkAccess } from './access.js';
 import { UNSATISFIABLE, evaluatePreconditions, isSingleRange, resolveRange } from './conditions.js';
 
 const PREFIX = '/assets/';
-const KEY = /^(?:NGAGE\.ROM|games\/[a-z0-9-]+\.zip)$/;
+// The firmware keys are tools/assets/common.py's FIRMWARE.
+const KEY = /^(?:NGAGE\.ROM|devices\/rm-409\.zip|ngage2\/ngage-1\.40\.1557\.sis|games\/[a-z0-9-]+\.zip)$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 
 const IMMUTABLE = 'max-age=31536000, immutable';
@@ -303,7 +305,7 @@ async function route(request, env, ctx, url, access) {
     return text(405, 'Method not allowed', { Allow: ALLOW });
   }
   if (!access.allowed) return text(403, 'Forbidden');
-  // Only the two kinds of key the site uses, so nothing else that ends up in
+  // Only the keys the site uses, so nothing else that ends up in
   // the bucket is reachable, and there is no listing.
   const key = url.pathname.slice(PREFIX.length);
   if (!KEY.test(key)) return text(404, 'Not found');

@@ -12,15 +12,16 @@
     "A match starts with both superstars' ring entrances, which take up to a minute and play by themselves.",
     "The left soft key pauses a match. The pause menu has Controls (the key list, which can be changed there) and Help.",
     "From the game's Help: tap Counter rapidly to counter a strike or grapple; hit Strike and Grapple rapidly to win a submission; when the SmackDown! meter is charged, go for the impact.",
-    "Multiplayer and N-Gage Arena on the main menu need a second phone or Nokia's online service and cannot work here."
+    "A Bluetooth match is under Multiplayer on the main menu: one player chooses Host, the other Join and then the host in the list, and the host answers \"wants to join. Accept?\" with Ok. The host then picks the match type, each player picks a superstar, the host picks the arena, and both press Continue (left soft key). N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "menu": "Main menu > Multiplayer",
-    "status": "untested"
+    "menu": "Multiplayer > Host / Join",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins, picks the host in the list and is accepted; the host chose Main Event > Exhibition, both chose a superstar, and a match ran on both screens with each player moving their own superstar. One player's pause is shown to the other, and the host is told when the other quits. Tag Team and more than two players were not tried."
   },
   "controls": {
     "source": "The game's defaults, read from its pause menu > Controls screen (keys 1 to 9). The soft keys and OK in menus were seen by pressing them. Moving with the pad is the usual arrangement and could not be confirmed in the match that was tried, because the opponent kept the player's superstar down.",
@@ -188,5 +189,10 @@
       }
     ]
   },
-  "statusNote": "Runs from the legal screens and logos through the menus into a Single-Player exhibition match: both ring entrances play in 3D, then the match itself with strikes, grapples, the health and SmackDown! meters and the pause menu."
+  "statusNote": "Runs from the legal screens and logos through the menus into a Single-Player exhibition match: both ring entrances play in 3D, then the match itself with strikes, grapples, the health and SmackDown! meters and the pause menu.",
+  "enhance": {
+    "engine": "exient",
+    "status": "experimental",
+    "note": "Ring, ropes, crowd and wrestlers are redrawn. Not exact yet: textures lit per pixel take one light level per polygon, and where a see-through part has nothing behind it (the screen above the stage) the key colour can show dimmed under the end-of-match menu. The larger sizes cost frames here."
+  }
 }
