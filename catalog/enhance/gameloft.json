@@ -1,0 +1,493 @@
+{
+  "engine": "gameloft",
+  "about": "Gameloft's 3D engine as Splinter Cell: Chaos Theory links it: a world of textured quads with a bilinear light and models of textured triangles, drawn into 32-bit words (depth, light level, 12-bit colour) that are resolved through a light table.",
+  "viewport": {
+    "width": 176,
+    "height": 208
+  },
+  "images": [
+    {
+      "name": "6r73.app",
+      "hash": "0x27DEE20C",
+      "game": "splinter-cell-chaos-theory",
+      "hooks": [
+        {
+          "at": "0x1007fc",
+          "do": "begin",
+          "note": "Draws the 3D scene's world, once a frame. r1: the renderer; its first word points to the frame buffer's address (32-bit words while drawing, the 16-bit picture after the resolve).",
+          "target": {
+            "pixels": "u32(u32(r1))",
+            "width": 176,
+            "height": 208,
+            "pitch": 352,
+            "format": "rgb444"
+          }
+        },
+        {
+          "at": "0x1007fc",
+          "do": "set",
+          "note": "The light table (16 rows of 4096 12-bit colours) the resolve looks every pixel up in, and that this frame has a 3D view.",
+          "vars": {
+            "T": "u32(u32(u32(r1 + 0x2724) + 4))",
+            "view": 1
+          }
+        },
+        {
+          "at": "0x1007fc",
+          "do": "set",
+          "note": "Night vision and thermal vision rewrite the table (every colour to a green or a red ramp), which no vertex colour can express: then nothing is captured and the game draws its 3D itself. The plain table leaves pure red, green and blue as they are in row 11.",
+          "vars": {
+            "plain": "$T && u16($T + 2 * (11 * 4096 + 0xf00)) == 0xf00 && u16($T + 2 * (11 * 4096 + 0xf0)) == 0xf0 && u16($T + 2 * (11 * 4096 + 0xf)) == 0xf"
+          }
+        },
+        {
+          "at": "0x1181e4",
+          "do": "set",
+          "note": "The corners come in one of two orders: r0, r1, r3, r2 around the quad when r0 and r2 lie on the same side of the line from r1 to r3, else r0, r1, r2, r3.",
+          "vars": {
+            "zig": "((s32(u32(r3)) - s32(u32(r1))) * (s32(u32(r0) + 4) - s32(u32(r1) + 4)) - (s32(u32(r3) + 4) - s32(u32(r1) + 4)) * (s32(u32(r0)) - s32(u32(r1)))) * ((s32(u32(r3)) - s32(u32(r1))) * (s32(u32(r2) + 4) - s32(u32(r1) + 4)) - (s32(u32(r3) + 4) - s32(u32(r1) + 4)) * (s32(u32(r2)) - s32(u32(r1)))) >= 0"
+          },
+          "when": "$plain"
+        },
+        {
+          "at": "0x1181e4",
+          "do": "set",
+          "note": "Each corner's light level.",
+          "vars": {
+            "l0": "max(0, min(15, sar(s32(u32(sp) + 0x1c) * sar(s32(r0 + 4), 4) * sar(s32(r0 + 8), 4) + s32(u32(sp) + 0x20) * sar(s32(r0 + 8), 4) + s32(u32(sp) + 0x24) * sar(s32(r0 + 4), 4) + s32(u32(sp) + 0x28) + 2047, 12)))",
+            "l1": "max(0, min(15, sar(s32(u32(sp) + 0x1c) * sar(s32(r1 + 4), 4) * sar(s32(r1 + 8), 4) + s32(u32(sp) + 0x20) * sar(s32(r1 + 8), 4) + s32(u32(sp) + 0x24) * sar(s32(r1 + 4), 4) + s32(u32(sp) + 0x28) + 2047, 12)))",
+            "l2": "max(0, min(15, sar(s32(u32(sp) + 0x1c) * sar(s32(r2 + 4), 4) * sar(s32(r2 + 8), 4) + s32(u32(sp) + 0x20) * sar(s32(r2 + 8), 4) + s32(u32(sp) + 0x24) * sar(s32(r2 + 4), 4) + s32(u32(sp) + 0x28) + 2047, 12)))",
+            "l3": "max(0, min(15, sar(s32(u32(sp) + 0x1c) * sar(s32(r3 + 4), 4) * sar(s32(r3 + 8), 4) + s32(u32(sp) + 0x20) * sar(s32(r3 + 8), 4) + s32(u32(sp) + 0x24) * sar(s32(r3 + 4), 4) + s32(u32(sp) + 0x28) + 2047, 12)))"
+          },
+          "when": "$plain"
+        },
+        {
+          "at": "0x1181e4",
+          "do": "set",
+          "note": "The light table's entries for white and mid grey at each corner's level.",
+          "vars": {
+            "w0": "u16($T + 2 * (($l0) * 4096 + 0xfff))",
+            "g0": "u16($T + 2 * (($l0) * 4096 + 0x888))",
+            "w1": "u16($T + 2 * (($l1) * 4096 + 0xfff))",
+            "g1": "u16($T + 2 * (($l1) * 4096 + 0x888))",
+            "w2": "u16($T + 2 * (($l2) * 4096 + 0xfff))",
+            "g2": "u16($T + 2 * (($l2) * 4096 + 0x888))",
+            "w3": "u16($T + 2 * (($l3) * 4096 + 0xfff))",
+            "g3": "u16($T + 2 * (($l3) * 4096 + 0x888))"
+          },
+          "when": "$plain"
+        },
+        {
+          "at": "0x1181e4",
+          "do": "draw",
+          "skip": true,
+          "note": "A world quad: r0 to r3 point to its corners (vertex pointer, u and v in 16ths of a texel), in one of the two orders the `set` before tells apart. [sp]: the plane gradients, with the bilinear light at +0x1c; [sp+4]: the texture and buffer.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, sel(i == 2, sel($zig, r3, r2), sel($zig, r2, r3))))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "(sar(s32(p + 4), 4) + 0.015625) - 0.999 * (256 * s32(u32(sp)) - (sar(s32(p + 4), 4) + 0.015625) * s32(u32(sp) + 8)) * s32(u32(p) + 8) / 67108864",
+            "v": "(sar(s32(p + 8), 4) + 0.015625) - 0.999 * (256 * s32(u32(sp) + 4) - (sar(s32(p + 8), 4) + 0.015625) * s32(u32(sp) + 8)) * s32(u32(p) + 8) / 67108864",
+            "color": "0xFF000000 | ((sel(i == 0, $w0, sel(i == 1, $w1, sel(i == 2, sel($zig, $w3, $w2), sel($zig, $w2, $w3))))) & 0xf00) * 0x1100 | ((sel(i == 0, $w0, sel(i == 1, $w1, sel(i == 2, sel($zig, $w3, $w2), sel($zig, $w2, $w3))))) & 0xf0) * 0x110 | ((sel(i == 0, $w0, sel(i == 1, $w1, sel(i == 2, sel($zig, $w3, $w2), sel($zig, $w2, $w3))))) & 0xf) * 0x11"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp + 4) + 8)",
+            "width": "1 << u32(u32(sp + 4) + 0x14)",
+            "height": "u32(u32(sp + 4) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp + 4) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "lequal",
+          "when": "$plain"
+        },
+        {
+          "at": "0x1181e4",
+          "do": "draw",
+          "note": "The same polygon again, added, where its light is above the texture's own colour (rows 12 to 15 of the light table brighten it).",
+          "when": "$plain && ($l0 > 11 || $l1 > 11 || $l2 > 11 || $l3 > 11)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, sel(i == 2, sel($zig, r3, r2), sel($zig, r2, r3))))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "(sar(s32(p + 4), 4) + 0.015625) - 0.999 * (256 * s32(u32(sp)) - (sar(s32(p + 4), 4) + 0.015625) * s32(u32(sp) + 8)) * s32(u32(p) + 8) / 67108864",
+            "v": "(sar(s32(p + 8), 4) + 0.015625) - 0.999 * (256 * s32(u32(sp) + 4) - (sar(s32(p + 8), 4) + 0.015625) * s32(u32(sp) + 8)) * s32(u32(p) + 8) / 67108864",
+            "color": "0xFF000000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, sel(i == 2, sel($zig, $g3, $g2), sel($zig, $g2, $g3))))) >> 8 & 15) - 8) * 0x200000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, sel(i == 2, sel($zig, $g3, $g2), sel($zig, $g2, $g3))))) >> 4 & 15) - 8) * 0x2000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, sel(i == 2, sel($zig, $g3, $g2), sel($zig, $g2, $g3))))) & 15) - 8) * 0x20"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp + 4) + 8)",
+            "width": "1 << u32(u32(sp + 4) + 0x14)",
+            "height": "u32(u32(sp + 4) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp + 4) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "add",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x117c78",
+          "do": "set",
+          "note": "As at 0x1181e4.",
+          "vars": {
+            "zig": "((s32(u32(r3)) - s32(u32(r1))) * (s32(u32(r0) + 4) - s32(u32(r1) + 4)) - (s32(u32(r3) + 4) - s32(u32(r1) + 4)) * (s32(u32(r0)) - s32(u32(r1)))) * ((s32(u32(r3)) - s32(u32(r1))) * (s32(u32(r2) + 4) - s32(u32(r1) + 4)) - (s32(u32(r3) + 4) - s32(u32(r1) + 4)) * (s32(u32(r2)) - s32(u32(r1)))) >= 0"
+          },
+          "when": "$plain"
+        },
+        {
+          "at": "0x117c78",
+          "do": "set",
+          "note": "Each corner's light level.",
+          "vars": {
+            "l0": "max(0, min(15, sar(s32(u32(sp) + 0x14) * sar(s32(r0 + 4) + 8, 4) * sar(s32(r0 + 8) + 8, 4) + s32(u32(sp) + 0x18) * sar(s32(r0 + 8) + 8, 4) + s32(u32(sp) + 0x1c) * sar(s32(r0 + 4) + 8, 4) + s32(u32(sp) + 0x20) + 2047, 12)))",
+            "l1": "max(0, min(15, sar(s32(u32(sp) + 0x14) * sar(s32(r1 + 4) + 8, 4) * sar(s32(r1 + 8) + 8, 4) + s32(u32(sp) + 0x18) * sar(s32(r1 + 8) + 8, 4) + s32(u32(sp) + 0x1c) * sar(s32(r1 + 4) + 8, 4) + s32(u32(sp) + 0x20) + 2047, 12)))",
+            "l2": "max(0, min(15, sar(s32(u32(sp) + 0x14) * sar(s32(r2 + 4) + 8, 4) * sar(s32(r2 + 8) + 8, 4) + s32(u32(sp) + 0x18) * sar(s32(r2 + 8) + 8, 4) + s32(u32(sp) + 0x1c) * sar(s32(r2 + 4) + 8, 4) + s32(u32(sp) + 0x20) + 2047, 12)))",
+            "l3": "max(0, min(15, sar(s32(u32(sp) + 0x14) * sar(s32(r3 + 4) + 8, 4) * sar(s32(r3 + 8) + 8, 4) + s32(u32(sp) + 0x18) * sar(s32(r3 + 8) + 8, 4) + s32(u32(sp) + 0x1c) * sar(s32(r3 + 4) + 8, 4) + s32(u32(sp) + 0x20) + 2047, 12)))"
+          },
+          "when": "$plain"
+        },
+        {
+          "at": "0x117c78",
+          "do": "set",
+          "note": "The light table's entries for white and mid grey at each corner's level.",
+          "vars": {
+            "w0": "u16($T + 2 * (($l0) * 4096 + 0xfff))",
+            "g0": "u16($T + 2 * (($l0) * 4096 + 0x888))",
+            "w1": "u16($T + 2 * (($l1) * 4096 + 0xfff))",
+            "g1": "u16($T + 2 * (($l1) * 4096 + 0x888))",
+            "w2": "u16($T + 2 * (($l2) * 4096 + 0xfff))",
+            "g2": "u16($T + 2 * (($l2) * 4096 + 0x888))",
+            "w3": "u16($T + 2 * (($l3) * 4096 + 0xfff))",
+            "g3": "u16($T + 2 * (($l3) * 4096 + 0x888))"
+          },
+          "when": "$plain"
+        },
+        {
+          "at": "0x117c78",
+          "do": "draw",
+          "skip": true,
+          "note": "A world quad without perspective (farther walls): as at 0x1181e4, but [sp] holds the changes of u and v (256ths of a texel) a pixel right and a row down, the bilinear light at +0x14 and one depth for the whole quad at +0x24; the texels are rounded.",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, sel(i == 2, sel($zig, r3, r2), sel($zig, r2, r3))))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "s32(p + 4) / 16 + 0.5 - 0.999 * s32(u32(sp)) / 256",
+            "v": "s32(p + 8) / 16 + 0.5 - 0.999 * s32(u32(sp) + 4) / 256",
+            "color": "0xFF000000 | ((sel(i == 0, $w0, sel(i == 1, $w1, sel(i == 2, sel($zig, $w3, $w2), sel($zig, $w2, $w3))))) & 0xf00) * 0x1100 | ((sel(i == 0, $w0, sel(i == 1, $w1, sel(i == 2, sel($zig, $w3, $w2), sel($zig, $w2, $w3))))) & 0xf0) * 0x110 | ((sel(i == 0, $w0, sel(i == 1, $w1, sel(i == 2, sel($zig, $w3, $w2), sel($zig, $w2, $w3))))) & 0xf) * 0x11"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp + 4) + 8)",
+            "width": "1 << u32(u32(sp + 4) + 0x14)",
+            "height": "u32(u32(sp + 4) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp + 4) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "lequal",
+          "when": "$plain"
+        },
+        {
+          "at": "0x117c78",
+          "do": "draw",
+          "note": "The same polygon again, added, where its light is above the texture's own colour (rows 12 to 15 of the light table brighten it).",
+          "when": "$plain && ($l0 > 11 || $l1 > 11 || $l2 > 11 || $l3 > 11)",
+          "mode": "fan",
+          "count": 4,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, sel(i == 2, sel($zig, r3, r2), sel($zig, r2, r3))))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "s32(p + 4) / 16 + 0.5 - 0.999 * s32(u32(sp)) / 256",
+            "v": "s32(p + 8) / 16 + 0.5 - 0.999 * s32(u32(sp) + 4) / 256",
+            "color": "0xFF000000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, sel(i == 2, sel($zig, $g3, $g2), sel($zig, $g2, $g3))))) >> 8 & 15) - 8) * 0x200000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, sel(i == 2, sel($zig, $g3, $g2), sel($zig, $g2, $g3))))) >> 4 & 15) - 8) * 0x2000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, sel(i == 2, sel($zig, $g3, $g2), sel($zig, $g2, $g3))))) & 15) - 8) * 0x20"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp + 4) + 8)",
+            "width": "1 << u32(u32(sp + 4) + 0x14)",
+            "height": "u32(u32(sp + 4) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp + 4) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "add",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x118dc8",
+          "do": "set",
+          "note": "Each corner's light level.",
+          "vars": {
+            "l0": "max(0, min(15, sar(s32(r3 + 0x1c) * sar(s32(r0 + 4), 4) * sar(s32(r0 + 8), 4) + s32(r3 + 0x20) * sar(s32(r0 + 8), 4) + s32(r3 + 0x24) * sar(s32(r0 + 4), 4) + s32(r3 + 0x28) + 2047, 12)))",
+            "l1": "max(0, min(15, sar(s32(r3 + 0x1c) * sar(s32(r1 + 4), 4) * sar(s32(r1 + 8), 4) + s32(r3 + 0x20) * sar(s32(r1 + 8), 4) + s32(r3 + 0x24) * sar(s32(r1 + 4), 4) + s32(r3 + 0x28) + 2047, 12)))",
+            "l2": "max(0, min(15, sar(s32(r3 + 0x1c) * sar(s32(r2 + 4), 4) * sar(s32(r2 + 8), 4) + s32(r3 + 0x20) * sar(s32(r2 + 8), 4) + s32(r3 + 0x24) * sar(s32(r2 + 4), 4) + s32(r3 + 0x28) + 2047, 12)))"
+          },
+          "when": "$plain && (u8(r3 + 0x18))"
+        },
+        {
+          "at": "0x118dc8",
+          "do": "set",
+          "note": "The light table's entries for white and mid grey at each corner's level.",
+          "vars": {
+            "w0": "u16($T + 2 * (($l0) * 4096 + 0xfff))",
+            "g0": "u16($T + 2 * (($l0) * 4096 + 0x888))",
+            "w1": "u16($T + 2 * (($l1) * 4096 + 0xfff))",
+            "g1": "u16($T + 2 * (($l1) * 4096 + 0x888))",
+            "w2": "u16($T + 2 * (($l2) * 4096 + 0xfff))",
+            "g2": "u16($T + 2 * (($l2) * 4096 + 0x888))"
+          },
+          "when": "$plain && (u8(r3 + 0x18))"
+        },
+        {
+          "at": "0x118dc8",
+          "do": "draw",
+          "skip": true,
+          "note": "A world triangle (the pieces of a quad cut by the near plane): r0 to r2 its corners, r3 the gradients (+0x18 nonzero: drawable), [sp] the texture and buffer.",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, r2))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "(sar(s32(p + 4), 4) + 0.015625) - 0.999 * (256 * s32(r3) - (sar(s32(p + 4), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "v": "(sar(s32(p + 8), 4) + 0.015625) - 0.999 * (256 * s32(r3 + 4) - (sar(s32(p + 8), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "color": "0xFF000000 | ((sel(i == 0, $w0, sel(i == 1, $w1, $w2))) & 0xf00) * 0x1100 | ((sel(i == 0, $w0, sel(i == 1, $w1, $w2))) & 0xf0) * 0x110 | ((sel(i == 0, $w0, sel(i == 1, $w1, $w2))) & 0xf) * 0x11"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 8)",
+            "width": "1 << u32(u32(sp) + 0x14)",
+            "height": "u32(u32(sp) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "none",
+          "depth": "lequal",
+          "when": "$plain && (u8(r3 + 0x18))"
+        },
+        {
+          "at": "0x118dc8",
+          "do": "draw",
+          "note": "The same polygon again, added, where its light is above the texture's own colour (rows 12 to 15 of the light table brighten it).",
+          "when": "$plain && (u8(r3 + 0x18) && ($l0 > 11 || $l1 > 11 || $l2 > 11))",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, r2))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "(sar(s32(p + 4), 4) + 0.015625) - 0.999 * (256 * s32(r3) - (sar(s32(p + 4), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "v": "(sar(s32(p + 8), 4) + 0.015625) - 0.999 * (256 * s32(r3 + 4) - (sar(s32(p + 8), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "color": "0xFF000000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, $g2))) >> 8 & 15) - 8) * 0x200000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, $g2))) >> 4 & 15) - 8) * 0x2000 | max(0, ((sel(i == 0, $g0, sel(i == 1, $g1, $g2))) & 15) - 8) * 0x20"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 8)",
+            "width": "1 << u32(u32(sp) + 0x14)",
+            "height": "u32(u32(sp) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "add",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x118750",
+          "do": "set",
+          "when": "$plain && (u8(r3 + 0x18))",
+          "note": "The model's light level.",
+          "vars": {
+            "ml": "(u32(u32(sp) + 4) >> 12) & 15"
+          }
+        },
+        {
+          "at": "0x118750",
+          "do": "set",
+          "when": "$plain && (u8(r3 + 0x18))",
+          "note": "The light table's entries for white and mid grey at that level.",
+          "vars": {
+            "wm": "u16($T + 2 * (($ml) * 4096 + 0xfff))",
+            "gm": "u16($T + 2 * (($ml) * 4096 + 0x888))"
+          }
+        },
+        {
+          "at": "0x118750",
+          "do": "draw",
+          "skip": true,
+          "when": "$plain && (u8(r3 + 0x18))",
+          "note": "A model triangle, affine: r0 to r2 point to its corners, r3 the gradients (+0x18 nonzero: drawable), [sp] the texture, the light level (+4, bits 12 to 15) and whether index 0 is transparent (+0x18).",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, r2))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "s32(p + 4) / 16 + 0.5 - 0.999 * s32(r3) / 256",
+            "v": "s32(p + 8) / 16 + 0.5 - 0.999 * s32(r3 + 4) / 256",
+            "color": "0xFF000000 | (($wm) & 0xf00) * 0x1100 | (($wm) & 0xf0) * 0x110 | (($wm) & 0xf) * 0x11"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 8)",
+            "width": "1 << u32(u32(sp) + 0x14)",
+            "height": "u32(u32(sp) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4,
+            "key": "sel(u8(u32(sp) + 0x18), 0, 0x100)"
+          },
+          "blend": "key",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x118750",
+          "do": "draw",
+          "when": "$plain && (u8(r3 + 0x18) && !u8(u32(sp) + 0x18) && $ml > 11)",
+          "note": "The same triangle again, added, when its light brightens the texture (rows 12 to 15) and it has no transparent texels (their colour would be added too).",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, r2))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "s32(p + 4) / 16 + 0.5 - 0.999 * s32(r3) / 256",
+            "v": "s32(p + 8) / 16 + 0.5 - 0.999 * s32(r3 + 4) / 256",
+            "color": "0xFF000000 | max(0, (($gm) >> 8 & 15) - 8) * 0x200000 | max(0, (($gm) >> 4 & 15) - 8) * 0x2000 | max(0, (($gm) & 15) - 8) * 0x20"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 8)",
+            "width": "1 << u32(u32(sp) + 0x14)",
+            "height": "u32(u32(sp) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "add",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x118978",
+          "do": "set",
+          "when": "$plain && (u8(r3 + 0x18))",
+          "note": "The model's light level.",
+          "vars": {
+            "ml": "(u32(u32(sp) + 4) >> 12) & 15"
+          }
+        },
+        {
+          "at": "0x118978",
+          "do": "set",
+          "when": "$plain && (u8(r3 + 0x18))",
+          "note": "The light table's entries for white and mid grey at that level.",
+          "vars": {
+            "wm": "u16($T + 2 * (($ml) * 4096 + 0xfff))",
+            "gm": "u16($T + 2 * (($ml) * 4096 + 0x888))"
+          }
+        },
+        {
+          "at": "0x118978",
+          "do": "draw",
+          "skip": true,
+          "when": "$plain && (u8(r3 + 0x18))",
+          "note": "A model triangle, with perspective: r0 to r2 point to its corners, r3 the gradients (+0x18 nonzero: drawable), [sp] the texture, the light level (+4, bits 12 to 15) and whether index 0 is transparent (+0x18).",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, r2))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "(sar(s32(p + 4), 4) + 0.015625) - 0.999 * (256 * s32(r3) - (sar(s32(p + 4), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "v": "(sar(s32(p + 8), 4) + 0.015625) - 0.999 * (256 * s32(r3 + 4) - (sar(s32(p + 8), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "color": "0xFF000000 | (($wm) & 0xf00) * 0x1100 | (($wm) & 0xf0) * 0x110 | (($wm) & 0xf) * 0x11"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 8)",
+            "width": "1 << u32(u32(sp) + 0x14)",
+            "height": "u32(u32(sp) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4,
+            "key": "sel(u8(u32(sp) + 0x18), 0, 0x100)"
+          },
+          "blend": "key",
+          "depth": "lequal"
+        },
+        {
+          "at": "0x118978",
+          "do": "draw",
+          "when": "$plain && (u8(r3 + 0x18) && !u8(u32(sp) + 0x18) && $ml > 11)",
+          "note": "The same triangle again, added, when its light brightens the texture (rows 12 to 15) and it has no transparent texels (their colour would be added too).",
+          "mode": "triangles",
+          "count": 3,
+          "vertex": "sel(i == 0, r0, sel(i == 1, r1, r2))",
+          "fields": {
+            "x": "s32(u32(p)) - 0.499",
+            "y": "s32(u32(p) + 4) + 0.5",
+            "z": "s32(u32(p) + 8)",
+            "w": "s32(u32(p) + 8)",
+            "u": "(sar(s32(p + 4), 4) + 0.015625) - 0.999 * (256 * s32(r3) - (sar(s32(p + 4), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "v": "(sar(s32(p + 8), 4) + 0.015625) - 0.999 * (256 * s32(r3 + 4) - (sar(s32(p + 8), 4) + 0.015625) * s32(r3 + 8)) * s32(u32(p) + 8) / 67108864",
+            "color": "0xFF000000 | max(0, (($gm) >> 8 & 15) - 8) * 0x200000 | max(0, (($gm) >> 4 & 15) - 8) * 0x2000 | max(0, (($gm) & 15) - 8) * 0x20"
+          },
+          "texture": {
+            "pixels": "u32(u32(sp) + 8)",
+            "width": "1 << u32(u32(sp) + 0x14)",
+            "height": "u32(u32(sp) + 0x10) + 1",
+            "format": "p8",
+            "palette": "u32(u32(sp) + 0xc)",
+            "paletteFormat": "rgb444",
+            "paletteStride": 4
+          },
+          "blend": "add",
+          "depth": "lequal"
+        },
+        {
+          "at": "0xd3470",
+          "do": "end",
+          "when": "$view",
+          "note": "After the resolve of the 32-bit buffer into the 16-bit picture; the radar and the HUD come after this."
+        },
+        {
+          "at": "0xd3470",
+          "do": "set",
+          "vars": {
+            "view": 0
+          }
+        }
+      ]
+    }
+  ]
+}

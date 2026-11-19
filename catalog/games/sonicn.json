@@ -14,6 +14,7 @@
     "# switches between the letterboxed view and a taller full-screen view. 0 turns the sound on and off.",
     "A soft key pauses; press it again to carry on."
   ],
+  "multiplayer": null,
   "controls": {
     "source": "Observed in play and in the menus. The title screen and the pause box name the 5 key; the game has no controls screen, and Options > Button Config was left at Normal.",
     "actions": {

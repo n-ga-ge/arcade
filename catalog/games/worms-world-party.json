@@ -12,7 +12,7 @@
     "The title screen asks for key 5, and 5 is the select key in every menu. The right soft key goes back.",
     "A title screen left alone starts a demo match; any key returns to the title.",
     "Single Game Deck has Quick Game, Missions, Custom Game and Training. Game Options > Misc. Options > Key Layout shows what every key does.",
-    "Multiplayer over Bluetooth and N-Gage Arena cannot work here."
+    "A Bluetooth game is under Multiplayer on the main menu (Host Quick Game, Host Custom Game, Join Game), and each player picks a team first. It does not work on this site yet: the joining player's list of hosts stays empty. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
@@ -20,7 +20,9 @@
       "arena",
       "hotseat"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host Quick Game or Host Custom Game / Join Game, then pick a team",
+    "status": "broken",
+    "statusNote": "Two players in one room: one chose Host Quick Game and a team and was told the team \"is waiting for clients to connect\"; the other chose Join Game and a team, and its Select Host list stayed empty under \"is looking for hosts\" for a minute and a half. Its phone finds the host's game and reads the host's team name from it, over and over, but the game never lists it, so nobody can join."
   },
   "controls": {
     "source": "The game's own Game Options > Misc. Options > Key Layout screen, which describes every key; moving, aiming, the weapons menu, firing, jumping and both soft keys were also tried in a Quick Game.",

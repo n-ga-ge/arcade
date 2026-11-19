@@ -12,14 +12,17 @@
   "notes": [
     "A new game first asks for a character name; type it on the number keys like a phone (2 gives a), then press OK.",
     "Story scenes show Continue and Skip on the soft keys. On the grid, press 5 to start the race.",
-    "N-Gage Arena and the multiplayer race (Bluetooth) cannot work here."
+    "The multiplayer race (Bluetooth) works between two players in one room: the host chooses Host Game and then Player Setup, the other Join Game and the host in the list; the host then chooses Launch Game, both pick a car, and the host presses 5 on the grid. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "players": 4,
+    "menu": "Start Game > Multiplayer Race > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts and opens Player Setup, the other joins and picks the host from the list, the host chooses Launch Game and both pick a car; a race in Milan ran on both screens, each sees the other's car under its name in the room, one player's pause is shown to the other, and the host's race is cancelled when the other quits. More than two players were not tried."
   },
   "controls": {
     "source": "The game's defaults from Options > Control Settings (the game can change them there). Accelerating, steering, the map, the soft keys and the pause menu were confirmed in a race.",
@@ -170,5 +173,10 @@
         "repeat": 3
       }
     ]
+  },
+  "enhance": {
+    "engine": "bugbear",
+    "status": "experimental",
+    "note": "Streets, buildings, cars, crowds, shadows, head-light glows and tail lights are drawn at the higher resolution; the radar and the dashboard stay as the game draws them. Tried only in the first race, in Milan."
   }
 }

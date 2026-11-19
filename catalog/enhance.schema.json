@@ -1,0 +1,315 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Enhancement profile",
+  "description": "Where an engine hands triangles to its software rasteriser, and how to read them. One file per engine in catalog/enhance/. docs/enhancements.md explains every field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "engine",
+    "images"
+  ],
+  "definitions": {
+    "expr": {
+      "type": [
+        "string",
+        "integer",
+        "number"
+      ],
+      "description": "An expression (docs/enhancements.md), or a number."
+    },
+    "format": {
+      "enum": [
+        "p8",
+        "rgb444",
+        "argb4444",
+        "rgb565",
+        "rgb555",
+        "argb1555",
+        "rgb888",
+        "argb8888",
+        "xrgb8888",
+        "a8",
+        "l8",
+        "p4",
+        "bgr555k"
+      ]
+    }
+  },
+  "properties": {
+    "engine": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "The file's name without .json."
+    },
+    "about": {
+      "type": "string",
+      "maxLength": 600,
+      "description": "One or two sentences on the engine and what the profile covers."
+    },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height"
+      ],
+      "description": "The size of the picture x and y are in. Default 176 by 208.",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        }
+      }
+    },
+    "images": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "hash",
+          "hooks"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[^/\\\\]+$",
+            "description": "The executable's file name, e.g. sce.app. Letter case does not matter."
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^0x[0-9A-Fa-f]{8}$",
+            "description": "The emulator's hash of its code (tools/re/e32.py info), so that another version of the file is never hooked at the wrong places."
+          },
+          "game": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "description": "The catalogue entry this executable belongs to."
+          },
+          "hooks": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "at",
+                "do"
+              ],
+              "properties": {
+                "at": {
+                  "type": "string",
+                  "pattern": "^0x[0-9A-Fa-f]+$",
+                  "description": "Offset from the start of the code section."
+                },
+                "do": {
+                  "enum": [
+                    "begin",
+                    "end",
+                    "draw",
+                    "set"
+                  ]
+                },
+                "note": {
+                  "type": "string",
+                  "maxLength": 300,
+                  "description": "What the function at this address is, in a few words."
+                },
+                "when": {
+                  "$ref": "#/definitions/expr"
+                },
+                "skip": {
+                  "type": "boolean",
+                  "description": "When the GPU layer draws the frame, return from this function without running it."
+                },
+                "return": {
+                  "$ref": "#/definitions/expr"
+                },
+                "target": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pixels",
+                    "width",
+                    "height",
+                    "format"
+                  ],
+                  "properties": {
+                    "pixels": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "width": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "height": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "pitch": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "format": {
+                      "$ref": "#/definitions/format"
+                    }
+                  }
+                },
+                "vars": {
+                  "type": "object",
+                  "propertyNames": {
+                    "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                  },
+                  "additionalProperties": {
+                    "$ref": "#/definitions/expr"
+                  }
+                },
+                "mode": {
+                  "enum": [
+                    "triangles",
+                    "fan",
+                    "strip"
+                  ]
+                },
+                "count": {
+                  "$ref": "#/definitions/expr"
+                },
+                "vertex": {
+                  "$ref": "#/definitions/expr"
+                },
+                "fields": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "properties": {
+                    "x": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "y": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "z": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "w": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "u": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "v": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "color": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "r": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "g": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "b": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "a": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "row": {
+                      "$ref": "#/definitions/expr",
+                      "description": "Which palette of a texture with paletteRows a pixel takes: interpolated across the triangle like u and v, floor(row) clamped to the rows. Only with such a texture."
+                    }
+                  }
+                },
+                "texture": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pixels",
+                    "width",
+                    "height",
+                    "format"
+                  ],
+                  "properties": {
+                    "id": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "pixels": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "width": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "height": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "pitch": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "format": {
+                      "$ref": "#/definitions/format"
+                    },
+                    "palette": {
+                      "$ref": "#/definitions/expr"
+                    },
+                    "paletteFormat": {
+                      "$ref": "#/definitions/format"
+                    },
+                    "paletteStride": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 16,
+                      "description": "Bytes from one palette entry to the next, when the entries are wider than their format (a 12-bit colour in a 32-bit word). Default: the size of the format."
+                    },
+                    "paletteRows": {
+                      "type": "integer",
+                      "minimum": 2,
+                      "maximum": 256,
+                      "description": "A paletted texture whose palette is chosen per pixel from a table of this many, by the vertices' interpolated row. The first is at palette."
+                    },
+                    "paletteRowStride": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65536,
+                      "description": "Bytes from one palette of the table to the next. Default: the entries (256, or 16 for p4) times paletteStride."
+                    },
+                    "key": {
+                      "$ref": "#/definitions/expr"
+                    }
+                  }
+                },
+                "blend": {
+                  "enum": [
+                    "none",
+                    "alpha",
+                    "add",
+                    "multiply",
+                    "key",
+                    "subtract"
+                  ]
+                },
+                "depth": {
+                  "enum": [
+                    "none",
+                    "less",
+                    "lequal",
+                    "greater",
+                    "gequal"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -3,9 +3,12 @@
 
   python3 -I tools/assets/fetch.py [--fw] [--all] [slug ...] --out DIR
 
-  --fw             the firmware, to <DIR>/NGAGE.ROM
+  --fw             the firmware the named games need: <DIR>/NGAGE.ROM for an
+                   original N-Gage game, <DIR>/devices/rm-409.zip and
+                   <DIR>/ngage2/ngage-1.40.1557.sis for an N-Gage 2.0 one
+                   (the entry's "platform"); without slugs, NGAGE.ROM
   slug ...         games, to <DIR>/games/<slug>.zip
-  --all            the firmware and every game in the manifest
+  --all            every firmware file and every game in the manifest
   --out DIR        the folder the tests read (testdata)
   --manifest FILE  default catalog/assets.json
   --retries N      attempts after the first for a transient failure (default 4)
@@ -119,7 +122,16 @@ def main():
         manifest = common.load_manifest(args.manifest)
     except (OSError, ValueError) as error:
         sys.exit(f"fetch.py: no usable manifest: {error}")
-    names = ([common.FW] if args.fw or args.all else []) + (sorted(manifest["games"]) if args.all else list(dict.fromkeys(args.slugs)))
+    slugs = sorted(manifest["games"]) if args.all else list(dict.fromkeys(args.slugs))
+    firmware = []
+    if args.all:
+        firmware = [name for name in common.FIRMWARE if name in manifest]
+    elif args.fw:
+        try:
+            firmware = common.firmware_for(slugs) if slugs else [common.FW]
+        except (OSError, ValueError) as error:
+            sys.exit(f"fetch.py: cannot tell which firmware the games need: {error}")
+    names = firmware + slugs
     if not names:
         parser.error("nothing to fetch: give --fw, slugs or --all")
     unknown = [name for name in names if not common.entry(manifest, name)]
