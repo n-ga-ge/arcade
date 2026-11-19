@@ -4,9 +4,9 @@ finished tree can be deployed.
 
   python3 -I tools/site/steps/90-cloudflare.py <dist> [--check]
 
-Copies cloudflare/pages/_headers (and _redirects, if there is one) into <dist>,
-and 404.html unless the site brought its own. Then it walks <dist> and stops
-the build when something in it must not or cannot go to Pages:
+Copies cloudflare/pages/_headers (and _redirects, if there is one) into <dist>.
+Then it walks <dist> and stops the build when something in it must not or
+cannot go to Pages:
 
   - a file over 25 MiB or more than 20,000 files (the Pages limits)
   - firmware, game dumps or parts of them: by file extension, by file
@@ -17,7 +17,8 @@ the build when something in it must not or cannot go to Pages:
   - names wrangler treats specially: _worker.js would turn the site into a
     Pages Functions project, where _headers no longer applies, and a few
     others are silently left out of the upload
-  - a missing _headers or 404.html
+  - a missing _headers, or a missing 404.html (site/404.html, which
+    build.py copies with the front page)
   - an inline script in the player's pages, which its Content-Security-Policy
     in _headers would block
 
@@ -229,23 +230,17 @@ def check_tree(dist):
         problems.append(f"{count} files; Pages accepts {MAX_FILES} per deployment")
     check_headers(os.path.join(dist, "_headers"), problems)
     if not os.path.isfile(os.path.join(dist, "404.html")):
-        problems.append("404.html is missing: without one at the top, Pages answers every unknown path with the front page and status 200")
+        problems.append("404.html is missing (it comes from site/404.html): without one at the top, Pages answers every unknown path with the front page and status 200")
     return count, largest, problems
 
 
 def copy_hosting_files(dist):
     copied = []
-    for name in ("_headers", "_redirects", "404.html"):
+    for name in ("_headers", "_redirects"):
         source = os.path.join(SOURCE, name)
-        target = os.path.join(dist, name)
         if not os.path.isfile(source):
             continue
-        # A top-level 404.html is what makes Pages answer unknown paths with
-        # 404 instead of the front page (its single-page-application default),
-        # so there must be one; the site's own wins over the plain one here.
-        if name == "404.html" and os.path.exists(target):
-            continue
-        shutil.copyfile(source, target)
+        shutil.copyfile(source, os.path.join(dist, name))
         copied.append(name)
     return copied
 
