@@ -13,13 +13,15 @@
     "On the play-call screen each of the three plays shown is picked with the key under it (1, 5 or 3); the direction pad pages through more plays. Your team's plays are the bottom row when you are the away team.",
     "The right soft key pauses a game (Resume, Replay, Timeout, Settings, Quit).",
     "Quick taps are sometimes missed by this game; hold a key a little longer if nothing happens.",
-    "Multiplayer needs Bluetooth and a second N-Gage and is not available in the browser."
+    "Two players: one chooses Multiplayer > Host and waits; the other chooses Multiplayer > Join and selects the host in the list when the search is complete; the host then selects the joiner's name when it appears. The host picks the home team and the joiner the away team, and each confirms with 5."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host / Join",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins and selects the host in the list, the host selects the joiner; each picks a team and sees the other's choice, and a game ran on both screens: coin toss, play calling, the kickoff and a down. One player's pause menu is shown to the other, and when the joiner quit both were back at the main menu."
   },
   "controls": {
     "source": "The game has no controls screen. Select (5) and Back (7) are from the labels at the bottom of its menus, and 1, 5 and 3 from the labels on the play-call screen; the soft keys, OK and the direction pad were observed in menus, play calling and the pause menu. The keys used during a down (snap, pass, tackle) could not be told apart by watching and are not listed; the pass-play diagrams label receivers 7, 4, 5 and 3.",

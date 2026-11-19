@@ -1,0 +1,76 @@
+{
+  "slug": "one-ngage2",
+  "title": "ONE",
+  "platform": "ngage2",
+  "publisher": "Nokia",
+  "year": 2008,
+  "genre": "Fighting",
+  "uid": "0x2000AFBF",
+  "variantOf": null,
+  "dump": "ONE (N-Gage 2.0)",
+  "status": "ingame",
+  "statusNote": "The N-Gage 2.0 game by Digital Legends, not the original N-Gage card of the same name. Menus, Versus and a fight in landscape with correct 3D, 24 to 26 fps on a fast laptop. The dump is a community release without signatures, which the N-Gage application refuses, so the player installs the game directly.",
+  "notes": [
+    "Punch and kick start on keys the phone does not have. Rebind them in the game's pause menu (left soft key).",
+    "The phone is turned to landscape by the game, 320×240."
+  ],
+  "multiplayer": {
+    "modes": [
+      "bluetooth"
+    ],
+    "menu": "Play > Multiplayer > Host a Game / Join a Game",
+    "status": "broken",
+    "statusNote": "Choosing Fight! under Host a Game, or Join a Game, ends the game at once with an access violation, before it makes any Bluetooth call, so two players cannot meet. Two linked phones do find each other; the game stops first."
+  },
+  "controls": {
+    "source": "Watched in play during the bring-up: the menus, Versus and a fight. Punch and kick were not mapped to phone keys by default.",
+    "actions": {
+      "left": "Move left",
+      "right": "Move right",
+      "up": "Jump",
+      "down": "Crouch",
+      "ok": "Select in menus",
+      "lsk": "Pause menu (controls can be rebound there)"
+    }
+  },
+  "test": {
+    "expect": "ingame",
+    "script": [
+      {
+        "wait": 45000
+      },
+      {
+        "key": "ok",
+        "hold": 200,
+        "wait": 5000
+      },
+      {
+        "key": "down",
+        "hold": 200,
+        "wait": 2500
+      },
+      {
+        "key": "ok",
+        "hold": 200,
+        "wait": 6000
+      },
+      {
+        "key": "lsk",
+        "hold": 200,
+        "wait": 45000
+      },
+      {
+        "key": "right",
+        "hold": 1000,
+        "wait": 500,
+        "repeat": 2
+      },
+      {
+        "key": "up",
+        "hold": 200,
+        "wait": 1500
+      }
+    ],
+    "timeoutMs": 150000
+  }
+}

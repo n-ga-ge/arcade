@@ -16,7 +16,8 @@
   "notes": [
     "Before the first stage the game asks for a three-letter tag. Type it on the number keys like a phone (2 gives a, 3 gives d, ...), then press OK.",
     "Before each stage the service area opens on Information; move right to Race and press OK to start.",
-    "Multiplayer (Bluetooth) and N-Gage Arena cannot work here.",
+    "A Bluetooth game is on the main menu's Multiplayer tab (move right from Rally). Both players pick a driver and then Host a Game or Join a Game; the joiner picks the host from the list. The host chooses Rally or Single Stage and the stage, the joiner sets Ready to Yes, the host chooses Start, and both go to Race in the service area.",
+    "N-Gage Arena is no longer online.",
     "The main menu starts a demo run when left idle for about 45 seconds; any key returns to the menu."
   ],
   "multiplayer": {
@@ -24,7 +25,9 @@
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Main menu > Multiplayer tab > pick a driver > Host a Game / Join a Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins and picks the host from the list, the host chooses a single stage and Start once the other is Ready; Finland stage 1 ran on both screens, each with the other's progress on the bar at the top. One player's pause is shown to the other (\"jmp has paused the game\"), and so is quitting. A whole rally and more than two players were not tried."
   },
   "controls": {
     "source": "The game's defaults, read from its Options > Controls screen (the game can reassign them there). The soft keys and OK were observed in menus and in a stage.",
