@@ -26,7 +26,11 @@
 //                      throttling, which does not reach workers, so it does
 //                      not slow the emulator: for a page that stalls)
 //   --hidden           put the page in the background while it is played, as
-//                      when the visitor looks at another tab
+//                      when the visitor looks at another tab. Headless Chrome
+//                      keeps every page visible and drawn, so there the page
+//                      is told it is hidden and the emulator's test switch
+//                      takes its animation frames away, which is what a
+//                      browser does to a hidden page
 //   --query STRING     more page parameters, e.g. "diag=1&log=*:info"
 //   --hook FILE        a module whose default export is called once the game
 //                      is in play and before it is measured, with { page,
@@ -237,6 +241,22 @@ async function throttle(page, rate) {
   await session.send('Emulation.setCPUThrottlingRate', { rate });
 }
 
+// --hidden where the browser does not hide the page: runs in the page. What a
+// hidden page sees (the document says so, a visibilitychange event) and what
+// its emulator gets (no animation frames).
+function pretendHidden(hidden) {
+  if (hidden) {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+  } else {
+    delete document.visibilityState;
+    delete document.hidden;
+  }
+  const module = window.eka2l1 && window.eka2l1.module;
+  if (module && module._eka2l1_web_debug_animation_frames) module._eka2l1_web_debug_animation_frames(hidden ? 1 : 0);
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
 // --- the run ---------------------------------------------------------------------
 
 async function main() {
@@ -331,11 +351,15 @@ async function main() {
     await throttle(page, Number(args.throttle));
   }
   let other = null;
+  let pretended = false;
   if (args.hidden) {
     phase = 'hiding the page';
     other = await context.newPage();
     await other.goto('about:blank');
     await other.bringToFront();
+    await sleep(500);
+    pretended = await evaluate(() => document.visibilityState === 'visible');
+    if (pretended) await evaluate(pretendHidden, true);
   }
 
   phase = 'playing';
@@ -359,6 +383,7 @@ async function main() {
 
   phase = 'taking the pictures';
   if (other) {
+    if (pretended) await evaluate(pretendHidden, false);
     await page.bringToFront();
     await other.close();
   }
