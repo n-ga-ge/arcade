@@ -23,3 +23,6 @@ __pycache__/
 
 # The demo video's work folder: game footage, never committed (docs/demo-video.md).
 /demo-work/
+
+# Local folders of coding agents (settings, worktrees, notes).
+.claude/
