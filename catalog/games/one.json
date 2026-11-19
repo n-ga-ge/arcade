@@ -183,7 +183,8 @@
         "wait": 25000
       }
     ],
-    "timeoutMs": 120000
+    "timeoutMs": 120000,
+    "attempts": 3
   },
   "statusNote": "Logos, language choice, menus and fighter creation work, and a single-player Versus fight in the 3D dock arena plays: moving, punch, kick and the pause menu were tried."
 }
