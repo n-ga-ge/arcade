@@ -20,14 +20,17 @@
   "notes": [
     "Start game > Solo player > New creates a campaign; the first mission is Pantelleria, summer 1943.",
     "The game is turn-based: move the cursor over the map and press OK to send the selected soldier there (the green line shows the path and what it costs). Key 7 opens the mission menu with End turn, Mission data, Use (weapons and gear), Commands and End mission.",
-    "Cooperative and multiplayer games need Bluetooth or N-Gage Arena and are not available in the browser."
+    "A Bluetooth battle works between two players in one room of the site (Menu > Multiplayer): Start game > Local battleground, then one chooses Host a game and Create, the other Join a game and the host's name. The host chooses Start game once the other is listed under Accept players, then Start the battle; both go through the briefing, the team and the gear. Cooperative only showed a page about the full game's features. Global battleground is N-Gage Arena, which is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
-      "arena"
+      "arena",
+      "hotseat"
     ],
-    "status": "untested"
+    "menu": "Start game > Local battleground > Host a game / Join a game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one chooses Host a game and Create, the other Join a game and the host in the list; the host then chooses Start game and Start the battle, and each player passes the briefing and picks a team and gear. A battle (Chef-Du-Pont 1944, Allies against Axis) ran on both screens and the turn passed back and forth. When one chose End mission, the other read \"Campaign won\"."
   },
   "controls": {
     "source": "The shortcuts shown in the game's own Commands menu (stance up 8, stance down 0, look at 9, previous 1, next 3) and the soft key labels in its menus; the cursor, OK, key 5 (the soldier moved and his action points dropped) and key 7 were observed in the first mission. Publisher and year are from the game's logo screens and general knowledge.",

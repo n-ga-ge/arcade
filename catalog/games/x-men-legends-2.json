@@ -13,14 +13,16 @@
     "The logos at the start cannot be skipped and take about 40 seconds. The title screen then waits for any key.",
     "OK or the left soft key selects in menus. Key 5 skips the intro video and steps through dialogue.",
     "The left soft key opens the pause menu (Resume, Load, Save, Options, Stats, Quit). The right soft key closes the map, the objectives and the stats screen.",
-    "Multiplayer needs Bluetooth and N-Gage Arena no longer exists; neither can work here."
+    "A Bluetooth game is under Multiplayer on the main menu: one player chooses Host Game, the other Join Game and then the host in the list. The host sees the other player under \"Accepted players\", chooses Start game and then New Game, and the story starts for both, each with their own hero of the team. N-Gage Arena is no longer online."
   ],
   "multiplayer": {
     "modes": [
       "bluetooth",
       "arena"
     ],
-    "status": "untested"
+    "menu": "Multiplayer > Host Game / Join Game",
+    "status": "plays",
+    "statusNote": "Two players in one room: one hosts, the other joins and picks the host, the host chooses Start game and New Game; The Sanctuary ran on both screens, one player as Cyclops and the other as Bishop, each seeing the other walk. One player's pause is shown to the other (\"Bo has paused the game\"), and the host's game goes on when the other quits. More than two players and a saved game were not tried."
   },
   "controls": {
     "source": "The game's own Options > Controller screen (its default keys for the ten actions). Moving, attacking, the map, objectives, the stats menu, both soft keys and 5 for dialogue and the video were also tried in play.",

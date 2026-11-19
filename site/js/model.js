@@ -12,6 +12,15 @@ export const STATUSES = [
   { id: 'boots', label: 'Boots', means: 'Shows its own first screens and gets no further.' },
   { id: 'broken', label: 'Not working', means: 'Does not start, or crashes.' },
 ];
+// What a game runs on. The original N-Gage is the default of an entry.
+export const PLATFORMS = [
+  { id: 'ngage', label: 'N-Gage' },
+  { id: 'ngage2', label: 'N-Gage 2.0' },
+];
+const PLATFORM_IDS = new Set(PLATFORMS.map((platform) => platform.id));
+export const isPlatform = (id) => PLATFORM_IDS.has(id);
+export const platformOf = (id) => PLATFORMS.find((platform) => platform.id === id) || PLATFORMS[0];
+
 // A game nobody has looked at yet is in the catalogue but not on the page: the
 // site only lists games it can say something about.
 const UNTESTED = { id: 'untested', label: 'Untested', means: 'Nobody has tried it in the web build yet.' };
@@ -75,6 +84,7 @@ function normalise(raw, version) {
     slug: String(raw.slug),
     title: String(raw.title || raw.slug),
     uid: raw.uid ? String(raw.uid) : '',
+    platform: isPlatform(raw.platform) ? raw.platform : 'ngage',
     status: statusOf(raw.status).id,
     statusNote: raw.statusNote ? String(raw.statusNote) : '',
     publisher: raw.publisher ? String(raw.publisher) : '',
@@ -95,7 +105,7 @@ function normalise(raw, version) {
     game.shot = CATALOG_URL + ci.shot.replace(/^\/+/, '') + (version ? `?v=${encodeURIComponent(version)}` : '');
   }
   game.playUrl = `/play/?g=${encodeURIComponent(game.slug)}`;
-  game.haystack = fold([game.title, game.publisher, game.genre, game.year || '', game.slug.replace(/-/g, ' ')].join(' '));
+  game.haystack = fold([game.title, game.publisher, game.genre, game.year || '', game.slug.replace(/-/g, ' '), game.platform === 'ngage2' ? 'N-Gage 2.0' : ''].join(' '));
   return game;
 }
 
@@ -124,7 +134,9 @@ export async function loadCatalog(signal) {
   // Whether the catalogue knows of any game two visitors could play together:
   // without one the page has no multiplayer filter and asks for no rooms.
   const multiplayer = games.some((game) => game.multiplayer?.bluetooth);
-  return { games, bySlug, commit, generated: parseDate(index.generated), multiplayer };
+  // A platform filter only means something with games of more than one.
+  const platforms = new Set(games.map((game) => game.platform)).size > 1;
+  return { games, bySlug, commit, generated: parseDate(index.generated), multiplayer, platforms };
 }
 
 function parseDate(value) {
@@ -145,17 +157,23 @@ const ORDERS = {
 export const isOrder = (name) => Object.hasOwn(ORDERS, name);
 export const isStatus = (id) => RANK.has(id);
 
-// What the page shows for a search, status filter, multiplayer filter and
-// order, plus the numbers on the filters: how many of the games that pass the
-// other filters have each status, and how many can be played over Bluetooth.
-export function select(games, { q, status, sort, mp }) {
+// What the page shows for a search, status filter, multiplayer filter,
+// platform filter and order, plus the numbers on the filters: how many of the
+// games that pass the other filters have each status, how many can be played
+// over Bluetooth, and how many run on each platform.
+export function select(games, { q, status, sort, mp, platform = '' }) {
   // Every word typed has to appear somewhere in the title, publisher, genre or year.
   const words = fold(q).split(/\s+/).filter(Boolean);
   const searched = games.filter((game) => words.every((word) => game.haystack.includes(word)));
-  const found = mp ? searched.filter((game) => game.multiplayer?.bluetooth) : searched;
+  const onPlatform = platform ? searched.filter((game) => game.platform === platform) : searched;
+  const found = mp ? onPlatform.filter((game) => game.multiplayer?.bluetooth) : onPlatform;
   const counts = Object.fromEntries(STATUSES.map((entry) => [entry.id, 0]));
   for (const game of found) counts[game.status] += 1;
-  const multiplayer = searched.filter((game) => game.multiplayer?.bluetooth && (!status || game.status === status)).length;
+  const multiplayer = onPlatform.filter((game) => game.multiplayer?.bluetooth && (!status || game.status === status)).length;
+  const platforms = Object.fromEntries(PLATFORMS.map((entry) => [`p-${entry.id}`, 0]));
+  for (const game of searched) {
+    if ((!mp || game.multiplayer?.bluetooth) && (!status || game.status === status)) platforms[`p-${game.platform}`] += 1;
+  }
   const shown = (status ? found.filter((game) => game.status === status) : found).sort(ORDERS[isOrder(sort) ? sort : '']);
-  return { shown, counts, found: found.length, multiplayer };
+  return { shown, counts, found: found.length, multiplayer, platforms };
 }

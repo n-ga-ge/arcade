@@ -1,5 +1,5 @@
 #!/bin/bash
-# Publish the built site (dist/) to Cloudflare Pages and deploy the two Workers.
+# Publish the built site (dist/) to Cloudflare Pages and deploy the three Workers.
 #   tools/ci/deploy.sh [--dry-run] [--branch <name>]
 #
 # Build first: python3 -I tools/site/build.py. One-time Cloudflare setup, the
@@ -28,7 +28,9 @@
 # (--help prints this comment up to here.) In full: on "main" the Worker in
 # cloudflare/assets-worker/ (when that folder exists) is deployed after the
 # site, with CLOUDFLARE_API_TOKEN_WORKERS when that is set, and ASSETS_TOKEN
-# is then stored on it; after that the relay Worker in cloudflare/net-worker/
+# is then stored on it; then the share Worker in cloudflare/share-worker/
+# (link previews for one game) with the same token; after that the relay
+# Worker in cloudflare/net-worker/
 # (when that folder exists) is deployed with the same token, unless the relay
 # that is live was built from the same files: a new version of it restarts
 # every room and cuts the players' connections, so an unchanged relay is left
@@ -60,6 +62,7 @@ PROJECT=${CF_PAGES_PROJECT:-n-ga-ge}
 DIST=$ARCADE_ROOT/dist
 WORKER_DIR=$ARCADE_ROOT/cloudflare/assets-worker
 NET_WORKER_DIR=$ARCADE_ROOT/cloudflare/net-worker
+SHARE_WORKER_DIR=$ARCADE_ROOT/cloudflare/share-worker
 API=${CLOUDFLARE_API_BASE_URL:-https://api.cloudflare.com/client/v4}
 
 die() { echo "deploy.sh: $1" >&2; shift; for line in "$@"; do echo "  $line" >&2; done; exit 1; }
@@ -242,6 +245,18 @@ if [ -n "$DRY_RUN" ]; then
     worker_config "$WORKER_DIR"
     (cd "$WORKER_DIR" && wrangler deploy "${WORKER_ARGS[@]}" --dry-run --outdir "$WORK/worker" </dev/null)
   fi
+  if [ -d "$SHARE_WORKER_DIR" ]; then
+    if [ "$ENVIRONMENT" = production ]; then
+      echo "and then, in cloudflare/share-worker/${CLOUDFLARE_ZONE_ID:+ (route zone by ID)}:"
+      show deploy
+    else
+      echo "The share Worker is only deployed from $PRODUCTION_BRANCH."
+    fi
+    echo "Checking that the share Worker builds:"
+    # Like the relay, it imports nothing but the runtime.
+    worker_config "$SHARE_WORKER_DIR"
+    (cd "$SHARE_WORKER_DIR" && wrangler deploy "${WORKER_ARGS[@]}" --dry-run --outdir "$WORK/share-worker" </dev/null)
+  fi
   if [ ! -d "$NET_WORKER_DIR" ]; then
     echo "No cloudflare/net-worker/ in this checkout: no relay Worker to deploy."
   else
@@ -357,6 +372,21 @@ else
   else
     echo "ASSETS_TOKEN is not set: the Worker keeps whatever token it has."
   fi
+fi
+
+# --- the share Worker (production only) --------------------------------------------
+
+# Link previews for one game: on /play/* it rewrites the share tags of the
+# player's page when the address names a game, and passes everything else through. Deployed
+# after the site, whose pages carry the tags it rewrites.
+if [ -d "$SHARE_WORKER_DIR" ] && [ "$ENVIRONMENT" = production ]; then
+  echo "Deploying the share Worker..."
+  worker_config "$SHARE_WORKER_DIR"
+  (cd "$SHARE_WORKER_DIR" && CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN_WORKERS:-$CLOUDFLARE_API_TOKEN} wrangler deploy "${WORKER_ARGS[@]}" </dev/null) ||
+    die "the deployment of the share Worker (cloudflare/share-worker/) failed. The site and the assets Worker were deployed: $URL" \
+        "Links to one game keep the site's own preview until it is deployed; wrangler's message above says why."
+elif [ -d "$SHARE_WORKER_DIR" ]; then
+  echo "Preview deployment: the share Worker is only deployed from $PRODUCTION_BRANCH."
 fi
 
 # --- the relay Worker (production only) --------------------------------------------

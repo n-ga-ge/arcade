@@ -1,0 +1,29 @@
+// The share Worker: gives a link to one game (/play/?g=<slug>) that game's
+// preview in chats and social posts. README.md explains it.
+// tools/ci/deploy.sh publishes it with every production deployment (by hand:
+// `npx wrangler deploy`); when CLOUDFLARE_ZONE_ID is set it deploys from a
+// copy of this file in which each "zone_name" is replaced by "zone_id".
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "n-ga-ge-share",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+
+  // The player. A route is matched against the whole URL, query string
+  // included, and cannot name a query, so "n-ga.ge/play/" would match the bare
+  // page only, never /play/?g=<slug>: the pattern needs the "*", and with it
+  // the player's own files under /play/ (config.json, /play/b/<build>/...)
+  // reach the Worker too, which hands them on untouched. The front page's
+  // links to a game (/?game=<slug>) would need "n-ga.ge/*", every request to
+  // the site, so they keep the site's preview. The Worker's requests to the
+  // site go to Pages: a route is never the target of a same-zone fetch().
+  "routes": [
+    { "pattern": "n-ga.ge/play/*", "zone_name": "n-ga.ge" },
+    { "pattern": "dev.n-ga.ge/play/*", "zone_name": "n-ga.ge" }
+  ],
+
+  "workers_dev": false,
+  "preview_urls": false,
+
+  "observability": { "enabled": true }
+}
