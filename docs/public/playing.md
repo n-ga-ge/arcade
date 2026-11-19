@@ -96,7 +96,8 @@ else.
 
 The menu restarts the game, mutes the sound, goes fullscreen, and opens the
 controls, the display settings, your saves, multiplayer and the guide to the
-running game.
+running game. **Diagnostics** measures how the game runs on your device and
+says what it found: see [Troubleshooting](troubleshooting.md).
 **Copy link to this game** gives you a link that starts it directly, and
 **All games** takes you back to the front page.
 
@@ -195,14 +196,32 @@ none yet. Files you choose from your device are not uploaded anywhere.
 
 ## When something goes wrong
 
+The player can find out why a game runs badly on your device. Play for half
+a minute, open **Menu → Diagnostics**, and read what it found: each finding
+says what is wrong and what to do, and links to its part of
+[Troubleshooting](troubleshooting.md), which explains all of them. The same
+dialog makes a report you can send: see
+[sending a report](troubleshooting.md#sending-a-report). A report is never
+sent by itself.
+
+The common cases:
+
 - **The player says the browser cannot run the emulator.** It names what is
-  missing. Use a current Chrome, Edge or Firefox.
+  missing. Use a current Chrome, Edge or Firefox
+  ([more](troubleshooting.md#the-browser-cannot-run-the-emulator)).
 - **No sound.** Click the page or press a key once, and check that the menu
-  does not say **Unmute**.
-- **The game is slow or stutters.** Close other heavy tabs. The speed depends
-  on your processor; the display options make no difference.
+  does not say **Unmute** ([more](troubleshooting.md#sound)).
+- **The game is slow or stutters.** Close other heavy tabs, then look at the
+  diagnostics: they tell a device that is too slow from one that is busy
+  with something else, and from a game that simply draws few pictures a
+  second. The speed depends on your processor, and a processor that is too
+  slow for a game cannot be helped
+  ([more](troubleshooting.md#the-game-is-slow)).
+- **The game stopped or closed.** **Menu → Restart game** starts it again
+  ([more](troubleshooting.md#the-game-stops)).
 - **The other player's game does not find yours.** Check in
   **Menu → Multiplayer…** that you are both in the same room, keep both tabs
-  in front, and let one game host before the other searches.
+  in front, and let one game host before the other searches
+  ([more](troubleshooting.md#playing-with-someone-else)).
 - **A game does not start.** Check its label on the front page: not every game
   works yet. **Menu → Guide** says how far the running game gets.

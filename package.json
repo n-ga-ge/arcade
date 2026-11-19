@@ -4,7 +4,7 @@
   "private": true,
   "description": "Test tooling for the n-ga.ge arcade: the per-game browser test and the browser suite.",
   "scripts": {
-    "test": "node --test tools/web/gamecheck.test.mjs",
+    "test": "node --test tools/web/gamecheck.test.mjs tools/web/diagreport.test.mjs tools/web/diag-scenarios.test.mjs",
     "test:game": "node tools/web/gametest.mjs",
     "test:status": "python3 -I tools/ci/status.py",
     "test:suite": "tools/web/suite.sh",

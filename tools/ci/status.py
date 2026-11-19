@@ -2,6 +2,7 @@
 """Turn the per-game test results into the status the front page shows.
 
   python3 -I tools/ci/status.py <results dir> --out <dir> [--commit SHA] [--summary FILE] [--allow-empty]
+  python3 -I tools/ci/status.py --self-test
 
 Reads every <slug>.json that tools/web/gametest.mjs wrote, in <results dir> or
 in a folder below it (downloaded CI artifacts arrive in one folder per game),
@@ -9,7 +10,8 @@ and writes
 
   <dir>/status.json        { "generated": <ISO time>, "commit": <sha or null>,
                              "games": { "<slug>": { "pass", "expect", "reached",
-                             "seconds", "shot", "error"?, "better"? } } }
+                             "seconds", "shot", "error"?, "better"?,
+                             "perf"? } } }
   <dir>/shots/<slug>.png   the emulator's last screenshot of each game
 
 which is what tools/site/build.py --status <dir> publishes under /catalog/.
@@ -20,11 +22,18 @@ which is what tools/site/build.py --status <dir> publishes under /catalog/.
   "expect"   the level it had to reach; null when it was only looked at
   "shot"     "shots/<slug>.png", or null when no screenshot was taken
   "better"   true when the game got further than the catalogue says
+  "perf"     what the player's diagnostics measured during the run, as the
+             result has it ("measuredS", "fps", "fpsWorst", ..., "findings":
+             the codes; docs/diagnostics.md), with the "browser" and the
+             WebGL "renderer" it was measured in beside the numbers. Left out
+             when the result has none (a player without diagnostics). It is
+             a record: it has no part in "pass".
 
 Games in the catalogue with no result are left out, and so are results for
 games the catalogue does not have. It prints one line per game and then a
 markdown table; --summary FILE also appends the table to FILE (the CI job
-summary). The exit code is 0 whether games passed or not (each game's own job
+summary). --self-test checks how a "perf" block is taken over and needs no
+results. The exit code is 0 whether games passed or not (each game's own job
 reports that), and 1 when there is no result at all, unless --allow-empty.
 
   --commit   the commit the results are for (default: $GITHUB_SHA, else the
@@ -34,6 +43,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import shutil
 import sys
 
@@ -77,13 +87,100 @@ def read_results(folder, skip):
     return found
 
 
+# What a "perf" block may hold, so that a result file cannot put more into
+# the published status than a few numbers and codes. A code and the number of
+# codes are as in tools/web/gamecheck.mjs, which makes the block (PERF_CODE
+# and PERF_FINDINGS there): change them together.
+PERF_FIELDS = 24
+PERF_FINDINGS = 32
+PERF_CODE = re.compile(r"[a-z0-9-]{1,40}")
+PERF_NAME = re.compile(r"[A-Za-z][A-Za-z0-9]{0,39}")
+PERF_TEXT = 200
+# Not numbers of the block: the codes, and what this script adds.
+PERF_OWN = ("findings", "browser", "renderer")
+
+
+def perf_block(result):
+    """The "perf" block of a result as the status keeps it, or None.
+
+    Every number of the block is passed on, whatever its name: which numbers
+    there are is decided where they are read (perfFrom in
+    tools/web/gamecheck.mjs). "findings" is kept as a list of codes, and the
+    browser and renderer of the result are added, because the numbers say
+    nothing without the machine they are from.
+    """
+    perf = result.get("perf")
+    if not isinstance(perf, dict):
+        return None
+    block = {}
+    for name, value in perf.items():
+        if len(block) >= PERF_FIELDS:
+            break
+        # A bool is an int in Python; it is not a measurement. Neither is NaN,
+        # an infinity or a number no JSON reader can hold.
+        if name in PERF_OWN or not PERF_NAME.fullmatch(name) or isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        if value == value and abs(value) <= 2 ** 53:
+            block[name] = value
+    findings = perf.get("findings")
+    block["findings"] = [code for code in (findings if isinstance(findings, list) else []) if isinstance(code, str) and PERF_CODE.fullmatch(code)][:PERF_FINDINGS]
+    for name in ("browser", "renderer"):
+        if isinstance(result.get(name), str) and result[name]:
+            block[name] = result[name][:PERF_TEXT]
+    return block
+
+
+def perf_words(perf):
+    """A "perf" block in a few words, for the table."""
+    if not perf:
+        return ""
+    words = []
+    if "fps" in perf:
+        words.append(f"{perf['fps']:g} fps" + (f" (worst {perf['fpsWorst']:g})" if "fpsWorst" in perf else ""))
+    if perf["findings"]:
+        words.append(", ".join(perf["findings"]))
+    return "; ".join(words)
+
+
+def self_test():
+    perf = {"measuredS": 30, "fps": 18.4, "fpsWorst": 12, "heapMB": 201, "findings": ["software-rendering"]}
+    result = {"slug": "x", "pass": True, "browser": "chrome-software", "renderer": "ANGLE (SwiftShader)", "perf": perf}
+    kept = perf_block(result)
+    assert kept == {**perf, "browser": "chrome-software", "renderer": "ANGLE (SwiftShader)"}, kept
+    assert perf_words(kept) == "18.4 fps (worst 12); software-rendering", perf_words(kept)
+    # A result without the block, or with something else in its place, has none.
+    for other in ({}, {"perf": None}, {"perf": []}, {"perf": "fast"}, {"perf": 7}):
+        assert perf_block(other) is None, other
+    assert perf_words(None) == ""
+    # Only numbers and codes pass; a renderer that is unknown is left out.
+    odd = {"renderer": None, "browser": "", "perf": {"measuredS": 0, "fps": None, "ok": True, "note": "text", "nested": {"a": 1},
+                                                    "huge": float("inf"), "nan": float("nan"), "long": 10 ** 400, "n" * 41: 1,
+                                                    "not a name": 1, "browser": 7, "renderer": 7,
+                                                    "findings": ["cpu-bound", 7, None, "x" * 41, {"code": "y"}, "<b>", "Not A Code", ""]}}
+    assert perf_block(odd) == {"measuredS": 0, "findings": ["cpu-bound"]}, perf_block(odd)
+    assert perf_words(perf_block(odd)) == "cpu-bound"
+    assert perf_block({"perf": {"findings": "none"}}) == {"findings": []}
+    assert perf_words({"findings": []}) == ""
+    assert perf_words({"fps": 20.0, "findings": []}) == "20 fps"
+    # Never more than a status file should carry.
+    many = perf_block({"renderer": "r" * 1000, "perf": {**{f"n{i}": i for i in range(100)}, "findings": [f"code-{i}" for i in range(100)]}})
+    assert len(many) == PERF_FIELDS + 2 and len(many["findings"]) == PERF_FINDINGS and len(many["renderer"]) == PERF_TEXT, many
+    # What is kept survives strict JSON.
+    json.dumps(kept, allow_nan=False)
+    json.dumps(many, allow_nan=False)
+    print("status.py self-test: ok")
+
+
 def cell(text):
     """Text that cannot break a markdown table row."""
     return " ".join(str(text).split()).replace("|", "\\|")
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    if "--self-test" in sys.argv[1:]:
+        self_test()
+        return
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0], epilog="--self-test checks how a perf block is taken over and needs no results")
     parser.add_argument("results", help="folder with <slug>.json and <slug>.png, directly or one folder per game")
     parser.add_argument("--out", required=True, help="folder to write status.json and shots/ to")
     parser.add_argument("--commit", help="the commit the results are for")
@@ -123,6 +220,9 @@ def main():
             game["error"] = "the test did not run" if reached is None else f"expected {expect}, reached {reached}"
         if result.get("better"):
             game["better"] = True
+        perf = perf_block(result)
+        if perf is not None:
+            game["perf"] = perf
         games[slug] = game
         if result.get("commit"):
             commits.add(result["commit"])
@@ -154,8 +254,8 @@ def main():
     table = [
         f"### Games: {passed} of {len(games)} passed" + (f" ({len(titles) - len(games)} not tested)" if len(games) < len(titles) else ""),
         "",
-        "| Game | Result | Expected | Reached | Seconds | Note |",
-        "|---|---|---|---|---|---|",
+        "| Game | Result | Expected | Reached | Seconds | Diagnostics | Note |",
+        "|---|---|---|---|---|---|---|",
     ]
     for slug in sorted(games, key=lambda s: titles[s].lower()):
         game = games[slug]
@@ -166,7 +266,7 @@ def main():
             note = f"better than listed ({game['expect']}); update the catalogue entry" + (f". {note}" if note else "")
         seconds = "" if game["seconds"] is None else game["seconds"]
         print(f"{word}  {slug}  {reached}" + (f" (expected {game['expect']})" if game["expect"] else "") + (f"  {note}" if note else ""))
-        table.append(f"| {cell(titles[slug])} | {word.lower() if game['pass'] else '**FAIL**'} | {game['expect'] or '–'} | {reached} | {seconds} | {cell(note)[:300]} |")
+        table.append(f"| {cell(titles[slug])} | {word.lower() if game['pass'] else '**FAIL**'} | {game['expect'] or '–'} | {reached} | {seconds} | {cell(perf_words(game.get('perf')))[:300]} | {cell(note)[:300]} |")
     text = "\n".join(table) + "\n"
     print()
     print(text, end="")

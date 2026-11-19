@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
-import { SHOWN_AT, checkScript, difference, gameQuery, likeness, picture, platformOf, scriptMs, stepTiming, targetLevel, verdict } from './gamecheck.mjs';
+import { PERF_NUMBERS, SHOWN_AT, checkScript, difference, gameQuery, likeness, perfFrom, picture, platformOf, scriptMs, stepTiming, targetLevel, verdict } from './gamecheck.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const KEYS = JSON.parse(fs.readFileSync(path.join(ROOT, 'catalog', 'schema.json'), 'utf8')).$defs.key.enum;
@@ -145,4 +145,105 @@ test('a game starts with the firmware of its platform', () => {
   assert.equal(gameQuery({ slug: 'x' }, 'x'), '?fw=/local/NGAGE.ROM&game=/local/games/x.zip&persist=0');
   assert.equal(gameQuery({ platform: 'ngage2' }, 'y'),
     '?device=/local/devices/rm-409.zip&app=/local/ngage2/ngage-1.40.1557.sis&game=/local/games/y.zip&persist=0');
+});
+
+// A diagnostics report as the player of today makes it (diag/core.js): the
+// session section has the frame rates, the sections behind them are not there.
+const report = (extra = {}) => ({
+  kind: 'eka2l1-web-diagnostics',
+  v: 1,
+  generated: '2026-11-18T10:00:00.000Z',
+  page: { address: 'http://127.0.0.1:8520/', hidden: false },
+  game: { uid: '0x101FD3F6', name: 'Elder Scrolls', slug: null },
+  session: { upS: 119, running: true, paused: false, emulatorAnswers: true, samples: 120, measuredS: 30 },
+  findings: [],
+  sections: {
+    session: {
+      title: 'Session',
+      data: { state: 'running', frames: 1473, fps: 9.0107, fpsAverage: 10.199998300000322, fpsWorst: 7.964319847085206, measuredS: 30.000004999999888 },
+      findings: [],
+    },
+    browser: { title: 'Browser and device', data: { ok: true, cores: 16 }, findings: [] },
+  },
+  series: { t: [0, 1], fps: [null, 10], running: [1, 1], hidden: [0, 0] },
+  ...extra,
+});
+
+test('the perf block of a report without the measuring sections has the frame rates', () => {
+  assert.deepEqual(perfFrom(report()), { measuredS: 30, fps: 10.2, fpsWorst: 8, findings: [] });
+});
+
+test('the perf block takes the numbers the table names and the codes of the findings', () => {
+  // The sections that will have these are not written: the paths are made up
+  // here, which is also how the table is extended once they are.
+  const numbers = [
+    ...PERF_NUMBERS.filter((entry) => entry.paths.length),
+    { name: 'cpuLoad', digits: 2, paths: ['sections.speed.data.cpu.busyShare'] },
+    { name: 'graphicsMs', digits: 1, paths: ['sections.graphics.data.msPerFrame', 'sections.graphics.data.frameMs'] },
+    { name: 'heapMB', digits: 0, paths: ['sections.memory.data.heap.usedMB'] },
+    { name: 'underruns', digits: 0, paths: ['sections.audio.data.underruns'] },
+  ];
+  const full = report({
+    findings: [
+      { code: 'cpu-bound', level: 'bad', section: 'speed', title: 'The device is too slow for this game.' },
+      { code: 'software-rendering', level: 'warn', section: 'graphics', title: 'The browser draws on the processor.' },
+      { code: 'software-rendering', level: 'warn', section: 'graphics', title: 'Twice.' },
+    ],
+  });
+  full.sections.speed = { title: 'Speed', data: { cpu: { busyShare: 0.97431 } }, findings: ['cpu-bound'] };
+  full.sections.graphics = { title: 'Picture', data: { frameMs: 3.4567 }, findings: ['software-rendering'] };
+  full.sections.memory = { title: 'Memory and storage', data: { heap: { usedMB: 201.6 } }, findings: [] };
+  assert.deepEqual(perfFrom(full, numbers), {
+    measuredS: 30, fps: 10.2, fpsWorst: 8, cpuLoad: 0.97, graphicsMs: 3.5, heapMB: 202, findings: ['cpu-bound', 'software-rendering'],
+  });
+  // The table as it stands leaves out what it has no path for.
+  assert.deepEqual(perfFrom(full), { measuredS: 30, fps: 10.2, fpsWorst: 8, findings: ['cpu-bound', 'software-rendering'] });
+});
+
+test('a report made before anything could be measured gives a block without rates', () => {
+  const early = report({ game: null, session: { upS: 2, running: false, paused: false, emulatorAnswers: false, samples: 2, measuredS: 0 } });
+  early.sections.session.data = { state: 'none', frames: 0, fps: null, fpsAverage: null, fpsWorst: null, measuredS: 0 };
+  assert.deepEqual(perfFrom(early), { measuredS: 0, findings: [] });
+});
+
+test('what is not a diagnostics report gives no perf block', () => {
+  for (const nothing of [null, undefined, '', 'eka2l1-web-diagnostics', 7, [], {}, { kind: 'something-else', findings: [] }, { session: { measuredS: 30 } }]) {
+    assert.equal(perfFrom(nothing), null);
+  }
+});
+
+test('a broken report gives the block of what can be read and never throws', () => {
+  const kind = 'eka2l1-web-diagnostics';
+  assert.deepEqual(perfFrom({ kind }), { measuredS: 0, findings: [] });
+  assert.deepEqual(perfFrom({ kind, session: null, sections: null, findings: null }), { measuredS: 0, findings: [] });
+  assert.deepEqual(perfFrom({ kind, session: 'gone', sections: [1, 2], findings: 'none' }), { measuredS: 0, findings: [] });
+  // Numbers that are not numbers, and findings that are not findings.
+  const odd = report({
+    session: { measuredS: '30' },
+    findings: [null, 'cpu-bound', { code: 7 }, { code: 'Not A Code' }, { code: 'x'.repeat(41) }, { level: 'bad' }, { code: 'game-crashed' }],
+  });
+  odd.sections.session.data = { fpsAverage: '12', fpsWorst: null, measuredS: 12.4 };
+  assert.deepEqual(perfFrom(odd), { measuredS: 12, findings: ['game-crashed'] });
+  // The error of a section that failed stands where its data would.
+  const failed = report();
+  failed.sections.session = { title: 'Session', data: null, findings: [], error: 'boom' };
+  assert.deepEqual(perfFrom(failed), { measuredS: 30, findings: [] });
+  // A path never leaves the report's own fields.
+  assert.deepEqual(perfFrom(report(), [{ name: 'odd', digits: 0, paths: ['sections.constructor.length', 'sections.toString.length', '__proto__.x'] }]), { measuredS: 0, findings: [] });
+  // A table that is itself wrong must not fail a run.
+  assert.equal(perfFrom(report(), [{ name: 'fps' }]), null);
+  // Never more codes than a status file should carry.
+  const many = report({ findings: Array.from({ length: 100 }, (_, i) => ({ code: `code-${i}` })) });
+  assert.equal(perfFrom(many).findings.length, 32);
+});
+
+test('the table of numbers is well formed', () => {
+  const names = PERF_NUMBERS.map((entry) => entry.name);
+  assert.equal(new Set(names).size, names.length);
+  assert.ok(!names.includes('findings'));
+  for (const entry of PERF_NUMBERS) {
+    assert.match(entry.name, /^[a-zA-Z][a-zA-Z0-9]*$/);
+    assert.ok(Number.isInteger(entry.digits) && entry.digits >= 0 && entry.digits <= 3);
+    assert.ok(Array.isArray(entry.paths) && entry.paths.every((path) => typeof path === 'string' && path));
+  }
 });

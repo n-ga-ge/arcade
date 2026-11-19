@@ -192,3 +192,65 @@ export function gameQuery(entry, slug, base = '/local/') {
   const query = Object.entries(files).map(([name, file]) => `${name}=${base}${file}`);
   return `?${[...query, `game=${base}games/${slug}.zip`, 'persist=0'].join('&')}`;
 }
+
+// --- what the player's diagnostics said -------------------------------------------
+//
+// The player measures itself (docs/diagnostics.md), and its report is long.
+// The per-game test keeps a few numbers of it as the result's "perf" block, so
+// that every CI run says, for every game, how fast it ran on a known machine
+// and which findings it produced there.
+//
+// The numbers to keep. `name` is the field in the block, `paths` where a
+// report may have it (dots go into objects; the first path that holds a finite
+// number wins, so an old and a new place can stand side by side), `digits` the
+// decimals kept. A number the report does not have is left out of the block.
+// To keep another number, add a line: nothing else needs to change, here or in
+// tools/ci/status.py, which passes every number of the block on.
+export const PERF_NUMBERS = [
+  // Seconds of play the rates below were measured over; 0 when nothing was.
+  { name: 'measuredS', digits: 0, paths: ['session.measuredS', 'sections.session.data.measuredS'] },
+  // Frames the game presented per second: on average, and in the worst second.
+  { name: 'fps', digits: 1, paths: ['sections.session.data.fpsAverage'] },
+  { name: 'fpsWorst', digits: 1, paths: ['sections.session.data.fpsWorst'] },
+  // The share of the time the emulated processor was busy, 0 to 1 (speed).
+  { name: 'cpuLoad', digits: 2, paths: ['sections.speed.data.busy'] },
+  // What the graphics thread spends on a frame, in milliseconds (graphics).
+  { name: 'graphicsMs', digits: 1, paths: ['sections.graphics.data.busyMsPerFrame'] },
+  // The emulator's memory, in megabytes (memory).
+  { name: 'heapMB', digits: 0, paths: ['sections.memory.data.heap.sizeMB'] },
+];
+
+export const REPORT_KIND = 'eka2l1-web-diagnostics';
+// How many codes a block holds and what a code looks like. tools/ci/status.py
+// checks a block against the same two before it publishes it (PERF_FINDINGS
+// and PERF_CODE there): change them together.
+const PERF_FINDINGS = 32;
+const PERF_CODE = /^[a-z0-9-]{1,40}$/;
+
+const own = (value, key) => (value !== null && typeof value === 'object' && Object.hasOwn(value, key) ? value[key] : undefined);
+const at = (value, path) => path.split('.').reduce(own, value);
+
+// The "perf" block for a diagnostics report (what `eka2l1Page.diag.report()`
+// resolved to): { measuredS, fps, fpsWorst, ..., findings: [codes] }, with the
+// numbers of `numbers` the report has and the code of every finding, worst
+// first as the report lists them. null when `report` is not a diagnostics
+// report at all (a player without diagnostics, a page that did not answer).
+// It never throws: a report with parts missing or of the wrong kind gives the
+// block of what could be read.
+export function perfFrom(report, numbers = PERF_NUMBERS) {
+  try {
+    if (own(report, 'kind') !== REPORT_KIND) return null;
+    const perf = { measuredS: 0 };
+    for (const { name, digits, paths } of numbers) {
+      const value = paths.map((path) => at(report, path)).find((found) => typeof found === 'number' && Number.isFinite(found));
+      if (value !== undefined) perf[name] = Number(value.toFixed(digits));
+    }
+    const findings = own(report, 'findings');
+    const codes = (Array.isArray(findings) ? findings : []).map((finding) => own(finding, 'code'))
+      .filter((code) => typeof code === 'string' && PERF_CODE.test(code));
+    perf.findings = [...new Set(codes)].slice(0, PERF_FINDINGS);
+    return perf;
+  } catch {
+    return null;
+  }
+}
